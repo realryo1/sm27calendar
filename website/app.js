@@ -129,7 +129,6 @@
     const waitPart = e.wait
       ? `<div class="ev-wait" data-wait="${e.id}" role="button" tabindex="0" style="top:${pos(toHour(e.wait))};height:${span(toHour(e.wait), top)}">
           <span class="ev-wait__label">早朝待機</span>
-          <span class="ev-wait__time">日の出 ${e.wait.replace(/^0/, "")}〜</span>
         </div>`
       : "";
     const lastEntry = e.lastEntry
@@ -200,7 +199,6 @@
   function renderVenueEvent(e, ids, ds) {
     const links = e.links ?? [{ label: "公式ページ", url: e.url }];
     const times = [
-      e.wait && ["早朝待機", `${e.wait}〜`],
       e.open && ["開場", e.open],
       [e.open ? "開演" : "時間", e.allDay ? "未発表" : `${e.start} – ${e.end}${e.tentative ? "（仮）" : ""}`],
       e.lastEntry && ["最終入場", e.lastEntry],
@@ -209,9 +207,6 @@
       ? `<details class="vc-wait" id="wait-${e.id}">
           <summary>早朝待機の案内（前年参考）</summary>
           <div class="vc-wait__body">
-            ${(e.marks ?? [])
-              .map((m) => `<p class="vc-wait__mark"><span class="ev-mark__label">${esc(m.label)} ${m.time}</span>${esc(m.detail)}</p>`)
-              .join("")}
             ${
               e.waitImage
                 ? `<a class="vc-image" href="${esc(e.waitSource ?? e.waitImage)}" target="_blank" rel="noopener">
@@ -219,7 +214,10 @@
                   </a>`
                 : ""
             }
-            <p class="vc-ev__note">日の出（${e.wait}）頃からの待機を想定しています。画像は前年のもので、今年の待機列とは異なる場合があります。画像をタップすると出典（SNOW MIKU 2026 公式サイト）が開きます。</p>
+            ${(e.marks ?? [])
+              .map((m) => `<p class="vc-wait__mark"><span class="ev-mark__label">${esc(m.label)} ${m.time}</span>${esc(m.detail)}</p>`)
+              .join("")}
+            <p class="vc-ev__note">${e.note ? `${esc(e.note)}<br>` : ""}画像は26年のもので仮置き。タップすると出典（SNOW MIKU 2026 公式サイト）が開きます。</p>
           </div>
         </details>`
       : "";
@@ -230,7 +228,7 @@
       </div>
       <p class="vc-ev__title">${esc(e.title)}${e.sub ? ` <small>${esc(e.sub)}</small>` : ""}</p>
       <dl class="vc-ev__times">${times.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join("")}</dl>
-      ${e.note ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
+      ${e.note && !e.wait ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
       ${wait}
       <div class="vc-ev__links">${links
         .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`)
@@ -317,9 +315,8 @@
   new IntersectionObserver(([entry]) => ($toBoard.hidden = entry.isIntersecting), { threshold: 0.15 }).observe($board);
   $toBoard.addEventListener("click", () => $board.scrollIntoView({ behavior: "smooth" }));
 
-  // ---------- 拡大縮小（縦ピンチ＝時間方向、横ピンチ＝会場列の幅） ----------
+  // ---------- 拡大縮小（縦ピンチ＝時間方向、横ピンチ＝会場列の幅。リロードで元に戻る） ----------
   const ZOOM = { hour: [28, 220], col: [72, 420] };
-  const $zoomReset = document.getElementById("zoomReset");
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v));
   const cssPx = (name) => parseFloat(getComputedStyle($tt).getPropertyValue(name));
   const colWidth = () => $tt.querySelector(".tt-col").getBoundingClientRect().width;
@@ -330,22 +327,6 @@
     const h = hourPx();
     $tt.dataset.density = h < 44 ? "tight" : h < 60 ? "compact" : "";
   };
-
-  function saveZoom() {
-    try {
-      const v = { hour: $tt.style.getPropertyValue("--hour"), col: $tt.style.getPropertyValue("--colmin") };
-      localStorage.setItem("tt-zoom", JSON.stringify(v));
-    } catch {}
-  }
-  function loadZoom() {
-    try {
-      const v = JSON.parse(localStorage.getItem("tt-zoom") || "null");
-      if (v?.hour) $tt.style.setProperty("--hour", v.hour);
-      if (v?.col) $tt.style.setProperty("--colmin", v.col);
-    } catch {}
-    $zoomReset.hidden = !$tt.style.getPropertyValue("--hour") && !$tt.style.getPropertyValue("--colmin");
-    updateDensity();
-  }
 
   // 拡大率 ky（縦）/ kx（横）を、開始時の大きさ base に掛けて適用。
   // anchor（スクロール領域内の座標）の下にある内容が動かないようにスクロール位置を補正する
@@ -361,7 +342,6 @@
     const rx = colWidth() / base.colW;
     $scroll.scrollTop = (base.top + ay) * ry - ay;
     $scroll.scrollLeft = (base.left + ax) * rx - ax;
-    $zoomReset.hidden = false;
     updateDensity();
   }
 
@@ -406,7 +386,6 @@
   const endPinch = (ev) => {
     if (!pinch || ev.touches.length >= 2) return;
     pinch = null;
-    saveZoom();
     updateActiveChip();
   };
   $scroll.addEventListener("touchend", endPinch);
@@ -423,28 +402,14 @@
       const k = Math.exp(-(ev.deltaY || ev.deltaX) * 0.01);
       const horizontal = ev.shiftKey;
       applyZoom(zoomBase(), horizontal ? k : 1, horizontal ? 1 : k, { x: ev.clientX, y: ev.clientY });
-      saveZoom();
     },
     { passive: false }
   );
 
-  $zoomReset.addEventListener("click", () => {
-    const base = zoomBase();
-    const rect = $scroll.getBoundingClientRect();
-    $tt.style.removeProperty("--hour");
-    $tt.style.removeProperty("--colmin");
-    const ry = hourPx() / base.hour;
-    $scroll.scrollTop = (base.top + rect.height / 2) * ry - rect.height / 2;
-    $zoomReset.hidden = true;
-    updateDensity();
-    try {
-      localStorage.removeItem("tt-zoom");
-    } catch {}
-  });
 
   renderNav();
   renderBoard();
-  loadZoom();
+  updateDensity();
 
   // URL の #日付、またはイベント当日なら現在時刻付近を初期表示
   const hashId = location.hash.slice(1);

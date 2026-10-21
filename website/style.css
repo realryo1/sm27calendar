@@ -23,7 +23,7 @@
 
   --hour: 72px;
   --head: 56px;
-  --divider: 64px;
+  --divider: 46px;
   --axis: 56px;
   --colmin: 150px;
 }
@@ -32,7 +32,7 @@
   :root {
     --hour: 60px;
     --head: 40px;
-    --divider: 50px;
+    --divider: 40px;
     --axis: 36px;
     --colmin: 112px;
   }
@@ -128,8 +128,6 @@ button { font: inherit; color: inherit; }
   background: linear-gradient(to bottom right, var(--col-ink-primary), var(--col-secondary));
 }
 .day-chip.is-active .day-chip__week { color: var(--col-paper); }
-.day-chip--zoom { font-size: .78rem; font-weight: 700; }
-.day-chip--zoom[hidden] { display: none; }
 .day-chip--train {
   text-decoration: none;
   font-weight: 900;
@@ -144,19 +142,43 @@ button { font: inherit; color: inherit; }
   .day-nav__sub { display: none; }
   .day-nav__brand { white-space: nowrap; }
 }
-@media (max-width: 480px) {
-  .day-nav { gap: 4px; margin-bottom: 8px; }
-  .day-nav__title { font-size: .72rem; }
-  .day-nav__brand { display: block; font-size: .78rem; }
-  .day-chip { flex: none; padding: 3px 8px; }
-  .day-chip--train { padding: 4px 8px; font-size: .75rem; }
-  .day-chip__date { font-size: .9rem; }
-  .day-chip__week { display: none; }
-}
-@media (max-width: 400px) {
-  .day-nav__brand { font-size: .7rem; letter-spacing: .02em; }
-  .day-nav__sub { display: none; }
-  .day-chip { padding: 3px 6px; }
+.day-nav__break { display: none; }
+/* スマホは画面下部のボトムバー：日付ボタンを3等分＋操作ボタン。タイトルは省く */
+@media (max-width: 600px) {
+  .board { padding-bottom: 0; }
+  .board__hint { order: 2; margin: 4px 0; }
+  .day-nav {
+    order: 3;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin: 0 -8px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--col-secondary-lighter);
+    background: var(--col-paper);
+    box-shadow: 0 -6px 16px rgb(79 69 143 / .1);
+  }
+  .day-nav__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .day-nav__break { display: none; }
+  .day-chip {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-height: 46px;
+    border-radius: 14px;
+  }
+  .day-chip[data-day] { flex: 1 1 0; padding: 4px 2px; }
+  .day-chip__date { font-size: 1.05rem; }
+  .day-chip__week { display: block; font-size: .58rem; }
+  .day-chip--train { flex: none; padding: 4px 12px; font-size: .8rem; line-height: 1.2; }
+  .day-chip--train .day-chip__week { display: block; }
 }
 
 /* ---------- Timetable grid ---------- */
@@ -254,7 +276,7 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: flex-end;
   height: var(--divider);
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   background: var(--col-paper);
 }
 /* 日付の右に伸びる細い区切り線 */
@@ -440,7 +462,6 @@ button { font: inherit; color: inherit; }
 .tt[data-density="tight"] .ev__badges,
 .tt[data-density="tight"] .ev__open,
 .tt[data-density="tight"] .ev__last,
-.tt[data-density="tight"] .ev-wait__time,
 .tt[data-density="tight"] .tt-axis__half,
 .tt[data-density="tight"] .tt-axis__m { display: none; }
 .tt[data-density="compact"] .ev__inner,
@@ -478,7 +499,6 @@ button { font: inherit; color: inherit; }
 .ev-wait:hover,
 .ev-wait:focus-visible { filter: brightness(1.04) saturate(1.2); outline: none; }
 .ev-wait__label { font-weight: 900; font-size: .8rem; color: var(--c-dark); }
-.ev-wait__time { font-family: var(--font-display); font-size: .66rem; color: var(--c-dark); }
 
 /* 時刻の目印線（始発着など） */
 .ev-mark {
@@ -648,66 +668,175 @@ button { font: inherit; color: inherit; }
   position: sticky;
   top: 16px;
   z-index: 3;
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--c-tint);
 }
+.tl-off { margin: 0; padding: 16px; border-radius: 12px; font-weight: 700; text-align: center; background: var(--c-tint); }
 @media (max-width: 767px) {
-  .tl-status { top: 8px; box-shadow: 0 4px 12px rgb(79 69 143 / .12); }
+  .tl-status { position: static; }
 }
-.tl-mode { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: .82rem; }
-.tl-live {
-  padding: 0 6px;
-  border-radius: 4px;
-  font-family: var(--font-display);
-  font-size: .6rem;
-  line-height: 1.7;
-  color: var(--col-paper);
-  background: var(--col-ink-primary);
-  animation: tl-blink 1.6s ease-in-out infinite;
-}
-@keyframes tl-blink { 50% { opacity: .45; } }
-.tl-main {
-  margin: 10px 0 0;
-  font-size: clamp(1.3rem, 4.5vw, 1.8rem);
-  font-weight: 900;
-  line-height: 1.3;
-  color: var(--c-dark);
-}
-.tl-sub { margin: 2px 0 0; font-size: .88rem; font-weight: 700; }
-.tl-next {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 12px;
-  margin: 14px 0 0;
-  padding-top: 12px;
-  font-size: .85rem;
-  border-top: 1px dashed var(--c-light);
-}
-.tl-next dt { font-weight: 700; color: var(--c); }
-.tl-next dd { margin: 0; font-weight: 700; }
 
-/* 運行方向 */
-.tl-dir { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 12px 0 0; }
-.tl-dir__pill {
-  padding: 2px 14px;
-  border-radius: 999px;
-  font-weight: 900;
-  font-size: 1rem;
-  color: var(--col-paper);
+/* 状況表示（駅名標風）。サイズは .tl-status の幅に合わせて cqw で伸縮 */
+/* 1カラム時に横幅いっぱいだと大きすぎるので最大幅を設ける */
+.tl-status { container-type: inline-size; width: 100%; max-width: 420px; margin: 0 auto; }
+
+.tl-sign {
+  --line: var(--track-outer);
+  --sign-bg: #fbf7ea;
+  overflow: hidden;
+  border-radius: 8px;
+  color: #1e1e1e;
+  background: var(--sign-bg);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .08), 0 3px 8px rgb(0 0 0 / .08);
+  font-family: var(--font-base);
+  letter-spacing: .02em;
+  font-feature-settings: normal;
 }
-.tl-dir__desc { font-size: .72rem; line-height: 1.5; opacity: .85; }
-.tl-dir--outer .tl-dir__pill { background: var(--track-outer); }
-.tl-dir--inner .tl-dir__pill { background: var(--track-inner); }
+.tl-sign--inner { --line: var(--track-inner); --sign-bg: #f6faff; }
+.tl-sign__top { padding: 3cqw 3cqw 2.4cqw; text-align: center; background: var(--line); }
+.tl-sign__name { margin: 0; font-size: min(10cqw, calc(78cqw / var(--len, 6))); font-weight: 900; line-height: 1.15; letter-spacing: .14em; }
+.tl-sign__roma { margin: .8cqw 0 0; font-size: 3.4cqw; font-weight: 700; text-transform: uppercase; }
+
+/* 中段の直上の時刻（前駅・当駅・次駅）。当駅だけ大きく */
+.tl-sign__times {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: baseline;
+  padding: 2.6cqw 3cqw 0;
+  text-align: center;
+  font-size: 3.4cqw;
+  font-weight: 900;
+  line-height: 1.2;
+}
+.tl-sign__times small { margin-left: .8cqw; font-size: 2.6cqw; font-weight: 700; opacity: .75; }
+.tl-sign__times .is-cur { font-size: 5.6cqw; color: #c8322c; }
+.tl-sign__times .is-cur small { font-size: 3cqw; opacity: 1; }
+
+.tl-sign__mid {
+  --mid-pad: 3cqw;
+  --cy: calc(3.5cqw + 9cqw); /* 線の高さ＝中央の丸の中心 */
+  --tip: calc(2.4cqw + 7cqw * 3 / 20); /* 矢印の先端の右端からの位置（viewBox の x=17/20） */
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 3.5cqw var(--mid-pad) 2.5cqw;
+}
+.tl-sign__mid::before {
+  content: "";
+  position: absolute;
+  left: var(--mid-pad);
+  right: var(--tip); /* 矢印の先端まで伸ばし、端をとがらせて矢印と一体にする */
+  top: var(--cy);
+  height: 2.8cqw;
+  transform: translateY(-50%);
+  background: var(--line);
+  clip-path: polygon(0 0, calc(100% - 1.4cqw) 0, 100% 50%, calc(100% - 1.4cqw) 100%, 0 100%);
+}
+.tl-sign__arrow {
+  position: absolute;
+  right: 2.4cqw;
+  top: var(--cy);
+  width: 7cqw;
+  height: 14cqw;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 4;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.tl-sign__st {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.25;
+}
+.tl-sign__num {
+  display: grid;
+  place-items: center;
+  width: 10cqw;
+  height: 10cqw;
+  margin-top: 4cqw;
+  border: 1.3cqw solid var(--line);
+  border-radius: 50%;
+  font-size: 2.7cqw;
+  font-weight: 900;
+  line-height: 1.05;
+  background: #fff;
+}
+.tl-sign__st--cur .tl-sign__num {
+  width: 18cqw;
+  height: 18cqw;
+  margin-top: 0;
+  border: 1.6cqw solid #e2403a;
+  font-size: 5.2cqw;
+}
+.tl-sign.is-here .tl-sign__st--cur .tl-sign__num { animation: tl-here 1.6s ease-in-out infinite; }
+@keyframes tl-here { 50% { box-shadow: 0 0 0 2cqw rgb(226 64 58 / .25); } }
+.tl-sign__st b { margin-top: 2.4cqw; font-size: min(4.1cqw, calc(28cqw / var(--len, 4))); font-weight: 900; white-space: nowrap; }
+.tl-sign__st small { margin-top: .4cqw; font-size: 2.7cqw; font-weight: 500; }
+
+/* 走行中の電車（前の停留場 → この駅 の間） */
+.tl-sign__train {
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--mid-pad) + (100% - 2 * var(--mid-pad)) * var(--p));
+  top: var(--cy);
+  display: grid;
+  place-items: center;
+  width: 9cqw;
+  height: 9cqw;
+  border: .8cqw solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(to bottom right, var(--col-ink-primary), var(--col-secondary));
+  box-shadow: 0 1cqw 2cqw rgb(0 0 0 / .2);
+  transform: translate(-50%, -50%);
+}
+.tl-sign__train svg { width: 62%; height: 62%; fill: currentColor; }
+.tl-sign__train svg rect:nth-of-type(2),
+.tl-sign__train svg circle { fill: var(--col-ink-primary); }
+
+.tl-sign__dir {
+  margin: 0 3cqw 3cqw;
+  padding: 1.3cqw;
+  border-radius: 999px;
+  font-size: 4.6cqw;
+  font-weight: 900;
+  text-align: center;
+  background: var(--line);
+}
+.tl-sign__dir span { margin-left: 4cqw; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  .tl-sign.is-here .tl-sign__st--cur .tl-sign__num { animation: none; }
+}
 
 /* 路線図（札幌市電ループ線） */
-.train-live { --track-outer: #EE9F27; --track-inner: #8577D8; }
+.train-live { --track-outer: #F2A31B; --track-inner: #4BA9E3; }
 .tl-map-wrap { min-width: 0; }
 /* スマホ用の横幅をつめた配置（画面幅に収めたうえで文字を少し大きく） */
 .tl-map--narrow { max-width: 480px; max-height: none; margin: 0 auto; overflow: visible; }
 .tl-map--narrow .tl-map__label text { font-size: 16px; }
 .tl-map--narrow .tl-map__time { font-size: 14px; }
 .tl-map { display: block; width: 100%; height: auto; max-height: 80svh; font-family: var(--font-base); }
+/* 目安の地下鉄と Zepp Sapporo（市電より控えめに） */
+.tl-sub__line line,
+.tl-sub__line polyline { fill: none; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
+.tl-sub__line circle { fill: #fff; stroke-width: 2.5; }
+.tl-sub__line--tozai { --sub: #F39800; }
+.tl-sub__line--nanboku { --sub: #00A040; }
+.tl-sub__line--toho { --sub: #0079C2; }
+.tl-sub__line line, .tl-sub__line polyline, .tl-sub__line circle { stroke: var(--sub); }
+.tl-sub__st { font-size: 10.5px; font-weight: 700; fill: #6b6b78; }
+.tl-sub__name { font-size: 10.5px; font-weight: 900; fill: var(--sub); }
+.tl-sub__link { stroke: #9b98b5; stroke-width: 1.5; stroke-dasharray: 2 3; }
+.tl-sub__odori rect { fill: #fff; stroke: #9b98b5; stroke-width: 1.5; }
+.tl-sub__odori text { font-size: 11px; font-weight: 900; fill: #55536b; }
+.tl-zepp path { fill: var(--col-ink-primary); }
+.tl-zepp circle { fill: #fff; }
+.tl-zepp text { font-size: 10.5px; font-weight: 900; fill: var(--col-primary-dark); paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+
 .tl-map__track path:first-child {
   fill: none;
   stroke-width: 5;
@@ -924,7 +1053,7 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .vc-wait__body { padding: 0 12px 12px; }
-.vc-wait__mark { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: .8rem; }
+.vc-wait__mark { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; font-size: .8rem; }
 .vc-wait__mark .ev-mark__label { position: static; }
 .vc-image {
   display: block;

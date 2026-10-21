@@ -15,7 +15,6 @@
     const r = Math.round(min);
     return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}`;
   };
-  const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
   const weekOf = (dateId) => {
     const [y, m, d] = dateId.split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
@@ -124,7 +123,7 @@
   // スマホでは横幅をつめた配置に切り替え、縮小しすぎずに画面幅へ収める
   const LAYOUTS = {
     wide: {
-      width: 600,
+      width: 630,
       st: [
         [440, 60, "below"], [500, 140, "left"], [450, 220, "belowRight"], [380, 220, "above"],
         [330, 270, "right"], [330, 317, "right"], [330, 363, "right"], [330, 410, "right"],
@@ -135,9 +134,20 @@
         [110, 60, "below"], [220, 60, "below"], [330, 60, "below"],
       ],
       corners: { 0: [[500, 60]], 1: [[500, 220]], 3: [[330, 220]], 10: [[330, 600]], 13: [[60, 600]], 20: [[60, 60]] },
+      // 目安の地下鉄（東西線は横、南北線・東豊線は縦）。
+      // links: 乗り換えの点線。[市電停留場の番号, 地下鉄側の x, y] または [x1, y1, x2, y2]
+      subway: {
+        tozai: { y: 22, x1: 18, x2: 616, st: [["西18丁目", 42], ["西11丁目", 220]] },
+        nanboku: { x: 552, y1: 4, y2: 520, st: [["すすきの", 220], ["中島公園", 317], ["幌平橋", 457]] },
+        // 東豊線は下端（y2）で右（東）へ折れる
+        toho: { x: 598, y1: 4, y2: 310, st: [["豊水すすきの", 242]] },
+        // 公式路線図と同じ乗り換えの点線
+        links: [[21, 42, 22], [22, 220, 22], [0, 552, 22], [1, 552, 22], [1, 552, 220], [2, 552, 220], [552, 220, 598, 242], [5, 552, 317], [8, 552, 457]],
+        zepp: [500, 310], // 南9条西4丁目＝山鼻9条〜中島公園の線上、中島公園駅のすぐ西
+      },
     },
     narrow: {
-      width: 400,
+      width: 450,
       st: [
         [326, 60, "below"], [370, 140, "left"], [325, 220, "below"], [275, 220, "above"],
         [230, 300, "right"], [230, 342, "right"], [230, 383, "right"], [230, 425, "right"],
@@ -148,6 +158,13 @@
         [66, 60, "below"], [160, 60, "below"], [258, 60, "below"],
       ],
       corners: { 0: [[370, 60]], 1: [[370, 220]], 3: [[230, 220]], 10: [[230, 600]], 13: [[40, 600]], 20: [[40, 60]] },
+      subway: {
+        tozai: { y: 22, x1: 8, x2: 442, st: [["西18丁目", 26], ["西11丁目", 160]] },
+        nanboku: { x: 394, y1: 4, y2: 520, st: [["すすきの", 220], ["中島公園", 342], ["幌平橋", 467]] },
+        toho: { x: 428, y1: 4, y2: 310, st: [["豊水すすきの", 242]] },
+        links: [[21, 26, 22], [22, 160, 22], [0, 394, 22], [1, 394, 22], [1, 394, 220], [2, 394, 220], [394, 220, 428, 242], [5, 394, 342], [8, 394, 467]],
+        zepp: [374, 342],
+      },
     },
   };
   const SC = (i) => String(i === 0 ? 1 : 25 - i).padStart(2, "0");
@@ -220,8 +237,49 @@
     return `<text x="${x}" y="${y0}" text-anchor="middle"><tspan>${st.name}</tspan><tspan x="${x}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
   };
 
+  // 地下鉄（目安）と Zepp Sapporo の位置。市電の線より下に薄く描く
+  function subwaySvg() {
+    const { tozai, nanboku, toho, links, zepp } = layout.subway;
+    const vLabel = (x, y, text) => `<text class="tl-sub__st" x="${x + 9}" y="${y - 4}" writing-mode="vertical-rl">${text}</text>`;
+    const dot = (x, y) => `<circle cx="${x}" cy="${y}" r="4.5"/>`;
+    return `<g class="tl-sub" aria-hidden="true">
+      ${links
+        .map((l) => {
+          const [x1, y1, x2, y2] = l.length === 4 ? l : [MAP_ST[l[0]][0], MAP_ST[l[0]][1], l[1], l[2]];
+          return `<line class="tl-sub__link" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+        })
+        .join("")}
+      <g class="tl-sub__line tl-sub__line--tozai">
+        <line x1="${tozai.x1}" y1="${tozai.y}" x2="${tozai.x2}" y2="${tozai.y}"/>
+        ${tozai.st.map(([n, x]) => dot(x, tozai.y) + `<text class="tl-sub__st" x="${x}" y="${tozai.y - 8}" text-anchor="middle">${n}</text>`).join("")}
+        <text class="tl-sub__name" x="${tozai.x1}" y="${tozai.y + 16}">東西線</text>
+      </g>
+      <g class="tl-sub__line tl-sub__line--nanboku">
+        <line x1="${nanboku.x}" y1="${nanboku.y1}" x2="${nanboku.x}" y2="${nanboku.y2}"/>
+        ${nanboku.st.map(([n, y]) => dot(nanboku.x, y) + vLabel(nanboku.x, y, n)).join("")}
+        <text class="tl-sub__name" x="${nanboku.x}" y="${nanboku.y2 + 14}" text-anchor="middle">南北線</text>
+      </g>
+      <g class="tl-sub__line tl-sub__line--toho">
+        <polyline points="${toho.x},${toho.y1} ${toho.x},${toho.y2} ${layout.width + 8},${toho.y2 + 8}"/>
+        ${toho.st.map(([n, y]) => dot(toho.x, y) + vLabel(toho.x, y, n)).join("")}
+        <text class="tl-sub__name" x="${toho.x}" y="${toho.y2 + 20}" text-anchor="middle">東豊線</text>
+      </g>
+      <g class="tl-sub__odori">
+        <rect x="${nanboku.x - 8}" y="${tozai.y - 8}" width="${toho.x - nanboku.x + 16}" height="16" rx="8"/>
+        <text x="${(nanboku.x + toho.x) / 2}" y="${tozai.y}" text-anchor="middle" dominant-baseline="central">大通</text>
+      </g>
+      <g class="tl-zepp" transform="translate(${zepp[0]},${zepp[1]})">
+        <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
+        <circle cx="0" cy="-18" r="4"/>
+        <text y="14" text-anchor="middle">Zepp</text>
+        <text y="27" text-anchor="middle">Sapporo</text>
+      </g>
+    </g>`;
+  }
+
   const buildMapSvg = (name) => `
     <svg class="tl-map tl-map--${name}" id="tlMap" viewBox="0 0 ${layout.width} 660" role="img" aria-label="札幌市電ループ線の路線図と雪ミク電車の予測位置">
+      ${subwaySvg()}
       <g class="tl-map__track tl-map__track--outer">
         <path d="${trackPath(GAP)}"/>
         <g class="tl-map__arrows">${arrows(GAP, false)}</g>
@@ -265,19 +323,13 @@
       <div class="tl-status" id="tlStatus"></div>
       <div class="tl-map-wrap">
         <div id="tlMapHost"></div>
-        <ul class="tl-legend">
-          <li><span class="tl-legend__line tl-legend__line--outer"></span>外回り</li>
-          <li><span class="tl-legend__line tl-legend__line--inner"></span>内回り</li>
-          <li><span class="tl-legend__dot"></span>地下鉄乗継駅の最寄り</li>
-          <li>数字＝次に来る予測時刻</li>
-        </ul>
       </div>
     </div>
     <details class="tl-trips">
       <summary>発車時刻（2024年ダイヤ）</summary>
       <div id="tlTrips"></div>
     </details>
-    <p class="tl-note">※ 2024年の雪ミク電車時刻表（平日＝内回り／土日祝＝外回り）と市電の実ダイヤをもとにした<strong>予測</strong>です。2026-27年の運行ダイヤ・車両運用とは異なる場合があります。狸小路の時刻は推定です。</p>
+    <p class="tl-note">※2024年の雪ミク電車時刻表と市電の実ダイヤをもとにした<strong>予測</strong>です。27年の運行ダイヤは現時点で未発表です。</p>
   `;
 
   const $now = document.getElementById("tlNow");
@@ -339,9 +391,46 @@
   const keypoints = (type) => (cache[type] ??= buildKeypoints(type));
 
   const DIR = {
-    outer: { name: "外回り", desc: "西4丁目 → すすきの → 中島公園 → 中央図書館 → 西線 → 西15丁目 の順（時計回り）" },
-    inner: { name: "内回り", desc: "すすきの → 西4丁目 → 西15丁目 → 西線 → 中央図書館 → 中島公園 の順（反時計回り）" },
+    outer: { name: "外回り", en: "Outer Loop", step: 1 },
+    inner: { name: "内回り", en: "Inner Loop", step: -1 },
   };
+
+  // 駅名標風の表示。center を中央（この駅）に、進行方向の前後の停留場を左右に置く。
+  // trainAt: 左の停留場(0)〜中央(1) の間の電車位置（走行中のみ。丸と重ならない範囲に収める）
+  // times: [前駅, 当駅, 次駅] の [時刻, 説明] （無い場合は null）
+  function stationSign(direction, center, trainAt, here, times) {
+    const dir = DIR[direction];
+    const at = (i) => ((i % N) + N) % N;
+    const prev = at(center - dir.step);
+    const next = at(center + dir.step);
+    const side = (i, cls) => `<div class="tl-sign__st tl-sign__st--${cls}">
+        <span class="tl-sign__num">SC<br>${SC(i)}</span>
+        <b style="--len:${T.stations[i].name.length}">${T.stations[i].name}</b><small>${T.stations[i].roma}</small>
+      </div>`;
+    const train =
+      trainAt != null
+        ? `<span class="tl-sign__train" style="--p:${(0.27 + trainAt * 0.085).toFixed(3)}" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="15" rx="3"/><rect x="7.5" y="6" width="9" height="5" rx="1" fill="#fff"/><circle cx="9" cy="14.5" r="1.3" fill="#fff"/><circle cx="15" cy="14.5" r="1.3" fill="#fff"/><path d="M8 18l-2 3M16 18l2 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+          </span>`
+        : "";
+    return `<div class="tl-sign tl-sign--${direction}${here ? " is-here" : ""}">
+      <div class="tl-sign__top">
+        <p class="tl-sign__name" style="--len:${T.stations[center].name.length}">${T.stations[center].name}</p>
+        <p class="tl-sign__roma">${T.stations[center].roma}</p>
+      </div>
+      <div class="tl-sign__times">${times
+        .map((t, k) => `<span class="${k === 1 ? "is-cur" : ""}">${t ? `${t[0] ? fmt(t[0]) : ""}<small>${t[1]}</small>` : ""}</span>`)
+        .join("")}</div>
+      <div class="tl-sign__mid">
+        <svg class="tl-sign__arrow" viewBox="0 0 20 40" aria-hidden="true"><polyline points="3,3 17,20 3,37"/></svg>
+        ${side(prev, "prev")}
+        <div class="tl-sign__st tl-sign__st--cur"><span class="tl-sign__num">SC<br>${SC(center)}</span></div>
+        ${side(next, "next")}
+        ${train}
+      </div>
+      <p class="tl-sign__dir">${dir.name}<span>${dir.en}</span></p>
+    </div>`;
+  }
 
   function render() {
     if (state.live) Object.assign(state, nowJST());
@@ -350,17 +439,12 @@
     $time.value = Math.floor(state.min);
     $clock.textContent = fmt(Math.floor(state.min));
 
-    const [, mo, d] = state.dateId.split("-").map(Number);
-    const dateText = `${mo}/${d}(${WEEK[weekOf(state.dateId)]})`;
     const type = dayType(state.dateId);
 
     $sts.forEach((g) => g.classList.remove("is-current", "is-next"));
     if (!type) {
       $map.dataset.dir = "";
-      $status.innerHTML = `
-        <p class="tl-mode">${dateText}</p>
-        <p class="tl-main">運行期間外</p>
-        <p class="tl-sub">雪ミク電車の運行期間は 2026/11/21〜2027/3/21 です。日付を変えるとシミュレーションできます。</p>`;
+      $status.innerHTML = `<p class="tl-off">運行期間外（2026/11/21〜2027/3/21）</p>`;
       $train.style.display = "none";
       $times.forEach((t) => (t.textContent = ""));
       $trips.innerHTML = "";
@@ -371,43 +455,35 @@
     const kps = keypoints(type);
     const loc = locate(kps, state.min);
     const next = nextTimes(kps, state.min);
-    const dir = DIR[cfg.direction];
     $map.dataset.dir = cfg.direction;
 
-    let main = "";
-    let sub = "";
+    // 駅名標の中央に出す停留場（停車中＝その駅、走行中＝次の駅、運行前後＝始発／終着）
+    let center;
+    let trainAt = null;
+    let curTime; // 当駅の時刻 [時刻, 説明]
     if (loc.state === "before") {
-      const first = kps[0];
-      main = "運行前";
-      sub = `初発は ${nameAt(first.pos)} ${fmt(first.t)}頃 発の予定`;
+      center = kps[0].pos % N;
+      curTime = [kps[0].t, "発車予定"];
     } else if (loc.state === "after") {
-      main = "本日の運行終了";
-      sub = `最終便は ${T.lastStop} 行きです`;
+      center = kps[kps.length - 1].pos % N;
+      curTime = [null, "運行終了"];
     } else if (loc.state === "stop") {
-      main = nameAt(loc.pos);
-      sub = `に停車中（${fmt(loc.until.t)}頃 発）`;
+      center = loc.pos % N;
+      curTime = [loc.until.t, "発車予定"];
     } else {
-      const to = nameAt(loc.to.pos);
-      if (loc.frac > 0.6) {
-        main = to;
-        sub = `にまもなく到着（${fmt(loc.to.t)}頃）`;
-      } else {
-        main = `${nameAt(loc.from.pos)} → ${to}`;
-        sub = `間を走行中（${to} ${fmt(loc.to.t)}頃）`;
-      }
+      center = loc.to.pos % N;
+      trainAt = loc.frac;
+      curTime = [loc.to.t, "到着予定"];
     }
-
-    const baseNext = (pos) => (next[pos] != null ? `${fmt(next[pos])}頃` : "—");
-    $status.innerHTML = `
-      <p class="tl-mode">${dateText} ${type === "holiday" ? "土日祝" : "平日"}ダイヤ
-        <span class="badge badge--tentative">予測</span>${state.live ? '<span class="tl-live">LIVE</span>' : ""}</p>
-      <p class="tl-dir tl-dir--${cfg.direction}"><span class="tl-dir__pill">${dir.name}</span><span class="tl-dir__desc">${dir.desc}</span></p>
-      <p class="tl-main">${main}</p>
-      <p class="tl-sub">${sub}</p>
-      <dl class="tl-next">
-        <dt>次の 西4丁目</dt><dd>${baseNext(0)}</dd>
-        <dt>次の すすきの</dt><dd>${baseNext(2)}</dd>
-      </dl>`;
+    // 前駅＝直近にその駅を出た時刻、次駅＝当駅の後に着く時刻
+    const step = DIR[cfg.direction].step;
+    const prevPos = (center - step + N) % N;
+    const nextPos = (center + step + N) % N;
+    const prevDep = kps.filter((k) => k.pos % N === prevPos && k.t <= state.min).at(-1);
+    const after = curTime[0] ?? state.min;
+    const nextArr = loc.state === "after" ? null : kps.find((k) => k.pos % N === nextPos && k.t > after);
+    const times = [prevDep && [prevDep.t, "発"], curTime, nextArr && [nextArr.t, "到着予定"]];
+    $status.innerHTML = stationSign(cfg.direction, center, trainAt, loc.state === "stop", times);
 
     $times.forEach((t) => {
       const v = next[Number(t.dataset.time)];
