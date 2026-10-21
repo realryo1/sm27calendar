@@ -1,10 +1,52 @@
-// カレンダーのデータ（date.md を元に作成）
+// カレンダーのデータ（イベント・会場・日付・画面の文言）。雪ミク電車の時刻表などは train.js
 // 時刻は "HH:MM"（24時間表記）。tentative: true は公式未発表で仮置きした時間、"end" は終演のみ仮。
 // wait: 早朝待機の開始目安＝日の出時刻（wait〜start をグラデーションで描くための内部値。時刻は画面に表示しない）、lastEntry: 最終入場、marks: 時刻の目印線。
 
 window.TT_DATA = {
   // 掲載情報の最終更新日時（日本時間）。情報を直したらここも更新する
   updatedAt: "2026-10-22 04:54",
+
+  // 画面に出る固定の文言。<head> のメタタグ（title / description / OGP）は index.html に静的に置く必要があるので、
+  // サイト名や説明を変えるときは index.html のそちらも合わせて直す
+  site: {
+    name: "SNOW MIKU 2027",
+    subtitle: "非公式カレンダー",
+    boardHint: "※ピンチで拡大縮小、予定タップで詳細",
+    venuesTitle: "会場・イベント詳細",
+    disclaimer: "本サイトは非公式です。このページの問い合わせはx.com/realryo1に行ってください。情報の正確性には留意していますが、最終的な判断は利用者が行ってください。",
+    toBoard: "▲ カレンダーへ",
+    // 予定のバッジ名
+    badges: { official: "公式", fan: "非公式", tentative: "時間仮", tentativeEnd: "終演仮" },
+    // 凡例。mark は app.js の描き分けキー（badge 系は badges の名前、tbd は取り消し線の見本、open / wait は帯の色見本）
+    legend: [
+      { mark: "official", text: "公式イベント" },
+      { mark: "fan", text: "ファン主催イベント" },
+      { mark: "tentative", text: "時間未発表のため仮置き" },
+      { mark: "tentativeEnd", text: "終演時間のみ仮置き" },
+      { mark: "tbd", text: "取り消し線の時刻は仮" },
+      { mark: "open", text: "開場〜開演" },
+      { mark: "wait", text: "早朝待機（前年参考）" },
+    ],
+    // 予定カード・会場カードの見出しやラベル
+    labels: {
+      place: "場所",
+      station: "最寄り",
+      open: "開場",
+      startWithOpen: "開演",
+      startOnly: "時間",
+      lastEntry: "最終入場",
+      unannounced: "未発表",
+      allDayUnannounced: "時間未発表",
+      defaultLink: "公式ページ",
+    },
+    wait: {
+      label: "早朝待機",
+      summary: "早朝待機について",
+      imageAlt: "前年の早朝待機列の案内図",
+      imageNote: "画像は26年のもので仮置き。タップすると出典（SNOW MIKU 2026 公式サイト）が開きます。",
+    },
+    updatedPrefix: "最終情報更新：",
+  },
 
   // 表示する時間帯（時）
   range: { start: 6, end: 22 },
@@ -72,6 +114,8 @@ window.TT_DATA = {
       title: "SNOW MIKU 2027 メインイベント",
       venue: "wingbay",
       days: ["2027-02-06", "2027-02-07"],
+      // 早朝待機の折りたたみの上に出す案内
+      lead: "札幌～小樽築港は片道で50分～30分、800円かかります。",
       wait: "06:00",
       // 前年（2026）の公式案内図。出典は waitSource
       waitImage: "image/souchou.png",
@@ -164,66 +208,4 @@ window.TT_DATA = {
       ],
     },
   ],
-
-  // 雪ミク電車 在線予測
-  // 2024年の雪ミク電車時刻表（西4丁目・すすきの発車時刻）を基準点に、
-  // 市電外回りの実ダイヤ（すすきの→西4丁目 52分）の所要比率で各停留場の時刻を割り振る。
-  train: {
-    period: { start: "2026-11-21", end: "2027-03-21" },
-    // 土日祝ダイヤ扱いの日（祝日＋年末年始は推定）
-    holidays: [
-      "2026-11-23", "2026-12-30", "2026-12-31", "2027-01-01", "2027-01-02", "2027-01-03",
-      "2027-01-11", "2027-02-11", "2027-02-23", "2027-03-21",
-    ],
-    // 外回りの停留場順。roma は駅名標用のローマ字、offset はすすきの発からの分（実ダイヤ）。arr/dep が異なるのは停車調整
-    loopMinutes: 52,
-    stations: [
-      { name: "西4丁目", roma: "Nishi yon chome", base: true },
-      { name: "狸小路", roma: "Tanuki koji", estimated: true },
-      { name: "すすきの", roma: "Susukino", base: true, offset: 0 },
-      { name: "資生館小学校前", roma: "Shiseikan shogakko mae", offset: 2 },
-      { name: "東本願寺前", roma: "Higashi honganji mae", offset: 4 },
-      { name: "山鼻9条", roma: "Yamahana ku jo", offset: 6 },
-      { name: "中島公園通", roma: "Nakajima koen dori", offset: 8 },
-      { name: "行啓通", roma: "Gyokei dori", offset: 10 },
-      { name: "静修学園前", roma: "Seishugakuen mae", offset: 12 },
-      { name: "山鼻19条", roma: "Yamahana juku jo", offset: 14 },
-      { name: "幌南小学校前", roma: "Konan shogakko mae", offset: 15 },
-      { name: "東屯田通", roma: "Higashi tonden dori", offset: 17 },
-      { name: "石山通", roma: "Ishiyama dori", offset: 19 },
-      { name: "中央図書館前", roma: "Chuo toshokan mae", offset: 20, depOffset: 22 },
-      { name: "電車事業所前", roma: "Densha jigyosho mae", offset: 25 },
-      { name: "ロープウェイ入口", roma: "Ropeway iriguchi", offset: 27 },
-      { name: "西線16条", roma: "Nishisen juroku jo", offset: 29 },
-      { name: "西線14条", roma: "Nishisen juyo jo", offset: 31 },
-      { name: "西線11条", roma: "Nishisen juichi jo", offset: 33 },
-      { name: "西線9条旭山公園通", roma: "Nishisen ku jo Asahiyama koen dori", offset: 35 },
-      { name: "西線6条", roma: "Nishisen roku jo", offset: 37 },
-      { name: "西15丁目", roma: "Nishi jugo chome", offset: 40 },
-      { name: "中央区役所前", roma: "Chuo kuyakusho mae", offset: 43 },
-      { name: "西8丁目", roma: "Nishi hatchome", offset: 46 },
-    ],
-    // 2024年時刻表。最終便（○）は中央図書館前行き
-    weekday: {
-      direction: "inner",
-      // [すすきの発, 西4丁目発]
-      trips: [
-        ["07:17", "07:25"], ["08:16", "08:24"], ["09:13", "09:20"], ["10:09", "10:17"],
-        ["11:06", "11:14"], ["12:03", "12:11"], ["13:01", "13:09"], ["13:58", "14:06"],
-        ["14:55", "15:03"], ["15:52", "16:00"], ["16:49", "16:57"], ["17:49", "17:57"],
-        ["18:48", "18:56"], ["19:46", "19:54"], ["20:45", "20:53"],
-      ],
-    },
-    holiday: {
-      direction: "outer",
-      // [西4丁目発, すすきの発]
-      trips: [
-        ["07:55", "08:03"], ["08:52", "09:00"], ["09:49", "09:57"], ["10:46", "10:54"],
-        ["11:43", "11:51"], ["12:40", "12:48"], ["13:37", "13:45"], ["14:35", "14:43"],
-        ["15:33", "15:41"], ["16:30", "16:38"], ["17:27", "17:35"], ["18:24", "18:32"],
-        ["19:21", "19:29"],
-      ],
-    },
-    lastStop: "中央図書館前",
-  },
 };

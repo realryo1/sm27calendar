@@ -1,7 +1,7 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは PRECACHE を更新し、VERSION を上げる。
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `sm27-${VERSION}`;
 const PRECACHE = [
   "./",
@@ -10,6 +10,7 @@ const PRECACHE = [
   "data.js",
   "app.js",
   "train.js",
+  "train-view.js",
   "pwa.js",
   "manifest.webmanifest",
   "favicon.ico",

@@ -1,5 +1,7 @@
 (() => {
-  const { range, days, venues, events, updatedAt } = window.TT_DATA;
+  const { site, range, days, venues, events, updatedAt } = window.TT_DATA;
+  const { badges: B, labels: L, wait: W } = site;
+  const TR = window.TT_TRAIN.text;
   const venueById = Object.fromEntries(venues.map((v) => [v.id, v]));
 
   const $dayNav = document.getElementById("dayNav");
@@ -17,13 +19,10 @@
   const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+  const badge = (cls, text) => `<span class="badge badge--${cls}">${text}</span>`;
   const badges = (ev) =>
-    (ev.official ? '<span class="badge badge--official">公式</span>' : '<span class="badge badge--fan">非公式</span>') +
-    (ev.tentative === "end"
-      ? '<span class="badge badge--tentative">終演仮</span>'
-      : ev.tentative
-        ? '<span class="badge badge--tentative">時間仮</span>'
-        : "");
+    (ev.official ? badge("official", B.official) : badge("fan", B.fan)) +
+    (ev.tentative === "end" ? badge("tentative", B.tentativeEnd) : ev.tentative ? badge("tentative", B.tentative) : "");
 
   // 会場見出し名（表の列見出しと下のカードで共通）。括弧書きは小さく表示
   const headName = (v) => esc(v.short ?? v.name).replace(/（(.+?)）/, "<small>（$1）</small>");
@@ -32,7 +31,7 @@
   const tbd = (t) => `<s class="tbd">${t}</s>`;
   const fmtTime = (e, which) => (e.tentative === true || (e.tentative === "end" && which === "end") ? tbd(e[which]) : e[which]);
 
-  const timeText = (ev) => (ev.allDay ? "時間未発表" : `${ev.start} – ${ev.end}`);
+  const timeText = (ev) => (ev.allDay ? L.allDayUnannounced : `${ev.start} – ${ev.end}`);
 
   const nowJST = () => {
     const now = new Date();
@@ -47,6 +46,28 @@
   // 行構成: 1行目=会場見出し、以降は日ごとに [日付帯, カレンダー本体]
   const dayRow = (i) => 2 + i * 2;
   const bodyRow = (i) => 3 + i * 2;
+
+  // index.html の枠に、固定の文言を流し込む
+  function renderStatic() {
+    const set = (id, html) => (document.getElementById(id).innerHTML = html);
+    set("siteTitle", `<span class="day-nav__brand">${esc(site.name)}</span> <span class="day-nav__sub">${esc(site.subtitle)}</span>`);
+    set("trainChip", `${TR.chip}<span class="day-chip__week">${TR.chipEn}</span>`);
+    set("boardHint", esc(site.boardHint));
+    set("venuesTitle", esc(site.venuesTitle));
+    set("disclaimer", esc(site.disclaimer));
+    set("toBoard", esc(site.toBoard));
+    const mark = {
+      tbd: '<s class="tbd">18:00</s>',
+      open: '<span class="legend__open"></span>',
+      wait: '<span class="legend__wait"></span>',
+    };
+    set(
+      "legend",
+      site.legend
+        .map(({ mark: m, text }) => `<li>${mark[m] ?? badge(m.startsWith("tentative") ? "tentative" : m, B[m])}${esc(text)}</li>`)
+        .join("")
+    );
+  }
 
   function renderNav() {
     $dayNav.innerHTML = days
@@ -132,11 +153,11 @@
       : "";
     const waitPart = e.wait
       ? `<div class="ev-wait" data-wait="${e.id}" role="button" tabindex="0" style="top:${pos(toHour(e.wait))};height:${span(toHour(e.wait), top)}">
-          <span class="ev-wait__label">早朝待機</span>
+          <span class="ev-wait__label">${W.label}</span>
         </div>`
       : "";
     const lastEntry = e.lastEntry
-      ? `<span class="ev__last" style="top:${span(top, toHour(e.lastEntry))}">最終入場 ${e.lastEntry}</span>`
+      ? `<span class="ev__last" style="top:${span(top, toHour(e.lastEntry))}">${L.lastEntry} ${e.lastEntry}</span>`
       : "";
     const marks = (e.marks ?? [])
       .map(
@@ -181,8 +202,8 @@
         const live = events.some((e) => e.venue === v.id && e.live);
         // 予定が1件だけの会場（早朝待機・在線予測なし）は、枠で分けずにカードへ直接載せる
         const single = groups.length === 1 && !live && !groups[0].e.wait ? groups[0] : null;
-        const place = `<dt>場所</dt><dd>${v.short ? `${esc(v.name)}<br>` : ""}${esc(v.address)}</dd>
-            <dt>最寄り</dt><dd>${esc(v.station)}</dd>`;
+        const place = `<dt>${L.place}</dt><dd>${v.short ? `${esc(v.name)}<br>` : ""}${esc(v.address)}</dd>
+            <dt>${L.station}</dt><dd>${esc(v.station)}</dd>`;
         const liveEv = live ? groups[0].e : null;
         const list = liveEv
           ? renderLiveHead(liveEv)
@@ -199,7 +220,7 @@
           ${
             live
               ? `<div class="train-live" id="train-live">
-                  <h4 class="train-live__title">雪ミク電車いまどこ？<small>（在線予測）</small></h4>
+                  <h4 class="train-live__title">${TR.title}<small>${TR.titleSub}</small></h4>
                   <div id="trainLive"></div>
                 </div>`
               : ""
@@ -211,7 +232,7 @@
 
   // 雪ミク電車：運行期間・時間・注記・リンクだけを見出しの下に置く（在線予測はその下）
   function renderLiveHead(e) {
-    const links = e.links ?? [{ label: "公式ページ", url: e.url }];
+    const links = e.links ?? [{ label: L.defaultLink, url: e.url }];
     return `<p class="vc-live__period">${esc(e.period)}</p>
       <p class="vc-live__time">${e.start} – ${e.end}</p>
       ${e.note ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
@@ -226,27 +247,27 @@
 
   // place を渡すと会場カードに直接載せる形（タイトルは見出しと重複するので省き、時間の下に場所・最寄りを並べる）
   function renderVenueEventBody(e, ds, place) {
-    const links = e.links ?? [{ label: "公式ページ", url: e.url }];
+    const links = e.links ?? [{ label: L.defaultLink, url: e.url }];
     const times = [
-      e.open && ["開場", fmtTime(e, "open")],
-      [e.open ? "開演" : "時間", e.allDay ? "未発表" : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`],
-      e.lastEntry && ["最終入場", e.lastEntry],
+      e.open && [L.open, fmtTime(e, "open")],
+      [e.open ? L.startWithOpen : L.startOnly, e.allDay ? L.unannounced : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`],
+      e.lastEntry && [L.lastEntry, e.lastEntry],
     ].filter(Boolean);
     const wait = e.wait
       ? `<details class="vc-wait" id="wait-${e.id}">
-          <summary>早朝待機について</summary>
+          <summary>${W.summary}</summary>
           <div class="vc-wait__body">
             ${
               e.waitImage
                 ? `<a class="vc-image" href="${esc(e.waitSource ?? e.waitImage)}" target="_blank" rel="noopener">
-                    <img src="${esc(e.waitImage)}" alt="前年の早朝待機列の案内図" loading="lazy">
+                    <img src="${esc(e.waitImage)}" alt="${W.imageAlt}" loading="lazy">
                   </a>`
                 : ""
             }
             ${(e.marks ?? [])
               .map((m) => `<p class="vc-wait__mark"><span class="ev-mark__label">${esc(m.label)} ${m.time}</span>${esc(m.detail)}</p>`)
               .join("")}
-            <p class="vc-ev__note">${e.note ? `${esc(e.note)}<br>` : ""}画像は26年のもので仮置き。タップすると出典（SNOW MIKU 2026 公式サイト）が開きます。</p>
+            <p class="vc-ev__note">${e.note ? `${esc(e.note)}<br>` : ""}${W.imageNote}</p>
           </div>
         </details>`
       : "";
@@ -262,6 +283,7 @@
       <dl class="vc-ev__times">${times.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join("")}</dl>`
       }
       ${e.note && !e.wait ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
+      ${e.lead ? `<p class="vc-ev__note">${esc(e.lead)}</p>` : ""}
       ${wait}
       <div class="vc-ev__links">${links
         .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`)
@@ -454,9 +476,10 @@
   if (updatedAt) {
     const [, y, mo, d, h, mi] = updatedAt.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/).map(Number);
     document.getElementById("updatedAt").innerHTML =
-      `最終情報更新：<time datetime="${updatedAt.replace(" ", "T")}+09:00">${y}年${mo}月${d}日 ${h}:${String(mi).padStart(2, "0")}</time>`;
+      `${site.updatedPrefix}<time datetime="${updatedAt.replace(" ", "T")}+09:00">${y}年${mo}月${d}日 ${h}:${String(mi).padStart(2, "0")}</time>`;
   }
 
+  renderStatic();
   renderNav();
   renderBoard();
   updateDensity();
