@@ -867,6 +867,9 @@ button { font: inherit; color: inherit; }
 .tl-zepp path { fill: var(--col-ink-primary); }
 .tl-zepp circle { fill: #fff; }
 .tl-zepp text { font-size: 10.5px; font-weight: 900; fill: var(--col-primary-dark); paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+/* 26年の雪ミク雪像（水色のピン） */
+.tl-statue path { fill: #39C5D9; }
+.tl-statue text { fill: #1f7f8c; }
 
 .tl-map__track path:first-child {
   fill: none;

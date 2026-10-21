@@ -147,8 +147,11 @@
       // 公式路線図と同じ乗り換えの点線
       links: [[21, 20, 22], [22, 163, 22], [0, 432, 22], [1, 432, 22], [1, 432, 175], [2, 432, 175], [432, 175, 470, 197], [5, 432, 302], [8, 432, 444]],
       zepp: [405, 296], // 南9条西4丁目＝山鼻9条〜中島公園の線上、中島公園駅のすぐ西
+      // 2026年の雪ミク雪像の場所（さっぽろ雪まつり 大通会場 11丁目）。ラベルはピンの右
+      snowStatue: [163, 2],
     },
   };
+  const TOP_PAD = 34; // 雪像ピンを東西線より上に置くための上余白
   const SC = (i) => String(i === 0 ? 1 : 25 - i).padStart(2, "0");
   const TRANSFER = ["01", "04", "17", "20", "23", "24"]; // 地下鉄乗継指定駅の最寄り
   const GAP = 9; // 外回り・内回り線の中心線からのずれ
@@ -219,7 +222,7 @@
 
   // 地下鉄（目安）と Zepp Sapporo の位置。市電の線より下に薄く描く
   function subwaySvg() {
-    const { tozai, nanboku, toho, links, zepp } = layout.subway;
+    const { tozai, nanboku, toho, links, zepp, snowStatue } = layout.subway;
     const vLabel = (x, y, text) => `<text class="tl-sub__st" x="${x + 9}" y="${y - 4}" writing-mode="vertical-rl">${text}</text>`;
     const dot = (x, y) => `<circle cx="${x}" cy="${y}" r="4.5"/>`;
     return `<g class="tl-sub" aria-hidden="true">
@@ -254,11 +257,17 @@
         <text y="14" text-anchor="middle">Zepp</text>
         <text y="27" text-anchor="middle">Sapporo</text>
       </g>
+      <g class="tl-zepp tl-statue" transform="translate(${snowStatue[0]},${snowStatue[1]})">
+        <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
+        <circle cx="0" cy="-18" r="4"/>
+        <text x="14" y="-22">26年に雪ミク雪像があった場所</text>
+        <text x="14" y="-10">（大通会場11丁目）</text>
+      </g>
     </g>`;
   }
 
   const buildMapSvg = () => `
-    <svg class="tl-map" id="tlMap" viewBox="0 0 ${layout.width} ${layout.height}" role="img" aria-label="札幌市電ループ線の路線図と雪ミク電車の予測位置">
+    <svg class="tl-map" id="tlMap" viewBox="0 ${-TOP_PAD} ${layout.width} ${layout.height + TOP_PAD}" role="img" aria-label="札幌市電ループ線の路線図と雪ミク電車の予測位置">
       ${subwaySvg()}
       <g class="tl-map__track tl-map__track--outer">
         <path d="${trackPath(GAP)}"/>
