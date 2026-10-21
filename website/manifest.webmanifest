@@ -18,6 +18,12 @@
   ],
   "screenshots": [
     {
+      "src": "image/ogp.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "SNOWMIKU2027非公式カレンダー"
+    },
+    {
       "src": "image/screenshot-narrow.png",
       "sizes": "780x1688",
       "type": "image/png",
