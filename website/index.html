@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SNOW MIKU 2027 会場別タイムスケジュール</title>
+  <meta name="description" content="SNOW MIKU 2027 関連イベントの会場別タイムスケジュール（非公式）">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="main">
+    <section class="board">
+      <nav class="day-nav" aria-label="日付へ移動">
+        <h1 class="day-nav__title"><span class="day-nav__brand">SNOW MIKU 2027</span> <span class="day-nav__sub">タイムスケジュール</span></h1>
+        <span id="dayNav" style="display:contents"></span>
+        <a class="day-chip day-chip--train" href="#train-live">いまどこ<span class="day-chip__week">TRAIN</span></a>
+      </nav>
+      <div class="tt-scroll" id="ttScroll">
+        <div class="tt" id="tt"></div>
+      </div>
+      <p class="board__hint">※ 縦スクロールで全日程、横スワイプで全会場を表示できます</p>
+    </section>
+
+    <div class="main__inner">
+      <ul class="legend">
+        <li><span class="badge badge--official">公式</span>公式イベント</li>
+        <li><span class="badge badge--fan">非公式</span>ファン主催イベント</li>
+        <li><span class="badge badge--tentative">時間仮</span>時間未発表のため仮置き</li>
+        <li><span class="badge badge--tentative">終演仮</span>終演時間のみ仮置き</li>
+        <li><span class="legend__open"></span>開場〜開演</li>
+        <li><span class="legend__wait"></span>早朝待機（前年参考）</li>
+      </ul>
+
+      <section class="venues" id="venues">
+        <h2 class="section-title">会場・イベント詳細</h2>
+        <div class="venue-list" id="venueList"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>本サイトはファンによる非公式のまとめです。最新情報は必ず各公式サイトをご確認ください。</p>
+  </footer>
+
+  <button type="button" class="to-board" id="toBoard" hidden>▲ タイムテーブルへ</button>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="train.js"></script>
+</body>
+</html>

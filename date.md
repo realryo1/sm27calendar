@@ -5,6 +5,8 @@
 ### メインイベント（本祭）
 https://snowmiku.com/2027/event-wingbay.html
 2027年2月6日(土) ・2月7日(日)
+10:00～17:00（最終入場 16:30）
+早朝待機は前年に倣い、日の出（6:46）からグラデーションで表現（https://snowmiku.com/2026/images/location/wingbay/wingbay_waiting-line.png）
 ウイングベイ小樽 5番街2F・3番街2F 他
 最寄り駅　JR北海道函館本線「小樽築港駅」
 
