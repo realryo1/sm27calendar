@@ -1,0 +1,110 @@
+<!doctype html>
+<!-- OGP 画像（website/ogp.png）の元データ。1200x630 でスクリーンショットして書き出す -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #4F458F; --pink: #DD67E2; --pink-d: #873890; --pink-l: #F7BFFF;
+    --violet: #9185DE; --violet-l: #BFB5FF; --violet-ll: #f4f1ff;
+    --orange: #D08100; --gold: #b5a43a; --indigo: #4F458F;
+    --gold-grad: linear-gradient(to right, #736B32 0%, #D9CA5E 20%, #FFFFFF 30%, #D9CA5E 50%, #736B32 90%);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    font-family: "Noto Sans JP", sans-serif;
+    color: var(--ink);
+    font-feature-settings: "palt";
+    background:
+      radial-gradient(circle at 8% 0%, var(--pink-l) 0, transparent 45%),
+      radial-gradient(circle at 100% 100%, var(--violet-l) 0, transparent 50%),
+      var(--violet-ll);
+  }
+  body::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: var(--gold-grad);
+  }
+  .snow { position: absolute; color: #fff; opacity: .9; font-size: 28px; }
+
+  .text { position: absolute; left: 60px; top: 10px; width: 560px; }
+  .brand { font-family: "Dela Gothic One"; letter-spacing: .1em; color: var(--pink); }
+  h1 { margin-top: 14px; font-size: 76px; font-weight: 900; line-height: 1.18; letter-spacing: .02em; }
+  h1 span { display: block; font-size: 58px; }
+  .date {
+    display: inline-flex; align-items: baseline; gap: 14px; margin-top: 28px; padding: 10px 26px; border-radius: 999px;
+    font-family: "Dela Gothic One"; font-size: 30px; color: #fff;
+    background: linear-gradient(to bottom right, var(--pink), var(--violet));
+    box-shadow: 0 8px 20px rgb(135 56 144 / .25);
+  }
+  .date small { font-size: 18px; letter-spacing: .1em; }
+  .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .tags span {
+    padding: 6px 16px; border-radius: 999px; font-size: 20px; font-weight: 700;
+    background: #fff; border: 2px solid var(--violet-l);
+  }
+  .foot { position: absolute; left: 60px; bottom: 40px; font-size: 18px; font-weight: 700; opacity: .7; }
+
+  /* 右側：タイムテーブルのミニチュア */
+  .board {
+    position: absolute; right: 56px; top: 64px; width: 470px; height: 500px; padding: 18px;
+    border-radius: 28px; background: #fff; box-shadow: 0 20px 50px rgb(79 69 143 / .2);
+    transform: rotate(3deg);
+  }
+  .heads, .cols { display: grid; grid-template-columns: 30px repeat(5, 1fr); gap: 6px; }
+  .heads div { height: 40px; border-radius: 10px 10px 0 0; font-family: "Dela Gothic One"; font-size: 20px; display: grid; place-items: center; }
+  .day { margin: 12px 0 8px; font-family: "Dela Gothic One"; font-size: 24px; color: var(--pink); }
+  .day small { font-size: 14px; color: var(--violet); letter-spacing: .1em; }
+  .cols { position: relative; height: 370px; }
+  .axis { position: relative; font-family: "Dela Gothic One"; font-size: 13px; }
+  .axis b { position: absolute; right: 2px; font-weight: 400; }
+  .col { position: relative; border-radius: 0 0 8px 8px;
+    background: repeating-linear-gradient(to bottom, transparent 0 22px, #fff 22px 23px), var(--tint); }
+  .ev { position: absolute; left: 4px; right: 4px; border: 2px solid var(--c); border-radius: 8px; background: #fff;
+    display: flex; flex-direction: column; align-items: center; padding-top: 6px; gap: 4px; }
+  .ev i { display: block; width: 70%; height: 10px; border-radius: 99px; background: var(--c); }
+  .ev u { display: block; width: 55%; height: 7px; border-radius: 99px; background: var(--c); opacity: .35; }
+  .wait { position: absolute; left: 4px; right: 4px; border-radius: 8px 8px 0 0; background: linear-gradient(transparent, var(--pink-l)); }
+  .tl { position: absolute; left: 0; right: 0; height: 0; border-top: 3px solid var(--pink); }
+  .a { --c: var(--pink); --tint: #fcecfd; } .b { --c: var(--violet); --tint: #f4f1ff; }
+  .c { --c: var(--orange); --tint: #fff4dc; } .d { --c: var(--gold); --tint: #f8f4d8; } .e { --c: var(--indigo); --tint: #ecebf7; }
+  .heads .a, .heads .b, .heads .c, .heads .d, .heads .e { background: var(--tint); color: var(--c); border-bottom: 3px solid var(--c); }
+</style>
+</head>
+<body>
+  <span class="snow" style="left:640px;top:40px">❄</span>
+  <span class="snow" style="left:600px;top:520px;font-size:22px">❄</span>
+  <span class="snow" style="left:40px;top:560px;font-size:20px">❄</span>
+
+  <div class="text">
+    <h1 class="brand">SNOW 
+    MIKU 
+    2027</h1>
+    <h1><span>非公式カレンダー</span></h1>
+    <p class="date">2027.2.5 <small>FRI</small> – 2.7 <small>SUN</small></p>
+    <div class="tags"><span>本祭</span><span>LIVE</span><span>Digital Stars</span><span>雪ミク電車 いまどこ？</span></div>
+  </div>
+  <p class="foot">非公式ファンメイド / @realryo1 作成</p>
+
+  <div class="board">
+    <div class="heads"><div></div><div class="a">A</div><div class="b">B</div><div class="c">C</div><div class="d">D</div><div class="e">E</div></div>
+    <p class="day">2/6 <small>SAT</small></p>
+    <div class="cols">
+      <div class="axis"><b style="top:0">6</b><b style="top:92px">10</b><b style="top:184px">14</b><b style="top:276px">18</b><b style="top:352px">22</b></div>
+      <div class="col a">
+        <div class="wait" style="top:18px;height:74px"></div>
+        <div class="ev" style="top:92px;height:161px"><i></i><u></u></div>
+      </div>
+      <div class="col b">
+        <div class="ev" style="top:138px;height:69px"><i></i><u></u></div>
+        <div class="ev" style="top:230px;height:69px"><i></i><u></u></div>
+      </div>
+      <div class="col c"><div class="ev" style="top:322px;height:46px"><i></i></div></div>
+      <div class="col d"><div class="ev" style="top:253px;height:69px"><i></i><u></u></div></div>
+      <div class="col e"><div class="ev" style="top:23px;height:322px"><i></i><u></u></div></div>
+      <div class="tl" style="top:290px;left:30px"></div>
+    </div>
+  </div>
+</body>
+</html>
