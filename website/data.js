@@ -13,7 +13,9 @@ window.TT_DATA = {
     subtitle: "非公式カレンダー",
     boardHint: "※ピンチで拡大縮小、予定タップで詳細",
     venuesTitle: "会場・イベント詳細",
-    disclaimer: "本サイトは非公式です。このページの問い合わせはx.com/realryo1に行ってください。情報の正確性には留意していますが、最終的な判断は利用者が行ってください。",
+    disclaimer: "本サイトは非公式です。このページの問い合わせはx.com/realryo1に行ってください。\n情報の正確性には留意していますが、最終的な判断は利用者が行ってください。",
+    // フッター（免責の下）に出すリポジトリへのリンク
+    repo: { label: "GitHub リポジトリ", url: "https://github.com/realryo1/sm27calendar" },
     toBoard: "▲ カレンダーへ",
     // 予定のバッジ名
     badges: { official: "公式", fan: "非公式", tentative: "時間仮", tentativeEnd: "終演仮" },

@@ -1,7 +1,12 @@
 (() => {
   const { site, range, days, venues, events, updatedAt } = window.TT_DATA;
-  const { badges: B, labels: L, wait: W } = site;
-  const TR = window.TT_TRAIN.text;
+  // データ中の文字列に "\n" を入れると改行（<br>）になる。本文は br（エスケープ＋改行）、属性は esc を使う
+  const nl = (s) => String(s).replace(/\n/g, "<br>");
+  const nlAll = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, nl(v)]));
+  const B = nlAll(site.badges);
+  const L = { ...nlAll(site.labels), defaultLink: site.labels.defaultLink };
+  const W = { ...nlAll(site.wait), imageAlt: site.wait.imageAlt };
+  const TR = nlAll(window.TT_TRAIN.text);
   const venueById = Object.fromEntries(venues.map((v) => [v.id, v]));
 
   const $dayNav = document.getElementById("dayNav");
@@ -19,13 +24,15 @@
   const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+  const br = (s) => nl(esc(s));
+
   const badge = (cls, text) => `<span class="badge badge--${cls}">${text}</span>`;
   const badges = (ev) =>
     (ev.official ? badge("official", B.official) : badge("fan", B.fan)) +
     (ev.tentative === "end" ? badge("tentative", B.tentativeEnd) : ev.tentative ? badge("tentative", B.tentative) : "");
 
   // 会場見出し名（表の列見出しと下のカードで共通）。括弧書きは小さく表示
-  const headName = (v) => esc(v.short ?? v.name).replace(/（(.+?)）/, "<small>（$1）</small>");
+  const headName = (v) => br(v.short ?? v.name).replace(/（(.+?)）/, "<small>（$1）</small>");
 
   // 仮の時刻は取り消し線で示す（tentative: true＝すべて仮、"end"＝終演のみ仮）
   const tbd = (t) => `<s class="tbd">${t}</s>`;
@@ -50,12 +57,15 @@
   // index.html の枠に、固定の文言を流し込む
   function renderStatic() {
     const set = (id, html) => (document.getElementById(id).innerHTML = html);
-    set("siteTitle", `<span class="day-nav__brand">${esc(site.name)}</span> <span class="day-nav__sub">${esc(site.subtitle)}</span>`);
+    set("siteTitle", `<span class="day-nav__brand">${br(site.name)}</span> <span class="day-nav__sub">${br(site.subtitle)}</span>`);
     set("trainChip", `${TR.chip}<span class="day-chip__week">${TR.chipEn}</span>`);
-    set("boardHint", esc(site.boardHint));
-    set("venuesTitle", esc(site.venuesTitle));
-    set("disclaimer", esc(site.disclaimer));
-    set("toBoard", esc(site.toBoard));
+    set("boardHint", br(site.boardHint));
+    set("venuesTitle", br(site.venuesTitle));
+    set("disclaimer", br(site.disclaimer));
+    const $repo = document.getElementById("repoLink");
+    $repo.href = site.repo.url;
+    $repo.innerHTML = `${br(site.repo.label)} ↗`;
+    set("toBoard", br(site.toBoard));
     const mark = {
       tbd: '<s class="tbd">18:00</s>',
       open: '<span class="legend__open"></span>',
@@ -64,7 +74,7 @@
     set(
       "legend",
       site.legend
-        .map(({ mark: m, text }) => `<li>${mark[m] ?? badge(m.startsWith("tentative") ? "tentative" : m, B[m])}${esc(text)}</li>`)
+        .map(({ mark: m, text }) => `<li>${mark[m] ?? badge(m.startsWith("tentative") ? "tentative" : m, B[m])}${br(text)}</li>`)
         .join("")
     );
   }
@@ -100,7 +110,7 @@
         (v) => `<div class="tt-head-cell"><div class="tt-head theme-${v.theme}">
           <span class="tt-head__letter">${v.letter}</span>
           <span class="tt-head__name" title="${esc(v.name)}">${headName(v)}</span>
-          <span class="tt-head__area">${esc(v.area)}</span>
+          <span class="tt-head__area">${br(v.area)}</span>
         </div></div>`
       )
       .join("");
@@ -140,7 +150,7 @@
       return `<button class="ev ev--allday" data-ev="${e.id}">
         <span class="ev__inner">
           <span class="ev__time">${timeText(e)}</span>
-          <span class="ev__title">${esc(e.title)}</span>
+          <span class="ev__title">${br(e.title)}</span>
           <span class="ev__badges">${badges(e)}</span>
         </span>
       </button>`;
@@ -162,7 +172,7 @@
     const marks = (e.marks ?? [])
       .map(
         (m) => `<div class="ev-mark" data-wait="${e.id}" style="top:${pos(toHour(m.time))}" title="${esc(m.detail)}">
-          <span class="ev-mark__label">${esc(m.label)} ${m.time.replace(/^0/, "")}</span>
+          <span class="ev-mark__label">${br(m.label)} ${m.time.replace(/^0/, "")}</span>
         </div>`
       )
       .join("");
@@ -171,8 +181,8 @@
       ${openPart}
       <span class="ev__inner">
         <span class="ev__time">${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}</span>
-        <span class="ev__title">${esc(e.title)}</span>
-        ${e.sub ? `<span class="ev__sub">${esc(e.sub)}</span>` : ""}
+        <span class="ev__title">${br(e.title)}</span>
+        ${e.sub ? `<span class="ev__sub">${br(e.sub)}</span>` : ""}
         <span class="ev__badges">${badges(e)}</span>
       </span>
       ${lastEntry}
@@ -202,8 +212,8 @@
         const live = events.some((e) => e.venue === v.id && e.live);
         // 予定が1件だけの会場（早朝待機・在線予測なし）は、枠で分けずにカードへ直接載せる
         const single = groups.length === 1 && !live && !groups[0].e.wait ? groups[0] : null;
-        const place = `<dt>${L.place}</dt><dd>${v.short ? `${esc(v.name)}<br>` : ""}${esc(v.address)}</dd>
-            <dt>${L.station}</dt><dd>${esc(v.station)}</dd>`;
+        const place = `<dt>${L.place}</dt><dd>${v.short ? `${br(v.name)}<br>` : ""}${br(v.address)}</dd>
+            <dt>${L.station}</dt><dd>${br(v.station)}</dd>`;
         const liveEv = live ? groups[0].e : null;
         const list = liveEv
           ? renderLiveHead(liveEv)
@@ -215,7 +225,7 @@
         return `<article class="venue-card theme-${v.theme}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.id}"${
           flat ? ` data-ids="${flat.ids.join(" ")}"` : ""
         }>
-          <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${headName(v)}<small class="venue-card__area">${esc(v.area)}</small></h3>
+          <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${headName(v)}<small class="venue-card__area">${br(v.area)}</small></h3>
           ${list}
           ${
             live
@@ -233,11 +243,11 @@
   // 雪ミク電車：運行期間・時間・注記・リンクだけを見出しの下に置く（在線予測はその下）
   function renderLiveHead(e) {
     const links = e.links ?? [{ label: L.defaultLink, url: e.url }];
-    return `<p class="vc-live__period">${esc(e.period)}</p>
+    return `<p class="vc-live__period">${br(e.period)}</p>
       <p class="vc-live__time">${e.start} – ${e.end}</p>
-      ${e.note ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
+      ${e.note ? `<p class="vc-ev__note">${br(e.note)}</p>` : ""}
       <div class="vc-ev__links">${links
-        .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`)
+        .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${br(l.label)} ↗</a>`)
         .join("")}</div>`;
   }
 
@@ -265,9 +275,9 @@
                 : ""
             }
             ${(e.marks ?? [])
-              .map((m) => `<p class="vc-wait__mark"><span class="ev-mark__label">${esc(m.label)} ${m.time}</span>${esc(m.detail)}</p>`)
+              .map((m) => `<p class="vc-wait__mark"><span class="ev-mark__label">${br(m.label)} ${m.time}</span>${br(m.detail)}</p>`)
               .join("")}
-            <p class="vc-ev__note">${e.note ? `${esc(e.note)}<br>` : ""}${W.imageNote}</p>
+            <p class="vc-ev__note">${e.note ? `${br(e.note)}<br>` : ""}${W.imageNote}</p>
           </div>
         </details>`
       : "";
@@ -279,14 +289,14 @@
       ${
         place
           ? `<dl class="venue-card__info vc-single__info">${times.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join("")}${place}</dl>`
-          : `<p class="vc-ev__title">${esc(e.title)}${e.sub ? ` <small>${esc(e.sub)}</small>` : ""}</p>
+          : `<p class="vc-ev__title">${br(e.title)}${e.sub ? ` <small>${br(e.sub)}</small>` : ""}</p>
       <dl class="vc-ev__times">${times.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join("")}</dl>`
       }
-      ${e.note && !e.wait ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
-      ${e.lead ? `<p class="vc-ev__note">${esc(e.lead)}</p>` : ""}
+      ${e.note && !e.wait ? `<p class="vc-ev__note">${br(e.note)}</p>` : ""}
+      ${e.lead ? `<p class="vc-ev__note">${br(e.lead)}</p>` : ""}
       ${wait}
       <div class="vc-ev__links">${links
-        .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`)
+        .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${br(l.label)} ↗</a>`)
         .join("")}</div>`;
   }
 

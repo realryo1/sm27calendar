@@ -19,6 +19,7 @@
     const [y, m, d] = dateId.split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
   };
+  const nl = (s) => String(s).replace(/\n/g, "<br>");
   const ymd = (id) => id.replace(/-0?/g, "/");
   const nameAt = (pos) => T.stations[pos % N].name;
 
@@ -271,7 +272,7 @@
   // ---------- 描画 ----------
   $root.innerHTML = `
     <div class="tl-controls">
-      <button type="button" class="tl-now" id="tlNow">${T.text.now}</button>
+      <button type="button" class="tl-now" id="tlNow">${nl(T.text.now)}</button>
       <input type="date" class="tl-date" id="tlDate" min="${T.period.start}" max="${T.period.end}" aria-label="${T.text.dateLabel}">
       <div class="tl-slider">
         <input type="range" id="tlTime" min="${6 * 60}" max="${22 * 60}" step="1" aria-label="${T.text.timeLabel}">
@@ -285,10 +286,10 @@
       </div>
     </div>
     <details class="tl-trips">
-      <summary>${T.text.tripsSummary}</summary>
+      <summary>${nl(T.text.tripsSummary)}</summary>
       <div id="tlTrips"></div>
     </details>
-    <p class="tl-note">${T.text.note}</p>
+    <p class="tl-note">${nl(T.text.note)}</p>
   `;
 
   const $now = document.getElementById("tlNow");
@@ -400,7 +401,7 @@
     $sts.forEach((g) => g.classList.remove("is-current", "is-next"));
     if (!type) {
       $map.dataset.dir = "";
-      $status.innerHTML = `<p class="tl-off">${T.text.offPeriod}（${ymd(T.period.start)}〜${ymd(T.period.end)}）</p>`;
+      $status.innerHTML = `<p class="tl-off">${nl(T.text.offPeriod)}（${ymd(T.period.start)}〜${ymd(T.period.end)}）</p>`;
       $train.style.display = "none";
       $times.forEach((t) => (t.textContent = ""));
       $trips.innerHTML = "";

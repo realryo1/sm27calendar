@@ -75,7 +75,7 @@ button { font: inherit; color: inherit; }
 .main__inner {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0 16px 48px;
+  padding: 0 16px 0;
 }
 
 /* ---------- Board ---------- */
@@ -1147,6 +1147,8 @@ button { font: inherit; color: inherit; }
 }
 
 .site-footer__updated { margin: 0 0 6px; font-weight: 700; }
+.site-footer__repo { margin: 8px 0 0; }
+.site-footer__repo a { color: inherit; text-decoration: underline; }
 
 /* ---------- インストール案内（PWA） ---------- */
 .install {
