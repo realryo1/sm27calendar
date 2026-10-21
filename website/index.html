@@ -3,28 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SNOW MIKU 2027 会場別タイムスケジュール</title>
-  <meta name="description" content="SNOW MIKU 2027（2027.2.5〜2.7）の本祭・LIVE・Digital Stars・初音銀華祭・雪ミク電車を会場別にまとめた非公式タイムスケジュール。雪ミク電車の在線予測つき。">
+  <title>SNOWMIKU2027 非公式カレンダー</title>
+  <meta name="description" content="SNOW MIKU 2027（2027.2.5〜2.7）のメインイベント・LIVE・Digital Stars・ファンメイドライブ・雪ミク電車を会場別にまとめた非公式カレンダー。雪ミク電車の在線予測つき。">
   <link rel="canonical" href="https://realryo1.github.io/sm27calendar/">
 
   <!-- OGP -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="SNOW MIKU 2027 タイムスケジュール（非公式）">
-  <meta property="og:title" content="SNOW MIKU 2027 会場別タイムスケジュール">
-  <meta property="og:description" content="2027.2.5〜2.7 の本祭・LIVE・Digital Stars・初音銀華祭・雪ミク電車を会場別にまとめた非公式タイムスケジュール。雪ミク電車の在線予測つき。">
+  <meta property="og:site_name" content="SNOWMIKU2027 非公式カレンダー">
+  <meta property="og:title" content="SNOWMIKU2027 非公式カレンダー">
+  <meta property="og:description" content="2027.2.5〜2.7 のメインイベント・LIVE・Digital Stars・ファンメイドライブ・雪ミク電車を会場別にまとめた非公式カレンダー。雪ミク電車の在線予測つき。">
   <meta property="og:url" content="https://realryo1.github.io/sm27calendar/">
   <meta property="og:image" content="https://realryo1.github.io/sm27calendar/image/ogp.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="SNOW MIKU 2027 会場別タイムスケジュール 2027.2.5 FRI – 2.7 SUN">
+  <meta property="og:image:alt" content="SNOWMIKU2027 非公式カレンダー 2027.2.5 FRI – 2.7 SUN">
   <meta property="og:locale" content="ja_JP">
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SNOW MIKU 2027 会場別タイムスケジュール">
-  <meta name="twitter:description" content="本祭・LIVE・Digital Stars・初音銀華祭・雪ミク電車を会場別にまとめた非公式タイムスケジュール。雪ミク電車の在線予測つき。">
+  <meta name="twitter:title" content="SNOWMIKU2027 非公式カレンダー">
+  <meta name="twitter:description" content="メインイベント・LIVE・Digital Stars・ファンメイドライブ・雪ミク電車を会場別にまとめた非公式カレンダー。雪ミク電車の在線予測つき。">
   <meta name="twitter:image" content="https://realryo1.github.io/sm27calendar/image/ogp.png">
-  <meta name="twitter:image:alt" content="SNOW MIKU 2027 会場別タイムスケジュール 2027.2.5 FRI – 2.7 SUN">
+  <meta name="twitter:image:alt" content="SNOWMIKU2027 非公式カレンダー 2027.2.5 FRI – 2.7 SUN">
   <meta name="theme-color" content="#DD67E2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +35,7 @@
   <main class="main">
     <section class="board">
       <nav class="day-nav" aria-label="日付へ移動">
-        <h1 class="day-nav__title"><span class="day-nav__brand">SNOW MIKU 2027</span> <span class="day-nav__sub">タイムスケジュール</span></h1>
+        <h1 class="day-nav__title"><span class="day-nav__brand">SNOW MIKU 2027</span> <span class="day-nav__sub">非公式カレンダー</span></h1>
         <span id="dayNav" style="display:contents"></span>
         <a class="day-chip day-chip--train" href="#train-live">市電いまどこ<span class="day-chip__week">TRAIN</span></a>
         <span class="day-nav__break" aria-hidden="true"></span>
@@ -43,7 +43,7 @@
       <div class="tt-scroll" id="ttScroll">
         <div class="tt" id="tt"></div>
       </div>
-      <p class="board__hint">※ 上下で日程・左右で会場を移動、ピンチで拡大縮小</p>
+      <p class="board__hint">※ピンチで拡大縮小、予定タップで詳細</p>
     </section>
 
     <div class="main__inner">
@@ -52,6 +52,7 @@
         <li><span class="badge badge--fan">非公式</span>ファン主催イベント</li>
         <li><span class="badge badge--tentative">時間仮</span>時間未発表のため仮置き</li>
         <li><span class="badge badge--tentative">終演仮</span>終演時間のみ仮置き</li>
+        <li><s class="tbd">18:00</s>取り消し線の時刻は仮</li>
         <li><span class="legend__open"></span>開場〜開演</li>
         <li><span class="legend__wait"></span>早朝待機（前年参考）</li>
       </ul>
@@ -67,7 +68,7 @@
     <p>本サイトはファンによる非公式のまとめです。最新情報は必ず各公式サイトをご確認ください。</p>
   </footer>
 
-  <button type="button" class="to-board" id="toBoard" hidden>▲ タイムテーブルへ</button>
+  <button type="button" class="to-board" id="toBoard" hidden>▲ カレンダーへ</button>
 
   <script src="data.js"></script>
   <script src="app.js"></script>

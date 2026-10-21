@@ -109,10 +109,11 @@
 
   const init = nowJST();
   const inPeriod = !!dayType(init.dateId);
+  // 運行期間外は 2/6 12:45 を表示しておく
   const state = {
     live: inPeriod,
     dateId: inPeriod ? init.dateId : "2027-02-06",
-    min: inPeriod ? init.min : Math.min(Math.max(init.min, 7 * 60), 21 * 60),
+    min: inPeriod ? init.min : toMin("12:45"),
   };
   // ?at=2027-02-06T08:10 で日時を指定して表示（共有・確認用）
   const at = new URLSearchParams(location.search).get("at")?.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/);
@@ -120,51 +121,32 @@
 
   // ---------- 路線図レイアウト（札幌市電 ループ線） ----------
   // 停留場の座標と名前ラベルの位置（外回りの順＝stations と同じ並び）と、線路の折れ点（その停留場の直後に入る角）。
-  // スマホでは横幅をつめた配置に切り替え、縮小しすぎずに画面幅へ収める
-  const LAYOUTS = {
-    wide: {
-      width: 630,
-      st: [
-        [440, 60, "below"], [500, 140, "left"], [450, 220, "belowRight"], [380, 220, "above"],
-        [330, 270, "right"], [330, 317, "right"], [330, 363, "right"], [330, 410, "right"],
-        [330, 457, "right"], [330, 503, "right"], [330, 550, "right"],
-        [290, 600, "below"], [200, 600, "below"], [110, 600, "below"],
-        [60, 550, "right"], [60, 480, "right"], [60, 410, "right"], [60, 340, "right"],
-        [60, 270, "right"], [60, 200, "right"], [60, 130, "right"],
-        [110, 60, "below"], [220, 60, "below"], [330, 60, "below"],
-      ],
-      corners: { 0: [[500, 60]], 1: [[500, 220]], 3: [[330, 220]], 10: [[330, 600]], 13: [[60, 600]], 20: [[60, 60]] },
-      // 目安の地下鉄（東西線は横、南北線・東豊線は縦）。
-      // links: 乗り換えの点線。[市電停留場の番号, 地下鉄側の x, y] または [x1, y1, x2, y2]
-      subway: {
-        tozai: { y: 22, x1: 18, x2: 616, st: [["西18丁目", 42], ["西11丁目", 220]] },
-        nanboku: { x: 552, y1: 4, y2: 520, st: [["すすきの", 220], ["中島公園", 317], ["幌平橋", 457]] },
-        // 東豊線は下端（y2）で右（東）へ折れる
-        toho: { x: 598, y1: 4, y2: 310, st: [["豊水すすきの", 242]] },
-        // 公式路線図と同じ乗り換えの点線
-        links: [[21, 42, 22], [22, 220, 22], [0, 552, 22], [1, 552, 22], [1, 552, 220], [2, 552, 220], [552, 220, 598, 242], [5, 552, 317], [8, 552, 457]],
-        zepp: [500, 310], // 南9条西4丁目＝山鼻9条〜中島公園の線上、中島公園駅のすぐ西
-      },
-    },
-    narrow: {
-      width: 450,
-      st: [
-        [326, 60, "below"], [370, 140, "left"], [325, 220, "below"], [275, 220, "above"],
-        [230, 300, "right"], [230, 342, "right"], [230, 383, "right"], [230, 425, "right"],
-        [230, 467, "right"], [230, 508, "right"], [230, 550, "right"],
-        [208, 600, "below"], [148, 600, "below"], [60, 600, "below"],
-        [40, 550, "right"], [40, 480, "right"], [40, 410, "right"], [40, 340, "right"],
-        [40, 270, "right"], [40, 200, "right"], [40, 130, "right"],
-        [66, 60, "below"], [160, 60, "below"], [258, 60, "below"],
-      ],
-      corners: { 0: [[370, 60]], 1: [[370, 220]], 3: [[230, 220]], 10: [[230, 600]], 13: [[40, 600]], 20: [[40, 60]] },
-      subway: {
-        tozai: { y: 22, x1: 8, x2: 442, st: [["西18丁目", 26], ["西11丁目", 160]] },
-        nanboku: { x: 394, y1: 4, y2: 520, st: [["すすきの", 220], ["中島公園", 342], ["幌平橋", 467]] },
-        toho: { x: 428, y1: 4, y2: 310, st: [["豊水すすきの", 242]] },
-        links: [[21, 26, 22], [22, 160, 22], [0, 394, 22], [1, 394, 22], [1, 394, 220], [2, 394, 220], [394, 220, 428, 242], [5, 394, 342], [8, 394, 467]],
-        zepp: [374, 342],
-      },
+  // PC・スマホ共通の1配置。スマホで縮小しても読める横幅に収めている
+  // 位置関係は実際の地図に合わせている。中央の列と西線は等間隔で、同じ通りの停留場を同じ高さにそろえる
+  // （西線9条–山鼻9条 … 電車事業所前–幌南小学校前。西線6条だけは実際に合わせて少し北）。西4丁目・すすきの・資生館小学校前は角、西15丁目は北西角
+  const LAYOUT = {
+    width: 500,
+    height: 700,
+    st: [
+      [400, 60, "right"], [400, 118, "right"], [400, 175, "below"], [280, 175, "left"],
+      [280, 245, "right"], [280, 302, "right"], [280, 359, "right"], [280, 416, "right"],
+      [280, 473, "right"], [280, 530, "right"], [280, 587, "right"], [221, 640, "below"],
+      [162, 640, "above"], [103, 640, "below"], [44, 587, "right"], [44, 530, "right"],
+      [44, 473, "right"], [44, 416, "right"], [44, 359, "right"], [44, 302, "right"],
+      [44, 200, "right"], [44, 60, "below"], [163, 60, "below"], [281, 60, "below"],
+    ],
+    // 西4丁目（0）・すすきの（2）・資生館小学校前（3）・西15丁目（21）は角そのものなので、角の点は持たない
+    corners: { 10: [[280, 640]], 13: [[44, 640]] },
+    // 目安の地下鉄（東西線は横、南北線・東豊線は縦）。
+    // links: 乗り換えの点線。[市電停留場の番号, 地下鉄側の x, y] または [x1, y1, x2, y2]
+    subway: {
+      tozai: { y: 22, x1: 6, x2: 494, st: [["西18丁目", 20], ["西11丁目", 163]] },
+      nanboku: { x: 432, y1: 4, y2: 530, st: [["すすきの", 175], ["中島公園", 302], ["幌平橋", 444]] },
+      // 東豊線は下端（y2）で右（東）へ折れる
+      toho: { x: 470, y1: 4, y2: 270, st: [["豊水すすきの", 197]] },
+      // 公式路線図と同じ乗り換えの点線
+      links: [[21, 20, 22], [22, 163, 22], [0, 432, 22], [1, 432, 22], [1, 432, 175], [2, 432, 175], [432, 175, 470, 197], [5, 432, 302], [8, 432, 444]],
+      zepp: [405, 296], // 南9条西4丁目＝山鼻9条〜中島公園の線上、中島公園駅のすぐ西
     },
   };
   const SC = (i) => String(i === 0 ? 1 : 25 - i).padStart(2, "0");
@@ -181,8 +163,8 @@
   };
 
   let layout, MAP_ST, pts, P, miter, cum, TOTAL, stDist;
-  function setLayout(name) {
-    layout = LAYOUTS[name];
+  function setLayout() {
+    layout = LAYOUT;
     MAP_ST = layout.st;
     pts = [];
     const stIdx = [];
@@ -231,8 +213,6 @@
       return `<text x="${x + 22}" y="${y - 1}"><tspan>${st.name}</tspan><tspan x="${x + 22}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
     if (side === "left")
       return `<text x="${x - 22}" y="${y - 1}" text-anchor="end"><tspan>${st.name}</tspan><tspan x="${x - 22}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
-    if (side === "belowRight")
-      return `<text x="${x - 12}" y="${y + 30}"><tspan>${st.name}</tspan><tspan dx="6" class="tl-map__time" data-time="${i}"></tspan></text>`;
     const y0 = side === "below" ? y + 32 : y - 36;
     return `<text x="${x}" y="${y0}" text-anchor="middle"><tspan>${st.name}</tspan><tspan x="${x}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
   };
@@ -277,8 +257,8 @@
     </g>`;
   }
 
-  const buildMapSvg = (name) => `
-    <svg class="tl-map tl-map--${name}" id="tlMap" viewBox="0 0 ${layout.width} 660" role="img" aria-label="札幌市電ループ線の路線図と雪ミク電車の予測位置">
+  const buildMapSvg = () => `
+    <svg class="tl-map" id="tlMap" viewBox="0 0 ${layout.width} ${layout.height}" role="img" aria-label="札幌市電ループ線の路線図と雪ミク電車の予測位置">
       ${subwaySvg()}
       <g class="tl-map__track tl-map__track--outer">
         <path d="${trackPath(GAP)}"/>
@@ -371,13 +351,10 @@
     anim.raf = requestAnimationFrame(step);
   }
 
-  // 画面幅に応じて路線図の配置を切り替えて描き直す
   const $mapHost = document.getElementById("tlMapHost");
-  const narrowMQ = matchMedia("(max-width: 767px)");
   function mountMap() {
-    const name = narrowMQ.matches ? "narrow" : "wide";
-    setLayout(name);
-    $mapHost.innerHTML = buildMapSvg(name);
+    setLayout();
+    $mapHost.innerHTML = buildMapSvg();
     $map = document.getElementById("tlMap");
     $train = document.getElementById("tlTrain");
     $heading = document.getElementById("tlHeading");
@@ -532,9 +509,5 @@
 
   mountMap();
   render();
-  narrowMQ.addEventListener("change", () => {
-    mountMap();
-    render();
-  });
   setInterval(() => state.live && render(), 15 * 1000);
 })();

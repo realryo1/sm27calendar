@@ -28,6 +28,10 @@
   // 会場見出し名（表の列見出しと下のカードで共通）。括弧書きは小さく表示
   const headName = (v) => esc(v.short ?? v.name).replace(/（(.+?)）/, "<small>（$1）</small>");
 
+  // 仮の時刻は取り消し線で示す（tentative: true＝すべて仮、"end"＝終演のみ仮）
+  const tbd = (t) => `<s class="tbd">${t}</s>`;
+  const fmtTime = (e, which) => (e.tentative === true || (e.tentative === "end" && which === "end") ? tbd(e[which]) : e[which]);
+
   const timeText = (ev) => (ev.allDay ? "時間未発表" : `${ev.start} – ${ev.end}`);
 
   const nowJST = () => {
@@ -40,7 +44,7 @@
     return { dateId, hour: h + m / 60 };
   };
 
-  // 行構成: 1行目=会場見出し、以降は日ごとに [日付帯, タイムテーブル本体]
+  // 行構成: 1行目=会場見出し、以降は日ごとに [日付帯, カレンダー本体]
   const dayRow = (i) => 2 + i * 2;
   const bodyRow = (i) => 3 + i * 2;
 
@@ -124,7 +128,7 @@
     const end = toHour(e.end);
     const top = e.open ? toHour(e.open) : start;
     const openPart = e.open
-      ? `<span class="ev__open" style="height:${span(top, start)}">OPEN ${e.open}</span>`
+      ? `<span class="ev__open" style="height:${span(top, start)}">OPEN ${fmtTime(e, "open")}</span>`
       : "";
     const waitPart = e.wait
       ? `<div class="ev-wait" data-wait="${e.id}" role="button" tabindex="0" style="top:${pos(toHour(e.wait))};height:${span(toHour(e.wait), top)}">
@@ -145,7 +149,7 @@
         style="top:${pos(top)};height:${span(top, end)}">
       ${openPart}
       <span class="ev__inner">
-        <span class="ev__time">${e.start} ▶ ${e.tentative === "end" ? `<span class="ev__tbd">${e.end}</span>` : e.end}</span>
+        <span class="ev__time">${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}</span>
         <span class="ev__title">${esc(e.title)}</span>
         ${e.sub ? `<span class="ev__sub">${esc(e.sub)}</span>` : ""}
         <span class="ev__badges">${badges(e)}</span>
@@ -174,19 +178,28 @@
               g.days.push(...e.days);
             } else groups.push({ key: groupKey(e), ids: [e.id], days: [...e.days], e });
           });
-        const list = groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds)).join("");
         const live = events.some((e) => e.venue === v.id && e.live);
-        return `<article class="venue-card theme-${v.theme}${live ? " venue-card--wide" : ""}" id="venue-${v.id}">
+        // 予定が1件だけの会場（早朝待機・在線予測なし）は、枠で分けずにカードへ直接載せる
+        const single = groups.length === 1 && !live && !groups[0].e.wait ? groups[0] : null;
+        const place = `<dt>場所</dt><dd>${v.short ? `${esc(v.name)}<br>` : ""}${esc(v.address)}</dd>
+            <dt>最寄り</dt><dd>${esc(v.station)}</dd>`;
+        const liveEv = live ? groups[0].e : null;
+        const list = liveEv
+          ? renderLiveHead(liveEv)
+          : single
+          ? renderVenueEventBody(single.e, single.days, place)
+          : `<dl class="venue-card__info">${place}</dl>
+            <ul class="vc-events">${groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds)).join("")}</ul>`;
+        const flat = single ?? (live ? groups[0] : null);
+        return `<article class="venue-card theme-${v.theme}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.id}"${
+          flat ? ` data-ids="${flat.ids.join(" ")}"` : ""
+        }>
           <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${headName(v)}<small class="venue-card__area">${esc(v.area)}</small></h3>
-          <dl class="venue-card__info">
-            <dt>場所</dt><dd>${v.short ? `${esc(v.name)}<br>` : ""}${esc(v.address)}</dd>
-            <dt>最寄り</dt><dd>${esc(v.station)}</dd>
-          </dl>
-          <ul class="vc-events">${list}</ul>
+          ${list}
           ${
             live
               ? `<div class="train-live" id="train-live">
-                  <h4 class="train-live__title">いまどこ？<small>（在線予測）</small></h4>
+                  <h4 class="train-live__title">雪ミク電車いまどこ？<small>（在線予測）</small></h4>
                   <div id="trainLive"></div>
                 </div>`
               : ""
@@ -196,16 +209,32 @@
       .join("");
   }
 
+  // 雪ミク電車：運行期間・時間・注記・リンクだけを見出しの下に置く（在線予測はその下）
+  function renderLiveHead(e) {
+    const links = e.links ?? [{ label: "公式ページ", url: e.url }];
+    return `<p class="vc-live__period">${esc(e.period)}</p>
+      <p class="vc-live__time">${e.start} – ${e.end}</p>
+      ${e.note ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
+      <div class="vc-ev__links">${links
+        .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`)
+        .join("")}</div>`;
+  }
+
   function renderVenueEvent(e, ids, ds) {
+    return `<li class="vc-ev" id="ev-${ids[0]}" data-ids="${ids.join(" ")}">${renderVenueEventBody(e, ds)}</li>`;
+  }
+
+  // place を渡すと会場カードに直接載せる形（タイトルは見出しと重複するので省き、時間の下に場所・最寄りを並べる）
+  function renderVenueEventBody(e, ds, place) {
     const links = e.links ?? [{ label: "公式ページ", url: e.url }];
     const times = [
-      e.open && ["開場", e.open],
-      [e.open ? "開演" : "時間", e.allDay ? "未発表" : `${e.start} – ${e.end}${e.tentative ? "（仮）" : ""}`],
+      e.open && ["開場", fmtTime(e, "open")],
+      [e.open ? "開演" : "時間", e.allDay ? "未発表" : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`],
       e.lastEntry && ["最終入場", e.lastEntry],
     ].filter(Boolean);
     const wait = e.wait
       ? `<details class="vc-wait" id="wait-${e.id}">
-          <summary>早朝待機の案内（前年参考）</summary>
+          <summary>早朝待機について</summary>
           <div class="vc-wait__body">
             ${
               e.waitImage
@@ -221,19 +250,22 @@
           </div>
         </details>`
       : "";
-    return `<li class="vc-ev" id="ev-${ids[0]}" data-ids="${ids.join(" ")}">
+    return `
       <div class="vc-ev__head">
         <span class="vc-ev__days">${[...new Set(ds)].sort().map(dayLabel).join(" ・ ")}</span>
         <span class="ev__badges">${badges(e)}</span>
       </div>
-      <p class="vc-ev__title">${esc(e.title)}${e.sub ? ` <small>${esc(e.sub)}</small>` : ""}</p>
-      <dl class="vc-ev__times">${times.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join("")}</dl>
+      ${
+        place
+          ? `<dl class="venue-card__info vc-single__info">${times.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join("")}${place}</dl>`
+          : `<p class="vc-ev__title">${esc(e.title)}${e.sub ? ` <small>${esc(e.sub)}</small>` : ""}</p>
+      <dl class="vc-ev__times">${times.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join("")}</dl>`
+      }
       ${e.note && !e.wait ? `<p class="vc-ev__note">${esc(e.note)}</p>` : ""}
       ${wait}
       <div class="vc-ev__links">${links
         .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`)
-        .join("")}</div>
-    </li>`;
+        .join("")}</div>`;
   }
 
   // 予定のタップで、下の会場カード（venue-○○）へ移動し、該当イベントを強調する
@@ -278,6 +310,9 @@
     $scroll.scrollTo({ top: col.offsetTop - stickyOffset() + offset, behavior });
   }
 
+  // 日付ボタンで選んだ日は、ユーザーが自分でスクロールするまで選択状態を保つ
+  // （縮小時など、最後の日の先頭まで届かず下端で止まる場合でも選んだ日を表示する）
+  let pinnedDay = null;
   function updateActiveChip() {
     const y = $scroll.scrollTop + stickyOffset() + 1;
     const axes = [...$tt.querySelectorAll(".tt-axis")];
@@ -285,13 +320,21 @@
     axes.forEach((a, i) => {
       if (a.offsetTop - $tt.querySelector(".tt-day").offsetHeight <= y) active = i;
     });
+    // 下端まで来ていれば最後の日
+    if ($scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 2) active = axes.length - 1;
+    if (pinnedDay != null) active = pinnedDay;
     $dayNav.querySelectorAll(".day-chip").forEach((c, i) => c.classList.toggle("is-active", i === active));
   }
 
   $dayNav.addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-day]");
-    if (btn) scrollToDay(btn.dataset.day);
+    if (!btn) return;
+    pinnedDay = days.findIndex((d) => d.id === btn.dataset.day);
+    scrollToDay(btn.dataset.day);
+    updateActiveChip();
   });
+  const unpin = () => (pinnedDay = null);
+  ["touchstart", "wheel", "keydown", "pointerdown"].forEach((t) => $scroll.addEventListener(t, unpin, { passive: true }));
 
   $scroll.addEventListener("scroll", () => requestAnimationFrame(updateActiveChip), { passive: true });
 

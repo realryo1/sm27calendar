@@ -1,4 +1,4 @@
-// タイムテーブルのデータ（date.md を元に作成）
+// カレンダーのデータ（date.md を元に作成）
 // 時刻は "HH:MM"（24時間表記）。tentative: true は公式未発表で仮置きした時間、"end" は終演のみ仮。
 // wait: 早朝待機の開始目安＝日の出時刻（wait〜start をグラデーションで描くための内部値。時刻は画面に表示しない）、lastEntry: 最終入場、marks: 時刻の目印線。
 
@@ -46,8 +46,8 @@ window.TT_DATA = {
       id: "clark",
       letter: "D",
       name: "北海道大学 クラーク会館講堂",
-      short: "初音銀華祭（非公式）",
-      area: "北海道大学・札幌駅",
+      short: "初音銀華祭2027",
+      area: "ファンメイドライブ",
       address: "北海道札幌市北区北8条西7丁目",
       station: "JR「札幌駅」",
       theme: "gold",
@@ -66,7 +66,7 @@ window.TT_DATA = {
   events: [
     {
       id: "wingbay",
-      title: "SNOW MIKU 2027 本祭",
+      title: "SNOW MIKU 2027 メインイベント",
       venue: "wingbay",
       days: ["2027-02-06", "2027-02-07"],
       wait: "06:00",
@@ -151,7 +151,8 @@ window.TT_DATA = {
       start: "07:00",
       end: "21:00",
       official: true,
-      note: "運行期間：2026年11月21日（土）～2027年3月21日（日）。おおむね7:00～21:00の運行。",
+      period: "2026年11月21日（土）～2027年3月21日（日）",
+      note: "運行時間はおおむねの目安です。",
       url: "https://www.stsp.or.jp/event/yukimiku2027/",
       live: true,
       links: [

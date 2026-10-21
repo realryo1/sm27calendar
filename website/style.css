@@ -25,15 +25,18 @@
   --head: 56px;
   --divider: 46px;
   --axis: 56px;
-  --colmin: 150px;
+  --colmin: 96px;
 }
 
-@media (max-width: 767px) {
+/* スマホ表示の切り替え幅は 640px に統一（ボトムバー・操作ヒント・会場列の横スクロール）。
+   640px 超は5会場がすべて収まる列幅、640px 以下は列幅を広げて横スワイプで見る */
+
+@media (max-width: 640px) {
   :root {
     --hour: 60px;
     --head: 40px;
     --divider: 40px;
-    --axis: 36px;
+    --axis: 26px;
     --colmin: 112px;
   }
 }
@@ -83,8 +86,8 @@ button { font: inherit; color: inherit; }
   padding: 10px 16px 8px;
   background: var(--col-paper);
 }
-@media (max-width: 767px) {
-  .board { padding: 8px 8px 6px; }
+@media (max-width: 640px) {
+  .board { padding: 8px 0 6px; } /* 左右の余白をなくし、表を画面いっぱいに使う */
 }
 .board__hint { display: none; margin: 4px 0 0; font-size: .7rem; text-align: center; opacity: .7; }
 
@@ -108,6 +111,7 @@ button { font: inherit; color: inherit; }
   letter-spacing: .08em;
 }
 .day-chip {
+  flex: none;
   display: inline-flex;
   white-space: nowrap;
   align-items: baseline;
@@ -138,20 +142,24 @@ button { font: inherit; color: inherit; }
 }
 .day-chip--train .day-chip__week { color: var(--col-secondary-light); }
 .day-chip--train:hover { background: #352d6b; }
+/* 641〜900px：上部バーと会場見出しを詰めて、5会場を収めたまま崩れないようにする */
 @media (max-width: 900px) {
+  .day-nav { gap: 6px; }
   .day-nav__sub { display: none; }
-  .day-nav__brand { white-space: nowrap; }
+  .day-nav__brand { white-space: nowrap; font-size: .9rem; }
+  .day-chip { padding: 4px 10px; }
+  .day-chip__week { display: none; }
 }
 .day-nav__break { display: none; }
 /* スマホは画面下部のボトムバー：日付ボタンを3等分＋操作ボタン。タイトルは省く */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .board { padding-bottom: 0; }
   .board__hint { order: 2; margin: 4px 0; }
   .day-nav {
     order: 3;
     flex-wrap: nowrap;
     gap: 6px;
-    margin: 0 -8px;
+    margin: 0;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--col-secondary-lighter);
     background: var(--col-paper);
@@ -174,11 +182,15 @@ button { font: inherit; color: inherit; }
     min-height: 46px;
     border-radius: 14px;
   }
-  .day-chip[data-day] { flex: 1 1 0; padding: 4px 2px; }
+  .day-chip[data-day],
+  .day-chip--train { flex: 1 1 0; min-width: 0; padding: 4px 2px; }
   .day-chip__date { font-size: 1.05rem; }
   .day-chip__week { display: block; font-size: .58rem; }
-  .day-chip--train { flex: none; padding: 4px 12px; font-size: .8rem; line-height: 1.2; }
+  .day-chip--train { font-size: .78rem; line-height: 1.2; letter-spacing: 0; }
   .day-chip--train .day-chip__week { display: block; }
+}
+@media (max-width: 360px) {
+  .day-chip--train { font-size: .68rem; }
 }
 
 /* ---------- Timetable grid ---------- */
@@ -192,6 +204,9 @@ button { font: inherit; color: inherit; }
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   border-radius: 12px;
+}
+@media (max-width: 640px) {
+  .tt-scroll { border-radius: 0; } /* スマホは画面端まで使うので角丸なし */
 }
 .tt {
   position: relative;
@@ -252,7 +267,20 @@ button { font: inherit; color: inherit; }
 }
 .tt-head__name small { font-size: .78em; font-weight: 700; letter-spacing: 0; }
 .tt-head__area { grid-area: area; font-size: .66rem; opacity: .7; }
-@media (max-width: 767px) {
+/* 641〜900px は列幅が狭いので、会場名を2行までにして補足を省く */
+@media (max-width: 900px) {
+  .tt-head__area { display: none; }
+  .tt-head { grid-template-areas: "letter name"; column-gap: 5px; padding: 2px 6px; }
+  .tt-head__name {
+    display: -webkit-box;
+    font-size: .72rem;
+    line-height: 1.2;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+@media (max-width: 640px) {
   .tt-head { column-gap: 5px; padding: 2px 6px; }
   .tt-head__letter { font-size: 1rem; }
   .tt-head__name {
@@ -309,7 +337,7 @@ button { font: inherit; color: inherit; }
 }
 .tt-day__week { font-family: var(--font-display); font-size: .78rem; letter-spacing: .14em; color: var(--col-secondary); }
 .tt-day__ja { font-size: .75rem; font-weight: 700; opacity: .6; }
-@media (max-width: 767px) {
+@media (max-width: 640px) {
   .tt-day { padding-bottom: 6px; }
   .tt-day__date { font-size: 1.35rem; }
 }
@@ -338,9 +366,14 @@ button { font: inherit; color: inherit; }
 .tt-axis__hour:last-child { transform: translateY(-100%); }
 .tt-axis__h { font-family: var(--font-display); font-size: 1.1rem; }
 .tt-axis__m { font-size: .62rem; opacity: .6; }
-@media (max-width: 767px) {
-  .tt-axis__h { font-size: .95rem; }
-  .tt-axis__hour .tt-axis__m { display: none; }
+@media (max-width: 640px) {
+  /* スマホは時刻軸を細く：時の数字だけを小さく出し、30分の表示は省く */
+  .tt-axis { margin-right: -4px; padding-right: 4px; }
+  /* 時刻は「画面端〜予定の列」の間の中央に置き、左右の余白を均等にする（8px は .tt の column-gap） */
+  .tt-axis__hour, .tt-axis__half { left: 0; right: auto; width: calc(var(--axis) + 8px); justify-content: center; }
+  .tt-axis__h { font-size: .88rem; letter-spacing: -.04em; }
+  .tt-axis__hour .tt-axis__m,
+  .tt-axis__half { display: none; }
 }
 
 .tt-col {
@@ -391,12 +424,12 @@ button { font: inherit; color: inherit; }
   background: linear-gradient(to bottom, var(--col-paper) 55%, #ececf0);
   box-shadow: 0 3px 0 #d3d3d9;
 }
-.ev__tbd {
-  margin-left: 2px;
-  padding: 0 5px;
-  border-radius: 999px;
-  color: var(--col-paper);
-  background: #8b8b96;
+/* 仮の時刻（取り消し線） */
+.tbd {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: currentColor;
+  opacity: .75;
 }
 
 .ev__open {
@@ -449,7 +482,7 @@ button { font: inherit; color: inherit; }
 }
 .ev--allday .ev__time { font-family: var(--font-base); font-weight: 700; background: var(--c-dark); }
 
-@media (max-width: 767px) {
+@media (max-width: 640px) {
   .ev { left: 3px; right: 3px; }
   .ev__title { font-size: .8rem; }
   .ev__time { font-size: .62rem; padding: 1px 6px; }
@@ -536,7 +569,7 @@ button { font: inherit; color: inherit; }
   border-top: 1px dashed var(--c);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 640px) {
   .ev-wait { left: 3px; right: 3px; }
 }
 
@@ -605,7 +638,7 @@ button { font: inherit; color: inherit; }
   border-bottom: 2px solid var(--col-ink-primary);
 }
 
-/* ---------- 雪ミク電車 いまどこ？ ---------- */
+/* ---------- 市電いまどこ？ ---------- */
 .train-live {
   margin-top: 16px;
   padding-top: 14px;
@@ -816,10 +849,8 @@ button { font: inherit; color: inherit; }
 .train-live { --track-outer: #F2A31B; --track-inner: #4BA9E3; }
 .tl-map-wrap { min-width: 0; }
 /* スマホ用の横幅をつめた配置（画面幅に収めたうえで文字を少し大きく） */
-.tl-map--narrow { max-width: 480px; max-height: none; margin: 0 auto; overflow: visible; }
-.tl-map--narrow .tl-map__label text { font-size: 16px; }
-.tl-map--narrow .tl-map__time { font-size: 14px; }
-.tl-map { display: block; width: 100%; height: auto; max-height: 80svh; font-family: var(--font-base); }
+/* PC・スマホ共通。PCでも大きく引き伸ばさない */
+.tl-map { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; overflow: visible; font-family: var(--font-base); }
 /* 目安の地下鉄と Zepp Sapporo（市電より控えめに） */
 .tl-sub__line line,
 .tl-sub__line polyline { fill: none; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
@@ -857,8 +888,8 @@ button { font: inherit; color: inherit; }
 .tl-map__st circle { fill: var(--col-paper); stroke: var(--col-ink); stroke-width: 2; }
 .tl-map__st.is-transfer circle { fill: #FFE45C; }
 .tl-map__sc { font-size: 8.5px; font-weight: 900; text-anchor: middle; fill: var(--col-ink); }
-.tl-map__label text { font-size: 15px; font-weight: 700; fill: var(--col-ink); paint-order: stroke; stroke: var(--col-paper); stroke-width: 4px; stroke-linejoin: round; }
-.tl-map__time { font-size: 13px; font-weight: 900; fill: var(--c); }
+.tl-map__label text { font-size: 14px; font-weight: 700; fill: var(--col-ink); paint-order: stroke; stroke: var(--col-paper); stroke-width: 4px; stroke-linejoin: round; }
+.tl-map__time { font-size: 12.5px; font-weight: 900; fill: var(--c); }
 .tl-map__st.is-next circle { stroke: var(--col-ink-primary); stroke-width: 4; }
 .tl-map__st.is-current circle { fill: var(--col-ink-primary); stroke: var(--col-ink-primary); }
 .tl-map__st.is-current .tl-map__sc { fill: var(--col-paper); }
@@ -941,7 +972,8 @@ button { font: inherit; color: inherit; }
   gap: 14px;
 }
 .venue-card {
-  padding: 16px;
+  --pad: 16px;
+  padding: var(--pad);
   border-radius: 16px;
   border-top: 6px solid var(--c);
   background: var(--col-paper);
@@ -950,7 +982,7 @@ button { font: inherit; color: inherit; }
 }
 .venue-card--wide { grid-column: 1 / -1; }
 @media (max-width: 767px) {
-  .venue-card { padding: 14px 12px; }
+  .venue-card { --pad: 12px; padding: 14px var(--pad) var(--pad); }
 }
 .venue-card__name {
   display: flex;
@@ -1004,7 +1036,22 @@ button { font: inherit; color: inherit; }
   background: var(--c-tint);
   scroll-margin-top: 16px;
 }
-.vc-ev.is-flash { animation: vc-flash 1.8s ease-out; }
+.vc-ev.is-flash,
+.venue-card.is-flash { animation: vc-flash 1.8s ease-out; }
+/* 予定が1件だけの会場は、カードに直接載せる */
+.venue-card--single { background: var(--c-tint); }
+/* 雪ミク電車：点線より上をパステル、在線予測は白地 */
+.venue-card--live { background: var(--c-tint); }
+.venue-card--live .train-live {
+  margin: 16px calc(-1 * var(--pad)) calc(-1 * var(--pad));
+  padding: 14px var(--pad) var(--pad);
+  border-radius: 0 0 16px 16px;
+  background: var(--col-paper);
+}
+.vc-live__period { margin: 0; font-size: .88rem; font-weight: 700; color: var(--c-dark); }
+.vc-live__time { margin: 2px 0 0; font-family: var(--font-display); font-size: 1.05rem; color: var(--c); }
+.vc-single__info { margin-top: 8px; }
+.vc-single__info dd { font-weight: 700; }
 @keyframes vc-flash {
   0%, 30% { box-shadow: 0 0 0 3px var(--col-ink-primary); }
   100% { box-shadow: 0 0 0 3px transparent; }
@@ -1012,7 +1059,7 @@ button { font: inherit; color: inherit; }
 .vc-ev__head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .vc-ev__days { font-family: var(--font-display); font-size: .8rem; color: var(--c); }
 .vc-ev__days small { font-family: var(--font-base); font-weight: 700; font-size: .72rem; }
-.vc-ev .ev__badges { justify-content: flex-start; margin: 0; }
+.venue-card .ev__badges { justify-content: flex-start; margin: 0; }
 .vc-ev__title { margin: 6px 0 0; font-size: 1rem; font-weight: 900; line-height: 1.4; color: var(--c-dark); }
 .vc-ev__title small { font-size: .78em; color: var(--c); }
 .vc-ev__times {
@@ -1092,6 +1139,6 @@ button { font: inherit; color: inherit; }
   opacity: .8;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 640px) {
   .board__hint { display: block; }
 }
