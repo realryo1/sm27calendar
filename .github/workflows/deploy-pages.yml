@@ -25,6 +25,14 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # 最終情報更新日時をデプロイ時刻（日本時間）に書き換える
+      - name: Stamp updatedAt
+        run: |
+          now="$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M')"
+          sed -i -E "s/^(  updatedAt: \")[^\"]*(\",)/\1${now}\2/" website/data.js
+          grep -q "updatedAt: \"${now}\"" website/data.js
+          echo "updatedAt: ${now}"
+
       - name: Upload website directory
         uses: actions/upload-pages-artifact@v3
         with:

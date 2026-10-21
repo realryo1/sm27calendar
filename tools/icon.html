@@ -1,0 +1,76 @@
+<!doctype html>
+<!-- PWA アイコン（website/image/icon-*.png）と favicon（?favicon を付けて書き出す）の元データ。正方形のウィンドウでスクリーンショットして書き出す。
+     maskable 対応のため背景は全面、図柄は中央 70% に収める -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 100vw; height: 100vh; overflow: hidden; }
+  body {
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 20% 10%, #F7BFFF 0, transparent 55%),
+      linear-gradient(to bottom right, #DD67E2, #9185DE);
+  }
+  .mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 70vw;
+    height: 70vw;
+    border-radius: 18vw;
+    overflow: hidden; /* 上の帯を角丸の内側で切り取る */
+    background: #fff;
+    box-shadow: 0 2vw 5vw rgb(79 69 143 / .3);
+  }
+  .grid {
+    position: absolute;
+    inset: 15vw 11vw 11vw;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.4vw;
+  }
+  .grid i { border-radius: 2vw; background: var(--c); opacity: .9; }
+  .grid i:nth-child(1) { --c: #DD67E2; margin-top: 4vw; }
+  .grid i:nth-child(2) { --c: #9185DE; margin-top: 14vw; margin-bottom: 6vw; }
+  .grid i:nth-child(3) { --c: #F2A31B; margin-top: 24vw; }
+  .bar {
+    position: absolute; left: 0; right: 0; top: 0; height: 11vw;
+    display: grid; place-items: center;
+    background: #4F458F;
+  }
+  .snow { font-size: 7vw; color: #fff; line-height: 1; }
+  /* favicon（icon.html?favicon）：小さく表示されるので枠を全面にし、細部（27）を省く */
+  .favicon body { background: transparent; }
+  .favicon .mark { width: 100vw; height: 100vw; border-radius: 22vw; box-shadow: none; }
+  .favicon .bar { height: 22vw; }
+  .favicon .snow { font-size: 15vw; }
+  .favicon .grid { inset: 30vw 12vw 12vw; gap: 5vw; }
+  .favicon .grid i { border-radius: 3vw; opacity: 1; }
+  .favicon .grid i:nth-child(1) { margin-top: 0; }
+  .favicon .grid i:nth-child(2) { margin-top: 12vw; margin-bottom: 8vw; }
+  .favicon .grid i:nth-child(3) { margin-top: 24vw; }
+  .favicon .num { display: none; }
+  .num {
+    position: absolute;
+    right: 5vw;
+    bottom: 3.5vw;
+    font-family: "Dela Gothic One", sans-serif;
+    font-size: 10vw;
+    color: #4F458F;
+    text-shadow: 0 0 1.2vw #fff, 0 0 1.2vw #fff;
+  }
+</style>
+</head>
+<body>
+  <script>if (location.search.includes("favicon")) document.documentElement.classList.add("favicon");</script>
+  <div class="mark">
+    <div class="bar"><span class="snow">❄</span></div>
+    <div class="grid"><i></i><i></i><i></i></div>
+    <span class="num">27</span>
+  </div>
+</body>
+</html>

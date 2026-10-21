@@ -1,0 +1,35 @@
+{
+  "id": "./",
+  "name": "SNOWMIKU2027非公式カレンダー",
+  "short_name": "雪ミク27",
+  "description": "SNOWMIKU2027（2027.2.5〜2.7）の各種情報をまとめた非公式カレンダー。雪ミク電車の現在地予測つき。オフラインでも見られます。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#DD67E2",
+  "categories": ["entertainment", "travel", "music"],
+  "icons": [
+    { "src": "image/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "image/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "image/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "image/screenshot-narrow.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "会場別カレンダー（スマホ）"
+    },
+    {
+      "src": "image/screenshot-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "会場別カレンダー（PC）"
+    }
+  ]
+}

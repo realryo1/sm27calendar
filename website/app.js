@@ -1,5 +1,5 @@
 (() => {
-  const { range, days, venues, events } = window.TT_DATA;
+  const { range, days, venues, events, updatedAt } = window.TT_DATA;
   const venueById = Object.fromEntries(venues.map((v) => [v.id, v]));
 
   const $dayNav = document.getElementById("dayNav");
@@ -449,6 +449,13 @@
     { passive: false }
   );
 
+
+  // 最終情報更新日時（例: 2026年10月22日 4:54）
+  if (updatedAt) {
+    const [, y, mo, d, h, mi] = updatedAt.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/).map(Number);
+    document.getElementById("updatedAt").innerHTML =
+      `最終情報更新：<time datetime="${updatedAt.replace(" ", "T")}+09:00">${y}年${mo}月${d}日 ${h}:${String(mi).padStart(2, "0")}</time>`;
+  }
 
   renderNav();
   renderBoard();

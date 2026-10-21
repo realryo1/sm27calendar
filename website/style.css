@@ -1145,3 +1145,57 @@ button { font: inherit; color: inherit; }
 @media (max-width: 640px) {
   .board__hint { display: block; }
 }
+
+.site-footer__updated { margin: 0 0 6px; font-weight: 700; }
+
+/* ---------- インストール案内（PWA） ---------- */
+.install {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(420px, calc(100% - 32px));
+  padding: 14px 14px 14px 12px;
+  border-radius: 16px;
+  background: var(--col-paper);
+  box-shadow: 0 10px 30px rgb(79 69 143 / .3);
+  border-top: 4px solid var(--col-ink-primary);
+  animation: install-in .3s ease-out;
+}
+.install[hidden] { display: none; }
+@keyframes install-in { from { transform: translateY(16px); opacity: 0; } }
+.install__icon { flex: none; border-radius: 12px; }
+.install__body { flex: 1; min-width: 0; }
+.install__title { margin: 0; font-size: .95rem; font-weight: 900; color: var(--col-primary-dark); }
+.install__text { margin: 2px 0 0; font-size: .78rem; line-height: 1.5; }
+.install__share { width: 1.1em; height: 1.1em; vertical-align: -.2em; color: #0a84ff; }
+.install__btn {
+  margin-top: 8px;
+  padding: 6px 18px;
+  border: none;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: .85rem;
+  color: var(--col-paper);
+  background: linear-gradient(to bottom right, var(--col-ink-primary), var(--col-secondary));
+  cursor: pointer;
+}
+.install__close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: -4px -4px 0 0;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  line-height: 1;
+  background: var(--col-secondary-lighter);
+  cursor: pointer;
+}
+/* スマホではボトムバーの上に出す */
+@media (max-width: 640px) {
+  .install { left: 8px; right: 8px; width: auto; bottom: calc(76px + env(safe-area-inset-bottom)); }
+}

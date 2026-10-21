@@ -26,6 +26,16 @@
   <meta name="twitter:image" content="https://realryo1.github.io/sm27calendar/image/ogp.png">
   <meta name="twitter:image:alt" content="SNOWMIKU2027 非公式カレンダー 2027.2.5 FRI – 2.7 SUN">
   <meta name="theme-color" content="#DD67E2">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" href="image/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="image/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="雪ミク27">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -65,6 +75,7 @@
   </main>
 
   <footer class="site-footer">
+    <p class="site-footer__updated" id="updatedAt"></p>
     <p>本サイトはファンによる非公式のまとめです。最新情報は必ず各公式サイトをご確認ください。</p>
   </footer>
 
@@ -73,5 +84,6 @@
   <script src="data.js"></script>
   <script src="app.js"></script>
   <script src="train.js"></script>
+  <script src="pwa.js"></script>
 </body>
 </html>
