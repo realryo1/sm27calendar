@@ -4,7 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SNOW MIKU 2027 会場別タイムスケジュール</title>
-  <meta name="description" content="SNOW MIKU 2027 関連イベントの会場別タイムスケジュール（非公式）">
+  <meta name="description" content="SNOW MIKU 2027（2027.2.5〜2.7）の本祭・LIVE・Digital Stars・初音銀華祭・雪ミク電車を会場別にまとめた非公式タイムスケジュール。雪ミク電車の在線予測つき。">
+  <link rel="canonical" href="https://realryo1.github.io/sm27calendar/">
+
+  <!-- OGP -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SNOW MIKU 2027 タイムスケジュール（非公式）">
+  <meta property="og:title" content="SNOW MIKU 2027 会場別タイムスケジュール">
+  <meta property="og:description" content="2027.2.5〜2.7 の本祭・LIVE・Digital Stars・初音銀華祭・雪ミク電車を会場別にまとめた非公式タイムスケジュール。雪ミク電車の在線予測つき。">
+  <meta property="og:url" content="https://realryo1.github.io/sm27calendar/">
+  <meta property="og:image" content="https://realryo1.github.io/sm27calendar/ogp.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SNOW MIKU 2027 会場別タイムスケジュール 2027.2.5 FRI – 2.7 SUN">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SNOW MIKU 2027 会場別タイムスケジュール">
+  <meta name="twitter:description" content="本祭・LIVE・Digital Stars・初音銀華祭・雪ミク電車を会場別にまとめた非公式タイムスケジュール。雪ミク電車の在線予測つき。">
+  <meta name="twitter:image" content="https://realryo1.github.io/sm27calendar/ogp.png">
+  <meta name="twitter:image:alt" content="SNOW MIKU 2027 会場別タイムスケジュール 2027.2.5 FRI – 2.7 SUN">
+  <meta name="theme-color" content="#DD67E2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -16,12 +37,13 @@
       <nav class="day-nav" aria-label="日付へ移動">
         <h1 class="day-nav__title"><span class="day-nav__brand">SNOW MIKU 2027</span> <span class="day-nav__sub">タイムスケジュール</span></h1>
         <span id="dayNav" style="display:contents"></span>
+        <button type="button" class="day-chip day-chip--zoom" id="zoomReset" hidden title="拡大縮小をリセット">等倍</button>
         <a class="day-chip day-chip--train" href="#train-live">いまどこ<span class="day-chip__week">TRAIN</span></a>
       </nav>
       <div class="tt-scroll" id="ttScroll">
         <div class="tt" id="tt"></div>
       </div>
-      <p class="board__hint">※ 縦スクロールで全日程、横スワイプで全会場を表示できます</p>
+      <p class="board__hint">※ 縦スクロールで全日程、横スワイプで全会場。縦・横のピンチで拡大縮小できます</p>
     </section>
 
     <div class="main__inner">

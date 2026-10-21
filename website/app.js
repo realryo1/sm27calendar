@@ -317,8 +317,134 @@
   new IntersectionObserver(([entry]) => ($toBoard.hidden = entry.isIntersecting), { threshold: 0.15 }).observe($board);
   $toBoard.addEventListener("click", () => $board.scrollIntoView({ behavior: "smooth" }));
 
+  // ---------- 拡大縮小（縦ピンチ＝時間方向、横ピンチ＝会場列の幅） ----------
+  const ZOOM = { hour: [28, 220], col: [72, 420] };
+  const $zoomReset = document.getElementById("zoomReset");
+  const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v));
+  const cssPx = (name) => parseFloat(getComputedStyle($tt).getPropertyValue(name));
+  const colWidth = () => $tt.querySelector(".tt-col").getBoundingClientRect().width;
+  const hourPx = () => cssPx("--hour");
+
+  // 縮小時は予定ブロックの表示を簡略化する
+  const updateDensity = () => {
+    const h = hourPx();
+    $tt.dataset.density = h < 44 ? "tight" : h < 60 ? "compact" : "";
+  };
+
+  function saveZoom() {
+    try {
+      const v = { hour: $tt.style.getPropertyValue("--hour"), col: $tt.style.getPropertyValue("--colmin") };
+      localStorage.setItem("tt-zoom", JSON.stringify(v));
+    } catch {}
+  }
+  function loadZoom() {
+    try {
+      const v = JSON.parse(localStorage.getItem("tt-zoom") || "null");
+      if (v?.hour) $tt.style.setProperty("--hour", v.hour);
+      if (v?.col) $tt.style.setProperty("--colmin", v.col);
+    } catch {}
+    $zoomReset.hidden = !$tt.style.getPropertyValue("--hour") && !$tt.style.getPropertyValue("--colmin");
+    updateDensity();
+  }
+
+  // 拡大率 ky（縦）/ kx（横）を、開始時の大きさ base に掛けて適用。
+  // anchor（スクロール領域内の座標）の下にある内容が動かないようにスクロール位置を補正する
+  function applyZoom(base, kx, ky, anchor) {
+    const rect = $scroll.getBoundingClientRect();
+    const ax = anchor.x - rect.left;
+    const ay = anchor.y - rect.top;
+    const hour = clamp(base.hour * ky, ZOOM.hour);
+    const col = clamp(base.col * kx, ZOOM.col);
+    $tt.style.setProperty("--hour", `${hour.toFixed(1)}px`);
+    $tt.style.setProperty("--colmin", `${col.toFixed(1)}px`);
+    const ry = hour / base.hour;
+    const rx = colWidth() / base.colW;
+    $scroll.scrollTop = (base.top + ay) * ry - ay;
+    $scroll.scrollLeft = (base.left + ax) * rx - ax;
+    $zoomReset.hidden = false;
+    updateDensity();
+  }
+
+  const zoomBase = () => ({
+    hour: hourPx(),
+    col: colWidth(),
+    colW: colWidth(),
+    top: $scroll.scrollTop,
+    left: $scroll.scrollLeft,
+  });
+
+  // タッチのピンチ
+  let pinch = null;
+  const spread = (t) => ({
+    dx: Math.abs(t[0].clientX - t[1].clientX),
+    dy: Math.abs(t[0].clientY - t[1].clientY),
+    x: (t[0].clientX + t[1].clientX) / 2,
+    y: (t[0].clientY + t[1].clientY) / 2,
+  });
+  $scroll.addEventListener(
+    "touchstart",
+    (ev) => {
+      if (ev.touches.length !== 2) return;
+      pinch = { start: spread(ev.touches), base: zoomBase(), raf: 0 };
+    },
+    { passive: true }
+  );
+  $scroll.addEventListener(
+    "touchmove",
+    (ev) => {
+      if (!pinch || ev.touches.length !== 2) return;
+      ev.preventDefault();
+      const now = spread(ev.touches);
+      // 指の開き方が小さい方向は拡大率が暴れるので変えない
+      const kx = pinch.start.dx > 40 ? now.dx / pinch.start.dx : 1;
+      const ky = pinch.start.dy > 40 ? now.dy / pinch.start.dy : 1;
+      cancelAnimationFrame(pinch.raf);
+      pinch.raf = requestAnimationFrame(() => applyZoom(pinch.base, kx, ky, now));
+    },
+    { passive: false }
+  );
+  const endPinch = (ev) => {
+    if (!pinch || ev.touches.length >= 2) return;
+    pinch = null;
+    saveZoom();
+    updateActiveChip();
+  };
+  $scroll.addEventListener("touchend", endPinch);
+  $scroll.addEventListener("touchcancel", endPinch);
+  // iOS Safari のページ全体のピンチズームを抑止
+  $scroll.addEventListener("gesturestart", (ev) => ev.preventDefault());
+
+  // PC: Ctrl+ホイール（トラックパッドのピンチ）で縦、Ctrl+Shift+ホイールで横
+  $scroll.addEventListener(
+    "wheel",
+    (ev) => {
+      if (!ev.ctrlKey) return;
+      ev.preventDefault();
+      const k = Math.exp(-(ev.deltaY || ev.deltaX) * 0.01);
+      const horizontal = ev.shiftKey;
+      applyZoom(zoomBase(), horizontal ? k : 1, horizontal ? 1 : k, { x: ev.clientX, y: ev.clientY });
+      saveZoom();
+    },
+    { passive: false }
+  );
+
+  $zoomReset.addEventListener("click", () => {
+    const base = zoomBase();
+    const rect = $scroll.getBoundingClientRect();
+    $tt.style.removeProperty("--hour");
+    $tt.style.removeProperty("--colmin");
+    const ry = hourPx() / base.hour;
+    $scroll.scrollTop = (base.top + rect.height / 2) * ry - rect.height / 2;
+    $zoomReset.hidden = true;
+    updateDensity();
+    try {
+      localStorage.removeItem("tt-zoom");
+    } catch {}
+  });
+
   renderNav();
   renderBoard();
+  loadZoom();
 
   // URL の #日付、またはイベント当日なら現在時刻付近を初期表示
   const hashId = location.hash.slice(1);

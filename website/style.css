@@ -128,6 +128,8 @@ button { font: inherit; color: inherit; }
   background: linear-gradient(to bottom right, var(--col-ink-primary), var(--col-secondary));
 }
 .day-chip.is-active .day-chip__week { color: var(--col-paper); }
+.day-chip--zoom { font-size: .78rem; font-weight: 700; }
+.day-chip--zoom[hidden] { display: none; }
 .day-chip--train {
   text-decoration: none;
   font-weight: 900;
@@ -138,6 +140,10 @@ button { font: inherit; color: inherit; }
 }
 .day-chip--train .day-chip__week { color: var(--col-secondary-light); }
 .day-chip--train:hover { background: #352d6b; }
+@media (max-width: 900px) {
+  .day-nav__sub { display: none; }
+  .day-nav__brand { white-space: nowrap; }
+}
 @media (max-width: 480px) {
   .day-nav { gap: 4px; margin-bottom: 8px; }
   .day-nav__title { font-size: .72rem; }
@@ -158,6 +164,7 @@ button { font: inherit; color: inherit; }
 .tt-scroll {
   position: relative;
   flex: 1;
+  touch-action: pan-x pan-y; /* ピンチはページ全体ではなく表の拡大縮小に使う */
   min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -425,6 +432,22 @@ button { font: inherit; color: inherit; }
   .ev__title { font-size: .8rem; }
   .ev__time { font-size: .62rem; padding: 1px 6px; }
 }
+
+/* 縮小時の簡略表示（app.js の updateDensity で切り替え） */
+.tt[data-density="compact"] .ev__sub,
+.tt[data-density="compact"] .ev__badges,
+.tt[data-density="tight"] .ev__sub,
+.tt[data-density="tight"] .ev__badges,
+.tt[data-density="tight"] .ev__open,
+.tt[data-density="tight"] .ev__last,
+.tt[data-density="tight"] .ev-wait__time,
+.tt[data-density="tight"] .tt-axis__half,
+.tt[data-density="tight"] .tt-axis__m { display: none; }
+.tt[data-density="compact"] .ev__inner,
+.tt[data-density="tight"] .ev__inner { gap: 1px; padding: 3px 4px; }
+.tt[data-density="tight"] .ev__time { font-size: .6rem; padding: 0 5px; }
+.tt[data-density="tight"] .ev__title { font-size: .72rem; line-height: 1.2; }
+.tt[data-density="tight"] .ev__open + .ev__inner { padding-top: 3px; }
 
 /* 早朝待機：日の出から開場まで、徐々に濃くなるグラデーション */
 .ev-wait {
