@@ -176,10 +176,12 @@
   };
   const trackPath = (d) => "M" + pts.map((_, k) => offPt(k, d).map((v) => v.toFixed(1)).join(",")).join("L") + "Z";
 
+  // 進行方向の矢印（＞の形）。見やすいよう大きめにして、数は駅間の1つおきに間引き、外回りと内回りで互い違いにする
   const arrows = (d, reverse) =>
     MAP_ST.map((_, i) => {
+      if ((i % 2 === 1) !== reverse) return ""; // 外回りは偶数番目、内回りは奇数番目に置いて、隣り合う線で互い違いにする
       const p = pointAt((stDist[i] + stDist[i + 1]) / 2, d);
-      return `<path d="M-4,-4L4,0L-4,4Z" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${p.angle + (reverse ? 180 : 0)})"/>`;
+      return `<path d="M-5,-10L5,0L-5,10" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${p.angle + (reverse ? 180 : 0)})"/>`;
     }).join("");
 
   const label = ([x, y, side], st, i) => {
@@ -193,8 +195,8 @@
 
   // 地下鉄（目安）と Zepp Sapporo の位置。市電の線より下に薄く描く
   function subwaySvg() {
-    const { tozai, nanboku, toho, links, zepp, snowStatue } = layout.subway;
-    const vLabel = (x, y, text) => `<text class="tl-sub__st" x="${x + 9}" y="${y - 4}" writing-mode="vertical-rl">${text}</text>`;
+    const { tozai, nanboku, toho, links, zepp, sync, snowStatue } = layout.subway;
+    const vLabel = (x, y, text) => `<text class="tl-sub__st" x="${x + 15}" y="${y - 4}" writing-mode="vertical-rl">${text}</text>`;
     const dot = (x, y) => `<circle cx="${x}" cy="${y}" r="4.5"/>`;
     return `<g class="tl-sub" aria-hidden="true">
       ${links
@@ -227,6 +229,12 @@
         <circle cx="0" cy="-18" r="4"/>
         <text y="14" text-anchor="middle">Zepp</text>
         <text y="27" text-anchor="middle">Sapporo</text>
+      </g>
+      <g class="tl-zepp tl-sync" transform="translate(${sync[0]},${sync[1]})">
+        <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
+        <circle cx="0" cy="-18" r="4"/>
+        <text y="14" text-anchor="middle">SYNC</text>
+        <text y="27" text-anchor="middle">north</text>
       </g>
       <g class="tl-zepp tl-statue" transform="translate(${snowStatue[0]},${snowStatue[1]})">
         <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
@@ -271,16 +279,25 @@
 
   // ---------- 描画 ----------
   $root.innerHTML = `
+    <div class="tl-grid">
+    <div class="tl-side">
+    <h4 class="train-live__title">${nl(T.text.title)}<small>${nl(T.text.titleSub)}</small></h4>
     <div class="tl-controls">
       <button type="button" class="tl-now" id="tlNow">${nl(T.text.now)}</button>
       <input type="date" class="tl-date" id="tlDate" min="${T.period.start}" max="${T.period.end}" aria-label="${T.text.dateLabel}">
-      <div class="tl-slider">
-        <input type="range" id="tlTime" min="${6 * 60}" max="${22 * 60}" step="1" aria-label="${T.text.timeLabel}">
-        <output class="tl-clock" id="tlClock"></output>
-      </div>
     </div>
-    <div class="tl-grid">
+    <div class="tl-time">
+      <button type="button" class="tl-step" data-step="-30" aria-label="30分前">30分前</button>
+      <div class="tl-wheel" role="group" aria-label="${T.text.timeLabel}">
+        <div class="tl-wheel__band" aria-hidden="true"></div>
+        <div class="tl-wheel__col" id="tlHour" role="listbox" tabindex="0" aria-label="時">${Array.from({ length: 17 }, (_, i) => `<div class="tl-wheel__item" role="option">${6 + i}</div>`).join("")}</div>
+        <span class="tl-wheel__colon" aria-hidden="true">:</span>
+        <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: 60 }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i).padStart(2, "0")}</div>`).join("")}</div>
+      </div>
+      <button type="button" class="tl-step" data-step="30" aria-label="30分後">30分後</button>
+    </div>
       <div class="tl-status" id="tlStatus"></div>
+    </div>
       <div class="tl-map-wrap">
         <div id="tlMapHost"></div>
       </div>
@@ -294,8 +311,8 @@
 
   const $now = document.getElementById("tlNow");
   const $date = document.getElementById("tlDate");
-  const $time = document.getElementById("tlTime");
-  const $clock = document.getElementById("tlClock");
+  const $hour = document.getElementById("tlHour");
+  const $min = document.getElementById("tlMin");
   const $status = document.getElementById("tlStatus");
   let $map, $train, $heading, $times, $sts;
   const $trips = document.getElementById("tlTrips");
@@ -393,8 +410,7 @@
     if (state.live) Object.assign(state, nowJST());
     $now.classList.toggle("is-active", state.live);
     $date.value = state.dateId;
-    $time.value = Math.floor(state.min);
-    $clock.textContent = fmt(Math.floor(state.min));
+    setWheel(Math.floor(state.min));
 
     const type = dayType(state.dateId);
 
@@ -481,10 +497,87 @@
     state.dateId = $date.value;
     render();
   });
-  $time.addEventListener("input", () => {
-    state.live = false;
-    state.min = Number($time.value);
-    render();
+  // ---------- 時刻のホイール（タイマー設定のように、時と分の縦のリストを回して合わせる） ----------
+  const wheelItem = () => $hour.firstElementChild.offsetHeight;
+  let ignoreScroll = 0; // render からの位置合わせで起きる scroll では状態を書き換えない（時刻 ms まで）
+  let userUntil = 0; // 指で操作している間は、render からの位置合わせをしない（時刻 ms まで）
+  let wheelRaf = 0;
+  let drag = null; // マウスでドラッグ中の { $col, y, top }
+  let dragMoved = false;
+  const wheelIndex = ($col, max) => Math.min(max, Math.max(0, Math.round($col.scrollTop / wheelItem())));
+  const markSelected = () => {
+    [[$hour, 16], [$min, 59]].forEach(([$col, max]) => {
+      const sel = wheelIndex($col, max);
+      [...$col.children].forEach(($i, k) => $i.classList.toggle("is-sel", k === sel));
+    });
+  };
+  function setWheel(min) {
+    if (performance.now() < userUntil) return;
+    const item = wheelItem();
+    ignoreScroll = performance.now() + 150;
+    $hour.scrollTop = (Math.floor(min / 60) - 6) * item;
+    $min.scrollTop = (min % 60) * item;
+    markSelected();
+  }
+  const onWheelScroll = () => {
+    if (performance.now() < ignoreScroll) return;
+    userUntil = performance.now() + 400;
+    cancelAnimationFrame(wheelRaf);
+    wheelRaf = requestAnimationFrame(() => {
+      markSelected();
+      const min = Math.min(22 * 60, (6 + wheelIndex($hour, 16)) * 60 + wheelIndex($min, 59));
+      if (min === Math.floor(state.min)) return; // 位置合わせで起きた scroll（時刻が変わっていない）では、「いま」の追従を止めない
+      state.live = false;
+      state.min = min;
+      render();
+    });
+  };
+  // 30分前／30分後ボタン（範囲は 6:00〜22:00）
+  $root.querySelectorAll(".tl-step").forEach(($b) =>
+    $b.addEventListener("click", () => {
+      state.live = false;
+      state.min = Math.min(22 * 60, Math.max(6 * 60, Math.floor(state.min) + Number($b.dataset.step)));
+      render();
+    })
+  );
+  [$hour, $min].forEach(($col) => {
+    $col.addEventListener("scroll", onWheelScroll, { passive: true });
+    // 項目をタップ／クリックすると、そこへ回る（ドラッグ直後のクリックは無視）
+    $col.addEventListener("click", (ev) => {
+      if (dragMoved) return;
+      const $i = ev.target.closest(".tl-wheel__item");
+      if ($i) $col.scrollTo({ top: [...$col.children].indexOf($i) * wheelItem(), behavior: "smooth" });
+    });
+    // マウスはホイールではなくドラッグで回す（タッチは標準のスクロール）。ホイールはページのスクロールに回す
+    $col.addEventListener("wheel", (ev) => {
+      ev.preventDefault();
+      window.scrollBy({ left: ev.deltaX, top: ev.deltaY });
+    }, { passive: false });
+    $col.addEventListener("pointerdown", (ev) => {
+      if (ev.pointerType !== "mouse" || ev.button !== 0) return;
+      drag = { $col, y: ev.clientY, top: $col.scrollTop };
+      dragMoved = false;
+      try {
+        $col.setPointerCapture(ev.pointerId);
+      } catch {}
+      $col.style.scrollSnapType = "none"; // ドラッグ中は吸着させない
+      $col.classList.add("is-dragging");
+    });
+    $col.addEventListener("pointermove", (ev) => {
+      if (!drag || drag.$col !== $col) return;
+      if (Math.abs(ev.clientY - drag.y) > 4) dragMoved = true;
+      $col.scrollTop = drag.top - (ev.clientY - drag.y);
+    });
+    const endDrag = () => {
+      if (!drag || drag.$col !== $col) return;
+      drag = null;
+      $col.classList.remove("is-dragging");
+      // 一番近い項目へ吸着させる（吸着を戻してから動かす）
+      $col.style.scrollSnapType = "";
+      $col.scrollTo({ top: Math.round($col.scrollTop / wheelItem()) * wheelItem(), behavior: "smooth" });
+      setTimeout(() => (dragMoved = false), 0);
+    };
+    ["pointerup", "pointercancel"].forEach((t) => $col.addEventListener(t, endDrag));
   });
 
   mountMap();

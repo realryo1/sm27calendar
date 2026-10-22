@@ -215,7 +215,9 @@
 
   function renderVenues() {
     $venueList.innerHTML = venues
-      .map((v) => {
+      .map((v, vi) => {
+        // 非公式の会場が並び始める所に、非公式イベントの表題を置く
+        const fanTitle = v.fan && !venues[vi - 1]?.fan ? `<h2 class="section-title venue-list__title">${br(site.fanTitle)}</h2>` : "";
         const groups = [];
         events
           .filter((e) => e.letter === v.letter)
@@ -254,7 +256,7 @@
           : `${commonDays ? `<p class="vc-days">${commonDays}</p>` : ""}<dl class="venue-card__info">${place}${priceRows}</dl>${noteBlocks(commonNote)}
             <ul class="vc-events">${groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds, { simple: true, commonTitle, commonDays, hideNote: !!commonNote, hideLinks: commonLinks.length > 0 })).join("")}</ul>${commonLinks.length ? linkButtons(commonLinks) : ""}`;
         const flat = single ?? (live ? groups[0] : null);
-        return `<article class="venue-card theme-${v.theme}${v.fan ? " venue-card--fan" : ""}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.letter}"${
+        return `${fanTitle}<article class="venue-card theme-${v.theme}${v.fan ? " venue-card--fan" : ""}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.letter}"${
           flat ? ` data-ids="${flat.ids.join(" ")}"` : ""
         }>
           <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${v.fan ? `${badge("fan", B.fan)} ` : ""}${cardTitle ? `${br(cardTitle)}<small class="venue-card__area">${br(v.name)}</small>` : `${headName(v)}<small class="venue-card__area">${br(v.area)}</small>`}</h3>
@@ -262,7 +264,6 @@
           ${
             live
               ? `<div class="train-live" id="train-live">
-                  <h4 class="train-live__title">${TR.title}<small>${TR.titleSub}</small></h4>
                   <div id="trainLive"></div>
                 </div>`
               : ""
