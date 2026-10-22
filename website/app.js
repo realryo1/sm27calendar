@@ -111,6 +111,7 @@
           <span class="tt-head__letter">${v.letter}</span>
           <span class="tt-head__name" title="${esc(v.name)}">${headName(v)}</span>
           <span class="tt-head__area">${br(v.area)}</span>
+          <span class="tt-head__kind tt-head__kind--${v.fan ? "fan" : "official"}">${v.fan ? `${B.fan}<small>ファン主催</small>` : B.official}</span>
         </div></div>`
       )
       .join("");
@@ -147,7 +148,7 @@
 
   function renderEvent(e) {
     if (e.allDay) {
-      return `<button class="ev ev--allday" data-ev="${e.id}">
+      return `<button class="ev ev--allday${e.official ? "" : " ev--fan"}" data-ev="${e.id}">
         <span class="ev__inner">
           <span class="ev__time">${timeText(e)}</span>
           <span class="ev__title">${br(e.title)}</span>
@@ -176,7 +177,7 @@
         </div>`
       )
       .join("");
-    return `${waitPart}${marks}<button class="ev${e.tentative === "end" ? " ev--tentative-end" : e.tentative ? " ev--tentative" : ""}" data-ev="${e.id}"
+    return `${waitPart}${marks}<button class="ev${e.official ? "" : " ev--fan"}${e.tentative === "end" ? " ev--tentative-end" : e.tentative ? " ev--tentative" : ""}" data-ev="${e.id}"
         style="top:${pos(top)};height:${span(top, end)}">
       ${openPart}
       <span class="ev__inner">
@@ -222,10 +223,10 @@
           : `<dl class="venue-card__info">${place}</dl>
             <ul class="vc-events">${groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds)).join("")}</ul>`;
         const flat = single ?? (live ? groups[0] : null);
-        return `<article class="venue-card theme-${v.theme}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.id}"${
+        return `<article class="venue-card theme-${v.theme}${v.fan ? " venue-card--fan" : ""}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.id}"${
           flat ? ` data-ids="${flat.ids.join(" ")}"` : ""
         }>
-          <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${headName(v)}<small class="venue-card__area">${br(v.area)}</small></h3>
+          <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${v.fan ? `${badge("fan", B.fan)} ` : ""}${headName(v)}<small class="venue-card__area">${br(v.area)}</small></h3>
           ${list}
           ${
             live
