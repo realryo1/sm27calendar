@@ -156,6 +156,7 @@
       <span class="tt-day__date">${d.label}</span>
       <span class="tt-day__week">${d.week}</span>
       <span class="tt-day__ja">（${d.weekJa}）</span>
+      <span class="tt-day__sub">${br(site.subtitle)}</span>
     </span>`;
 
   function renderEvent(e) {
