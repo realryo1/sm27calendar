@@ -24,7 +24,7 @@
 
   --hour: 72px;
   --head: 56px;
-  --divider: 46px;
+  --divider: 36px;
   --axis: 56px;
   --colmin: 96px;
 }
@@ -40,7 +40,7 @@
   :root {
     --hour: 60px;
     --head: 66px;
-    --divider: 40px;
+    --divider: 34px;
     --axis: 26px;
     --colmin: 112px;
   }
@@ -223,9 +223,11 @@ button { font: inherit; color: inherit; }
   background: var(--col-paper);
 }
 
+.tt-corner,
+.tt-head-cell { grid-row: 2; } /* 日付帯（1行目）の下 */
 .tt-corner {
   position: sticky;
-  top: 0;
+  top: var(--divider);
   left: 0;
   z-index: 5;
   margin-right: -8px;
@@ -234,9 +236,8 @@ button { font: inherit; color: inherit; }
 
 .tt-head-cell {
   position: sticky;
-  top: 0;
+  top: var(--divider); /* 日付帯の直下に貼り付く */
   z-index: 4;
-  padding-bottom: 6px;
   background: var(--col-paper);
 }
 /* 会場見出しは列の背景色に溶け込ませ、主張を控えめに */
@@ -340,25 +341,18 @@ button { font: inherit; color: inherit; }
   .tt-head .tt-head__kind--fan { background: repeating-linear-gradient(-45deg, rgb(194 53 79 / .16) 0 5px, rgb(255 255 255 / .6) 5px 10px); }
 }
 
-/* 日付の帯：スクロール中は会場見出しの直下に貼り付く */
+/* 日付の帯。1日目の帯（--top）は会場見出しの上に常に貼り付き、今見ている日を表す。2日目以降は日の境目に置く普通の帯 */
 .tt-day {
   grid-column: 1 / -1;
-  position: sticky;
-  top: var(--head);
-  z-index: 3;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   height: var(--divider);
-  padding-bottom: 6px;
   background: var(--col-paper);
 }
-/* 日付の右に伸びる細い区切り線 */
-.tt-day::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  margin: 0 0 .5em 14px;
-  background: linear-gradient(to right, var(--col-secondary-light), transparent 85%);
+.tt-day--top {
+  position: sticky;
+  top: 0;
+  z-index: 6; /* 会場見出しより前 */
 }
 .tt-day__label {
   position: sticky;
@@ -366,25 +360,24 @@ button { font: inherit; color: inherit; }
   z-index: 1;
   display: inline-flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 0 6px 0 4px;
-  background: var(--col-paper);
+  gap: 6px;
+  margin-left: 2px;
+  padding: 4px 8px;
   line-height: 1;
 }
 .tt-day__date {
   font-family: var(--font-display);
-  font-size: 1.7rem;
+  font-size: 1.3rem;
   color: var(--col-ink-primary);
   background: linear-gradient(to right, var(--col-ink-primary), var(--col-secondary));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.tt-day__week { font-family: var(--font-display); font-size: .78rem; letter-spacing: .14em; color: var(--col-secondary); }
-.tt-day__ja { font-size: .75rem; font-weight: 700; opacity: .6; }
+.tt-day__week { font-family: var(--font-display); font-size: .66rem; letter-spacing: .14em; color: var(--col-secondary); }
+.tt-day__ja { font-size: .68rem; font-weight: 700; opacity: .6; }
 @media (max-width: 640px) {
-  .tt-day { padding-bottom: 6px; }
-  .tt-day__date { font-size: 1.35rem; }
+  .tt-day__date { font-size: 1.15rem; }
 }
 
 .tt-axis {
@@ -430,6 +423,8 @@ button { font: inherit; color: inherit; }
     var(--c-tint);
   border-radius: 0 0 10px 10px;
 }
+/* 2日目以降は上に会場見出しがないので、上の角も丸める（1日目は見出しとつながる） */
+.tt-col--round { border-radius: 10px; }
 
 /* 非公式の会場の列：背景を市松模様にして、チェックの片側を白く色抜きする */
 .tt-fan {
@@ -520,9 +515,19 @@ button { font: inherit; color: inherit; }
   color: var(--col-paper);
   background: var(--c);
 }
+/* 予定内のバッジ（公式など）は時間（.ev__time）と同じカプセル型・同じ文字サイズ。違うのはフォントの種類だけ */
+.ev .badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: clamp(.58rem, min(5.2cqw, 8cqh), 1rem);
+  letter-spacing: .02em;
+  line-height: inherit;
+}
 .ev__title { font-weight: 900; font-size: clamp(.83rem, min(7.5cqw, 10.5cqh), 1.43rem); line-height: 1.3; color: var(--c-dark); word-break: keep-all; overflow-wrap: anywhere; } /* 日本語を文字の途中で折らず、スペースの位置で折る（収まらない時だけ強制折り返し） */
 .ev__sub { font-size: clamp(.6rem, min(5.6cqw, 9cqh), 1.05rem); font-weight: 700; }
-.ev__badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 2px; }
+/* 時間・サブタイトル（昼公演など）・バッジ（公式など）は横並び。収まらない幅では折り返す */
+.ev__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5px 6px; margin-bottom: 2px; } /* チップが縦に重なったときも、チップ同士とタイトルとの間隔が近くなるよう行間を広めに */
+.ev__badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
 /* 予定の高さに収まらないときは app.js の fitEvents が付けるクラスで、バッジ→サブタイトル→時刻の順に隠す（最後はタイトルのみ） */
 .ev--nobadge .ev__badges,
 .ev--nosub .ev__sub,
@@ -588,7 +593,7 @@ button { font: inherit; color: inherit; }
   border-bottom-color: rgb(255 255 255 / .6);
 }
 .ev:not(.ev--fan) .ev__time { background: rgb(255 255 255 / .22); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .6); }
-.ev:not(.ev--fan) .badge--official { background: rgb(255 255 255 / .22); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .7); }
+.ev:not(.ev--fan) .badge--official { background: rgb(255 255 255 / .22); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .6); }
 
 .ev--allday {
   top: 8px;
@@ -601,21 +606,14 @@ button { font: inherit; color: inherit; }
 
 @media (max-width: 640px) {
   .ev { left: 3px; right: 3px; }
-  .ev__time { padding: 1px 6px; } /* 文字サイズは画面幅ではなく列幅（cqw）だけで決める */
+  .ev__time,
+  .ev .badge { padding: 1px 6px; } /* 文字サイズは画面幅ではなく列幅（cqw）だけで決める */
 }
 
 /* 縮小時の簡略表示（app.js の updateDensity で切り替え） */
-.tt[data-density="compact"] .ev__sub,
-.tt[data-density="compact"] .ev__badges,
-.tt[data-density="tight"] .ev__sub,
-.tt[data-density="tight"] .ev__badges,
+/* 予定カードの中身は縦の縮小率で見た目を変えない（余白・行間もそのまま）。高さが足りない予定だけ app.js の fitEvents が隠す */
 .tt[data-density="tight"] .tt-axis__half,
 .tt[data-density="tight"] .tt-axis__m { display: none; }
-.tt[data-density="compact"] .ev__inner,
-.tt[data-density="tight"] .ev__inner { gap: 1px; padding: 8px 4px 3px; }
-.tt[data-density="tight"] .ev__time { padding: 0 5px; } /* 文字サイズは縦の縮小に連動させない */
-.tt[data-density="tight"] .ev__title { line-height: 1.2; }
-.tt[data-density="tight"] .ev__open + .ev__inner { padding-top: 6px; }
 
 /* 早朝待機：日の出から開場まで、徐々に濃くなるグラデーション */
 .ev-wait {

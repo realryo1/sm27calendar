@@ -59,7 +59,8 @@
   };
 
   // 行構成: 1行目=会場見出し、以降は日ごとに [日付帯, カレンダー本体]
-  const dayRow = (i) => 2 + i * 2;
+  // 行の並び：1日目の日付帯 → 会場見出し（2行目・style.css） → 1日目の本体 → 2日目の日付帯 → 2日目の本体 …（日付帯が会場見出しの上に来る）
+  const dayRow = (i) => (i === 0 ? 1 : 2 + i * 2);
   const bodyRow = (i) => 3 + i * 2;
 
   // index.html の枠に、固定の文言を流し込む
@@ -131,34 +132,41 @@
               .filter((e) => e.letter === v.letter)
               .map((e) => renderEvent(e))
               .join("");
-            return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}" style="grid-row:${bodyRow(i)}">${blocks}</div>`;
+            return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}${i > 0 ? " tt-col--round" : ""}" style="grid-row:${bodyRow(i)}">${blocks}</div>`;
           })
           .join("");
-        return `<div class="tt-day" id="day-${d.id}" style="grid-row:${dayRow(i)}">
-            <span class="tt-day__label">
-              <span class="tt-day__date">${d.label}</span>
-              <span class="tt-day__week">${d.week}</span>
-              <span class="tt-day__ja">（${d.weekJa}）</span>
-            </span>
-          </div>${axis(bodyRow(i))}${cols}`;
+        // 1日目の帯は一番上に貼り付く「現在の日付」（スクロールに合わせて updateActiveChip が書き換える）。2日目以降は日の境目に置く普通の帯
+        const band =
+          i === 0
+            ? `<div class="tt-day tt-day--top" style="grid-row:${dayRow(i)}">${dayBand(d)}</div>`
+            : `<div class="tt-day" style="grid-row:${dayRow(i)}">${dayBand(d)}</div>`;
+        return `${band}${axis(bodyRow(i))}${cols}`;
       })
       .join("");
 
     $tt.style.setProperty("--cols", venues.length);
-    $tt.style.gridTemplateRows = `var(--head) repeat(${days.length}, var(--divider) calc(${range.end - range.start} * var(--hour)))`;
+    $tt.style.gridTemplateRows = `var(--divider) var(--head) calc(${range.end - range.start} * var(--hour)) repeat(${days.length - 1}, var(--divider) calc(${range.end - range.start} * var(--hour)))`;
     $tt.innerHTML = `<div class="tt-corner"></div>${heads}${sections}<div class="tt-now" hidden></div>`;
 
     renderVenues();
     updateNow();
   }
 
+  const dayBand = (d) => `<span class="tt-day__label">
+      <span class="tt-day__date">${d.label}</span>
+      <span class="tt-day__week">${d.week}</span>
+      <span class="tt-day__ja">（${d.weekJa}）</span>
+    </span>`;
+
   function renderEvent(e) {
     if (e.allDay) {
       return `<button class="ev ev--allday${e.official ? "" : " ev--fan"}" data-ev="${e.id}">
         <span class="ev__inner">
-          <span class="ev__time">${timeText(e)}</span>
+          <span class="ev__meta">
+            <span class="ev__time">${timeText(e)}</span>
+            <span class="ev__badges">${badges(e)}</span>
+          </span>
           <span class="ev__title">${br(e.title)}</span>
-          <span class="ev__badges">${badges(e)}</span>
         </span>
       </button>`;
     }
@@ -187,10 +195,12 @@
         style="top:${pos(top)};height:${span(top, end)}">
       ${openPart}
       <span class="ev__inner">
-        <span class="ev__time">${e.live ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
+        <span class="ev__meta">
+          <span class="ev__time">${e.live ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
+          <span class="ev__badges">${badges(e)}</span>
+        </span>
         <span class="ev__title">${br(e.title)}</span>
         ${e.sub ? `<span class="ev__sub">${br(e.sub)}</span>` : ""}
-        <span class="ev__badges">${badges(e)}</span>
       </span>
       ${lastEntry}
     </button>`;
@@ -401,6 +411,12 @@
     if ($scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 2) active = axes.length - 1;
     if (pinnedDay != null) active = pinnedDay;
     $dayNav.querySelectorAll(".day-chip").forEach((c, i) => c.classList.toggle("is-active", i === active));
+    // 一番上に貼り付いている日付帯を、今見ている日に合わせる
+    const $top = $tt.querySelector(".tt-day--top");
+    if ($top.dataset.day !== String(active)) {
+      $top.dataset.day = String(active);
+      $top.innerHTML = dayBand(days[active]);
+    }
   }
 
   $dayNav.addEventListener("click", (ev) => {
@@ -486,9 +502,10 @@
     const rect = $scroll.getBoundingClientRect();
     const ax = anchor.x - rect.left;
     const ay = anchor.y - rect.top;
-    const hour = clamp(base.hour * ky, ZOOM.hour);
+    // 1時間の高さは偶数のpxに丸める（正時・30分の横線が小数pxにかかってにじみ、太さがそろわなくなるため）
+    const hour = Math.round(clamp(base.hour * ky, ZOOM.hour) / 2) * 2;
     const col = clamp(base.col * kx, ZOOM.col);
-    $tt.style.setProperty("--hour", `${hour.toFixed(1)}px`);
+    $tt.style.setProperty("--hour", `${hour}px`);
     $tt.style.setProperty("--colmin", `${col.toFixed(1)}px`);
     const ry = hour / base.hour;
     const rx = colWidth() / base.colW;
@@ -546,14 +563,27 @@
   $scroll.addEventListener("gesturestart", (ev) => ev.preventDefault());
 
   // PC: Ctrl+ホイール（トラックパッドのピンチ）で縦、Ctrl+Shift+ホイールで横
+  // マウスのホイールは1目盛りが大きい（deltaY ≒ 100）ので、トラックパッドより係数を小さくして1目盛り≒1.1倍にする。
+  // 1時間の高さは偶数pxに丸めるため、小さな変化が丸めで消えないよう、縦の目標値は小数のまま持ち回す
+  let wheelHour = null;
   $scroll.addEventListener(
     "wheel",
     (ev) => {
       if (!ev.ctrlKey) return;
       ev.preventDefault();
-      const k = Math.exp(-(ev.deltaY || ev.deltaX) * 0.01);
-      const horizontal = ev.shiftKey;
-      applyZoom(zoomBase(), horizontal ? k : 1, horizontal ? 1 : k, { x: ev.clientX, y: ev.clientY });
+      const delta = ev.deltaY || ev.deltaX;
+      const notch = ev.deltaMode === 1 || Math.abs(delta) >= 40;
+      const k = Math.exp(-delta * (notch ? 0.001 : 0.01));
+      const base = zoomBase();
+      let kx = 1;
+      let ky = 1;
+      if (ev.shiftKey) kx = k;
+      else {
+        if (wheelHour == null || Math.abs(wheelHour - base.hour) > 2) wheelHour = base.hour; // 他の操作で変わっていたら現在値から
+        wheelHour = clamp(wheelHour * k, ZOOM.hour);
+        ky = wheelHour / base.hour;
+      }
+      applyZoom(base, kx, ky, { x: ev.clientX, y: ev.clientY });
     },
     { passive: false }
   );
