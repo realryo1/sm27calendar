@@ -32,6 +32,8 @@
     (ev.tentative === "end" ? badge("tentative", B.tentativeEnd) : ev.tentative ? badge("tentative", B.tentative) : "");
 
   // 会場見出し名（表の列見出しと下のカードで共通）。括弧書きは小さく表示
+  // 見出しの会場名の幅の目安（全角=1、半角=0.6）。狭い見出しで改行せず収まる文字サイズを CSS で出すのに使う
+  const nameWidth = (v) => [...(v.short ?? v.name)].reduce((w, c) => w + (c.charCodeAt(0) < 256 ? 0.6 : 1), 0).toFixed(1);
   const headName = (v) => br(v.short ?? v.name).replace(/（(.+?)）/, "<small>（$1）</small>");
 
   // 仮の時刻は取り消し線で示す（tentative: true＝すべて仮、"end"＝終演のみ仮）
@@ -109,9 +111,8 @@
       .map(
         (v) => `<div class="tt-head-cell"><div class="tt-head theme-${v.theme}">
           <span class="tt-head__letter">${v.letter}</span>
-          <span class="tt-head__name" title="${esc(v.name)}">${headName(v)}</span>
-          <span class="tt-head__area">${br(v.area)}</span>
-          <span class="tt-head__kind tt-head__kind--${v.fan ? "fan" : "official"}">${v.fan ? `${B.fan}<small>ファン主催</small>` : B.official}</span>
+          <span class="tt-head__name" style="--nl:${nameWidth(v)}" title="${esc(v.name)}">${headName(v)}</span>
+          <span class="tt-head__kind tt-head__kind--${v.fan ? "fan" : "official"}">${v.fan ? B.fan : B.official}</span>
         </div></div>`
       )
       .join("");
@@ -125,7 +126,7 @@
               .filter((e) => e.venue === v.id)
               .map((e) => renderEvent(e))
               .join("");
-            return `<div class="tt-col theme-${v.theme}" style="grid-row:${bodyRow(i)}">${blocks}</div>`;
+            return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}" style="grid-row:${bodyRow(i)}">${blocks}</div>`;
           })
           .join("");
         return `<div class="tt-day" id="day-${d.id}" style="grid-row:${dayRow(i)}">

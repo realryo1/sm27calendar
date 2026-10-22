@@ -32,10 +32,14 @@
 /* スマホ表示の切り替え幅は 640px に統一（ボトムバー・操作ヒント・会場列の横スクロール）。
    640px 超は5会場がすべて収まる列幅、640px 以下は列幅を広げて横スワイプで見る */
 
+/* 列が狭くなる幅では見出しを2段（会場名＋公式/非公式の帯）にするので、高さを確保 */
+@media (max-width: 900px) {
+  :root { --head: 66px; }
+}
 @media (max-width: 640px) {
   :root {
     --hour: 60px;
-    --head: 40px;
+    --head: 66px;
     --divider: 40px;
     --axis: 26px;
     --colmin: 112px;
@@ -239,7 +243,7 @@ button { font: inherit; color: inherit; }
 .tt-head {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(max-content, calc(100% / 3)); /* 公式／非公式の帯は幅の1/3（文字が収まらない狭さでは文字幅） */
-  grid-template-areas: "letter name kind" "letter area kind";
+  grid-template-areas: "letter name kind";
   align-items: center;
   column-gap: 8px;
   height: 100%;
@@ -299,34 +303,41 @@ button { font: inherit; color: inherit; }
     repeating-linear-gradient(-45deg, rgb(194 53 79 / .16) 0 5px, rgb(255 255 255 / .6) 5px 10px);
 }
 .tt-head__kind small { font-size: .6em; font-weight: 700; }
-.tt-head__area { grid-area: area; font-size: .66rem; opacity: .7; }
-/* 641〜900px は列幅が狭いので、会場名を2行までにして補足を省く */
-@media (max-width: 900px) {
-  .tt-head__area { display: none; }
-  .tt-head { grid-template-areas: "letter name kind"; column-gap: 5px; padding: 2px 6px; }
-  .tt-head__kind { margin: -2px -6px -2px 0; padding: 0 6px 0 10px; font-size: .68rem; }
-  .tt-head__name {
-    display: -webkit-box;
-    font-size: .72rem;
-    line-height: 1.2;
-    white-space: normal;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+/* 見出しの幅が狭いとき（スマホ・縮小表示）は、上段（頭文字＋会場名）と下段（公式／非公式の帯）の2エリアに分ける */
+.tt-head-cell { container-type: inline-size; }
+@container (max-width: 230px) {
+  .tt-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr; /* 会場名と公式/非公式の帯を 1:1 の高さで上下に分ける */
+    grid-template-areas: "letter name" "kind kind";
+    column-gap: 5px;
+    padding: 0 6px;
+    overflow: hidden;
   }
-}
-@media (max-width: 640px) {
-  .tt-head { column-gap: 5px; padding: 2px 6px; }
-  .tt-head__letter { font-size: 1rem; }
+  .tt-head__letter { font-size: 1.1rem; }
+  /* 会場名は改行せず1行で、見出しの幅に収まる大きさに自動で縮める（--nl は app.js が出す名前の幅の目安） */
   .tt-head__name {
-    display: -webkit-box;
-    font-size: .68rem;
-    line-height: 1.2;
-    white-space: normal;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    font-size: clamp(.5rem, calc((100cqw - 44px) / var(--nl)), .95rem);
+    line-height: 1.3;
   }
-  .tt-head__area { display: none; }
-  .tt-head { grid-template-areas: "letter name kind"; }
+  /* 下段は見出しの左右いっぱいに広げた帯。グラデーションは使わない */
+  .tt-head .tt-head__kind {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    align-self: stretch;
+    align-items: center;
+    margin: 0 -6px;
+    padding: 0 6px;
+    border-radius: 0;
+    /* 帯の文字は改行させず、幅に応じて小さくする */
+    white-space: nowrap;
+    font-size: clamp(.75rem, 9cqw, 1rem);
+    line-height: 1.3;
+  }
+  .tt-head .tt-head__kind--official { font-weight: 700; background: var(--c-light); }
+  .tt-head .tt-head__kind--fan { background: repeating-linear-gradient(-45deg, rgb(194 53 79 / .16) 0 5px, rgb(255 255 255 / .6) 5px 10px); }
 }
 
 /* 日付の帯：スクロール中は会場見出しの直下に貼り付く */
@@ -418,6 +429,14 @@ button { font: inherit; color: inherit; }
     repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) / 2 - 1px), var(--col-paper) calc(var(--hour) / 2 - 1px) calc(var(--hour) / 2)),
     var(--c-tint);
   border-radius: 0 0 10px 10px;
+}
+
+/* 非公式の会場の列：背景を市松模様にして、チェックの片側を白く色抜きする */
+.tt-fan {
+  background:
+    repeating-linear-gradient(to bottom, var(--c-light) 0 1px, transparent 1px var(--hour)),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) / 2 - 1px), var(--col-paper) calc(var(--hour) / 2 - 1px) calc(var(--hour) / 2)),
+    conic-gradient(var(--c-tint) 25%, var(--col-paper) 0 50%, var(--c-tint) 0 75%, var(--col-paper) 0) 0 0 / 24px 24px round; /* round でマスの数が整数になり、列幅の端がぴったり揃う */
 }
 
 /* ---------- Event block ---------- */
@@ -1144,11 +1163,11 @@ button { font: inherit; color: inherit; }
 .vc-ev__head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .vc-ev__days { font-family: var(--font-display); font-size: .8rem; color: var(--c); }
 .vc-ev__days small { font-family: var(--font-base); font-weight: 700; font-size: .72rem; }
-/* 非公式の会場カードも予定ブロックと同じ赤の斜めストライプ枠で囲む */
+/* 非公式の会場カードも予定ブロックと同じ赤の斜めストライプ枠で囲み、塗りは列と同じ市松模様にする */
 .venue-card.venue-card--fan {
   border: 8px solid transparent;
   background:
-    linear-gradient(var(--col-paper), var(--col-paper)) padding-box,
+    conic-gradient(var(--c-tint) 25%, var(--col-paper) 0 50%, var(--c-tint) 0 75%, var(--col-paper) 0) 0 0 / 24px 24px round padding-box,
     repeating-linear-gradient(-45deg, var(--col-fan) 0 8px, transparent 8px 16px) border-box;
 }
 .venue-card .ev__badges { justify-content: flex-start; margin: 0; }
