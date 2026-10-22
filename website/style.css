@@ -904,7 +904,7 @@ button { font: inherit; color: inherit; }
 
 .tl-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr);
+  grid-template-columns: 3fr 4fr;
   align-items: start;
 }
 /* PC：左に「操作（いま・日付・時刻）＋今の駅」、右に地図の2カラム。左はスクロール中も貼り付く。
@@ -912,7 +912,7 @@ button { font: inherit; color: inherit; }
 .tl-side {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
   min-width: 0;
   container-type: inline-size; /* 幅が足りないときの並べ替え用（下の @container） */
   position: sticky;
@@ -921,6 +921,7 @@ button { font: inherit; color: inherit; }
 }
 /* 表題・操作部・時刻・今の駅は同じ幅で中央にそろえる（今の駅のカードの最大幅と同じ 390px） */
 .tl-side .train-live__title,
+.tl-side .vc-ev__note,
 .tl-side .tl-controls,
 .tl-side .tl-time {
   width: 100%;
@@ -1092,10 +1093,10 @@ button { font: inherit; color: inherit; }
 
 /* 路線図（札幌市電ループ線） */
 .train-live { --track-outer: #F2A31B; --track-inner: #4BA9E3; }
-.tl-map-wrap { min-width: 0; }
+.tl-map-wrap { min-width: 0; padding: 0 5px; }
 /* スマホ用の横幅をつめた配置（画面幅に収めたうえで文字を少し大きく） */
 /* PC・スマホ共通。PCでも大きく引き伸ばさない */
-.tl-map { display: block; max-height: 750px; margin: 0 5px ; overflow: visible; font-family: var(--font-base); }
+.tl-map { display: block; max-height: 750px; margin: 0 auto; overflow: visible; font-family: var(--font-base); }
 /* 目安の地下鉄と Zepp Sapporo（市電より控えめに） */
 .tl-sub__line line,
 .tl-sub__line polyline { fill: none; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
@@ -1199,7 +1200,6 @@ button { font: inherit; color: inherit; }
 .tl-table td { padding: 4px 6px; font-family: var(--font-display); border-bottom: 1px solid var(--c-tint); }
 .tl-table td small { font-family: var(--font-base); font-size: .68rem; }
 .tl-table tr.is-current td { background: var(--col-primary-light); }
-.tl-note { margin: 14px 0 0; font-size: .75rem; opacity: .85; }
 
 /* ---------- Venues（会場・イベント詳細） ---------- */
 .venues { margin-top: 36px; scroll-margin-top: 16px; }

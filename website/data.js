@@ -42,6 +42,20 @@ window.TT_DATA = {
       unannounced: "未発表",
       allDayUnannounced: "時間未発表",
     },
+    // 雪ミク電車いまどこ（市電マップ）の文言。運行期間・時刻表などのデータは train.js
+    train: {
+      chip: "市電いまどこ",
+      chipEn: "TRAIN",
+      title: "雪ミク電車いまどこ？",
+      titleSub: "（在線予測）",
+      tripsSummary: "発車時刻（2024年ダイヤ）",
+      note: "すすきの～西4丁目間の時刻から計算しています。<br>27年の運行計画は未発表です。2024年の時刻を使用しています。",
+      offPeriod: "運行期間外",
+      now: "いま",
+      dateLabel: "日付",
+      timeLabel: "時刻",
+      mapLabel: "札幌市電ループ線の路線図と雪ミク電車の予測位置",
+    },
     updatedPrefix: "最終情報更新：",
   },
 

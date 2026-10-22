@@ -1,6 +1,7 @@
 // 雪ミク電車 在線予測
 (() => {
   const T = window.TT_TRAIN;
+  const TEXT = window.TT_DATA.site.train; // 画面の文言は data.js
   const N = T.stations.length; // pos N は一周して戻った西4丁目
   const L = T.loopMinutes;
 
@@ -216,7 +217,7 @@
         <text class="tl-sub__name" x="${nanboku.x}" y="${nanboku.y2 + 14}" text-anchor="middle">南北線</text>
       </g>
       <g class="tl-sub__line tl-sub__line--toho">
-        <polyline points="${toho.x},${toho.y1} ${toho.x},${toho.y2} ${layout.width + 8},${toho.y2 + 8}"/>
+        <polyline points="${toho.x},${toho.y1} ${toho.x},${toho.y2} ${layout.width},${toho.y2 + 8}"/>
         ${toho.st.map(([n, y]) => dot(toho.x, y) + vLabel(toho.x, y, n)).join("")}
         <text class="tl-sub__name" x="${toho.x}" y="${toho.y2 + 20}" text-anchor="middle">東豊線</text>
       </g>
@@ -246,7 +247,7 @@
   }
 
   const buildMapSvg = () => `
-    <svg class="tl-map" id="tlMap" viewBox="0 ${-TOP_PAD} ${layout.width} ${layout.height + TOP_PAD}" role="img" aria-label="${T.text.mapLabel}">
+    <svg class="tl-map" id="tlMap" viewBox="0 ${-TOP_PAD} ${layout.width} ${layout.height + TOP_PAD}" role="img" aria-label="${TEXT.mapLabel}">
       ${subwaySvg()}
       <g class="tl-map__track tl-map__track--outer">
         <path d="${trackPath(GAP)}"/>
@@ -281,18 +282,19 @@
   $root.innerHTML = `
     <div class="tl-grid">
     <div class="tl-side">
-    <h4 class="train-live__title">${nl(T.text.title)}<small>${nl(T.text.titleSub)}</small></h4>
+    <h4 class="train-live__title">${nl(TEXT.title)}<small>${nl(TEXT.titleSub)}</small></h4>
+    <p class="vc-ev__note">${nl(TEXT.note)}</p>
     <div class="tl-controls">
-      <button type="button" class="tl-now" id="tlNow">${nl(T.text.now)}</button>
-      <input type="date" class="tl-date" id="tlDate" min="${T.period.start}" max="${T.period.end}" aria-label="${T.text.dateLabel}">
+      <button type="button" class="tl-now" id="tlNow">${nl(TEXT.now)}</button>
+      <input type="date" class="tl-date" id="tlDate" min="${T.period.start}" max="${T.period.end}" aria-label="${TEXT.dateLabel}">
     </div>
     <div class="tl-time">
       <button type="button" class="tl-step" data-step="-30" aria-label="30分前">30分前</button>
-      <div class="tl-wheel" role="group" aria-label="${T.text.timeLabel}">
+      <div class="tl-wheel" role="group" aria-label="${TEXT.timeLabel}">
         <div class="tl-wheel__band" aria-hidden="true"></div>
         <div class="tl-wheel__col" id="tlHour" role="listbox" tabindex="0" aria-label="時">${Array.from({ length: 17 }, (_, i) => `<div class="tl-wheel__item" role="option">${6 + i}</div>`).join("")}</div>
         <span class="tl-wheel__colon" aria-hidden="true">:</span>
-        <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: 60 }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i).padStart(2, "0")}</div>`).join("")}</div>
+        <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: 180 }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i % 60).padStart(2, "0")}</div>`).join("")}</div>
       </div>
       <button type="button" class="tl-step" data-step="30" aria-label="30分後">30分後</button>
     </div>
@@ -303,10 +305,9 @@
       </div>
     </div>
     <details class="tl-trips">
-      <summary>${nl(T.text.tripsSummary)}</summary>
+      <summary>${nl(TEXT.tripsSummary)}</summary>
       <div id="tlTrips"></div>
     </details>
-    <p class="tl-note">${nl(T.text.note)}</p>
   `;
 
   const $now = document.getElementById("tlNow");
@@ -417,7 +418,7 @@
     $sts.forEach((g) => g.classList.remove("is-current", "is-next"));
     if (!type) {
       $map.dataset.dir = "";
-      $status.innerHTML = `<p class="tl-off">${nl(T.text.offPeriod)}（${ymd(T.period.start)}〜${ymd(T.period.end)}）</p>`;
+      $status.innerHTML = `<p class="tl-off">${nl(TEXT.offPeriod)}（${ymd(T.period.start)}〜${ymd(T.period.end)}）</p>`;
       $train.style.display = "none";
       $times.forEach((t) => (t.textContent = ""));
       $trips.innerHTML = "";
@@ -502,11 +503,12 @@
   let ignoreScroll = 0; // render からの位置合わせで起きる scroll では状態を書き換えない（時刻 ms まで）
   let userUntil = 0; // 指で操作している間は、render からの位置合わせをしない（時刻 ms まで）
   let wheelRaf = 0;
+  let wheelSettle = 0;
   let drag = null; // マウスでドラッグ中の { $col, y, top }
   let dragMoved = false;
   const wheelIndex = ($col, max) => Math.min(max, Math.max(0, Math.round($col.scrollTop / wheelItem())));
   const markSelected = () => {
-    [[$hour, 16], [$min, 59]].forEach(([$col, max]) => {
+    [[$hour, 16], [$min, 179]].forEach(([$col, max]) => {
       const sel = wheelIndex($col, max);
       [...$col.children].forEach(($i, k) => $i.classList.toggle("is-sel", k === sel));
     });
@@ -516,7 +518,7 @@
     const item = wheelItem();
     ignoreScroll = performance.now() + 150;
     $hour.scrollTop = (Math.floor(min / 60) - 6) * item;
-    $min.scrollTop = (min % 60) * item;
+    $min.scrollTop = (60 + (min % 60)) * item; // 分は 00〜59 を3周ぶん並べ、真ん中の周に置く
     markSelected();
   }
   const onWheelScroll = () => {
@@ -525,12 +527,21 @@
     cancelAnimationFrame(wheelRaf);
     wheelRaf = requestAnimationFrame(() => {
       markSelected();
-      const min = Math.min(22 * 60, (6 + wheelIndex($hour, 16)) * 60 + wheelIndex($min, 59));
+      // 分のリストは3周ぶんあり、前後の周に入った分は時に繰り上げ／繰り下げる（13:00 から 12:59 へ回せる）
+      const mi = wheelIndex($min, 179);
+      const min = Math.min(22 * 60, Math.max(6 * 60, (6 + wheelIndex($hour, 16)) * 60 + (mi % 60) + (Math.floor(mi / 60) - 1) * 60));
       if (min === Math.floor(state.min)) return; // 位置合わせで起きた scroll（時刻が変わっていない）では、「いま」の追従を止めない
       state.live = false;
       state.min = min;
       render();
     });
+    // 操作が止まったら、時・分のリストを今の時刻の位置（分は真ん中の周）へ置き直す
+    clearTimeout(wheelSettle);
+    wheelSettle = setTimeout(() => {
+      if (drag) return;
+      userUntil = 0;
+      setWheel(Math.floor(state.min));
+    }, 180);
   };
   // 30分前／30分後ボタン（範囲は 6:00〜22:00）
   $root.querySelectorAll(".tl-step").forEach(($b) =>

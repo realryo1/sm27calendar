@@ -7,7 +7,7 @@
   const nlAll = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, nl(v)]));
   const B = nlAll(site.badges);
   const L = nlAll(site.labels);
-  const TR = nlAll(window.TT_TRAIN.text);
+  const TR = nlAll(site.train);
   // 会場は各イベントの会場フィールドから重複を除いて集め、letter 順に並べる
   const venues = [...new Map(events.map((e) => [e.letter, e])).values()].sort((x, y) => x.letter.localeCompare(y.letter));
 
