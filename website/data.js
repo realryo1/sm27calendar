@@ -1,6 +1,8 @@
 // カレンダーのデータ（イベント・会場・日付・画面の文言）。雪ミク電車の時刻表などは train.js
 // 時刻は "HH:MM"（24時間表記）。tentative: true は公式未発表で仮置きした時間、"end" は終演のみ仮。
-// wait: 早朝待機の開始目安＝日の出時刻（wait〜start をグラデーションで描くための内部値。時刻は画面に表示しない）、lastEntry: 最終入場、marks: 時刻の目印線。
+// sessions: 公演ごとの違いだけを子要素に書く（読み込み時に共通項目と合成して、公演ごとの予定に展開する）
+// price: 入場料。文字列、または複数行にしたいときは文字列の配列（会場カードの「最寄り」の下に出る）
+// wait.start: 早朝待機の開始目安＝日の出時刻（wait.start〜start をグラデーションで描くための内部値。時刻は画面に表示しない）、lastEntry: 最終入場、marks: 時刻の目印線。
 
 window.TT_DATA = {
   // 掲載情報の最終更新日時（日本時間）。情報を直したらここも更新する
@@ -18,14 +20,11 @@ window.TT_DATA = {
     repo: { label: "GitHub リポジトリ", url: "https://github.com/realryo1/sm27calendar" },
     toBoard: "▲ カレンダーへ",
     // 予定のバッジ名
-    badges: { official: "公式", fan: "非公式", tentative: "時間仮", tentativeEnd: "終演仮" },
-    // 凡例。mark は app.js の描き分けキー（badge 系は badges の名前、tbd は取り消し線の見本、open / wait は帯の色見本）
+    badges: { official: "公式", fan: "非公式", tentative: "時間仮" },
+    // 凡例。mark は app.js の描き分けキー（badge 系は badges の名前、open / wait は帯の色見本）。今の画面に出ているものだけ載せる
     legend: [
       { mark: "official", text: "SNOW MIKU 2027 公式イベント" },
       { mark: "fan", text: "非公式（ファン主催・公式とは無関係）" },
-      { mark: "tentative", text: "時間未発表のため仮置き" },
-      { mark: "tentativeEnd", text: "終演時間のみ仮置き" },
-      { mark: "tbd", text: "取り消し線の時刻は仮" },
       { mark: "open", text: "開場〜開演" },
       { mark: "wait", text: "早朝待機（前年参考）" },
     ],
@@ -33,18 +32,13 @@ window.TT_DATA = {
     labels: {
       place: "場所",
       station: "最寄り",
+      price: "入場料",
       open: "開場",
       startWithOpen: "開演",
       startOnly: "時間",
       lastEntry: "最終入場",
       unannounced: "未発表",
       allDayUnannounced: "時間未発表",
-    },
-    wait: {
-      label: "早朝待機",
-      summary: "早朝待機について",
-      imageAlt: "前年の早朝待機列の案内図",
-      imageNote: "画像は26年のもので仮置き。タップすると出典（SNOW MIKU 2026 公式サイト）が開きます。",
     },
     updatedPrefix: "最終情報更新：",
   },
@@ -63,20 +57,27 @@ window.TT_DATA = {
   events: [
     {
       id: "wingbay",
-      title: "SNOW MIKU 2027 メインイベント",
+      title: "SNOW MIKU 2027\nメインイベント",
       letter: "A",
       name: "ウイングベイ小樽",
       area: "小樽築港駅",
       address: "5番街2F・3番街2F 他",
       station: "JR函館本線「小樽築港駅」",
+      price: "無料",
       theme: "pink",
       days: ["2027-02-06", "2027-02-07"],
       // 早朝待機の折りたたみの上に出す案内
       lead: "札幌～小樽築港は片道で50分～30分、800円かかります。",
-      wait: "06:00",
-      // 前年（2026）の公式案内図。出典は waitSource
-      waitImage: "image/souchou.png",
-      waitSource: "https://snowmiku.com/2026/location_wingbay.html#wingbay_top",
+      // 早朝待機。start は日の出時刻の目安、image は前年（2026）の公式案内図で出典は source
+      wait: {
+        start: "06:00",
+        label: "早朝待機",
+        summary: "早朝待機について",
+        image: "image/souchou.png",
+        source: "https://snowmiku.com/2026/location_wingbay.html#wingbay_top",
+        imageAlt: "前年の早朝待機列の案内図",
+        imageNote: "早朝待機は例年日の出前から。（あまり早すぎると返されます）現地の警備員の指示に従うこと。<br>画像は26年のもので仮置き。タップすると出典（SNOW MIKU 2026 公式サイト）が開きます。",
+      },
       // 時刻の目印線（first train: 札幌からの函館本線始発の小樽築港着）
       marks: [
         {
@@ -89,46 +90,27 @@ window.TT_DATA = {
       end: "17:00",
       lastEntry: "16:30",
       official: true,
-      note: "早朝待機は例年日の出前から。（あまり早すぎると返されます）現地の警備員の指示に従うこと。",
       links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-wingbay.html" }],
     },
     {
-      id: "live-day",
       title: "SNOW MIKU LIVE! 2027",
-      sub: "昼公演",
       letter: "B",
       name: "Zepp Sapporo",
       area: "中島公園駅",
       address: "北海道札幌市中央区南9条西4丁目",
       station: "地下鉄南北線「中島公園駅」／市電「山鼻9条駅」",
+      price: ["1Fスタンディング 9,000円", "2F着席指定席 9,500円", "U-18席（着席指定席） 3,900円", "※入場時別途ドリンク代600円必要"],
       theme: "violet",
       days: ["2027-02-05", "2027-02-06", "2027-02-07"],
-      open: "12:00",
-      start: "13:00",
-      end: "15:00",
       official: true,
       tentative: "end",
-      note: "終演時間は未発表。仮で公演時間2時間としています。",
-      links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-live.html" }],
-    },
-    {
-      id: "live-night",
-      title: "SNOW MIKU LIVE! 2027",
-      sub: "夜公演",
-      letter: "B",
-      name: "Zepp Sapporo",
-      area: "中島公園駅",
-      address: "北海道札幌市中央区南9条西4丁目",
-      station: "地下鉄南北線「中島公園駅」／市電「山鼻9条駅」",
-      theme: "violet",
-      days: ["2027-02-05", "2027-02-06", "2027-02-07"],
-      open: "16:00",
-      start: "17:00",
-      end: "19:00",
-      official: true,
-      tentative: "end",
-      note: "終演時間は未発表。仮で公演時間2時間としています。",
-      links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-live.html" }],
+      note: "公演時間は約2時間の予定。<br>ドリンク代はZepp側の収益となるシステム。現金・交通系ICが使用可能。",
+      links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-live.html" },{ label: "ドリンク代の公式ポスト", url: "https://x.com/zeppsapporo/status/2055893701357146217" }],
+      // sessions: 上の共通項目を引き継ぐ公演ごとの項目（id・sub・時間。上と同じ項目を書けばその公演だけ上書き）
+      sessions: [
+        { id: "live-day", sub: "昼公演", open: "12:00", start: "13:00", end: "15:00" },
+        { id: "live-night", sub: "夜公演", open: "16:00", start: "17:00", end: "19:00" },
+      ],
     },
     {
       id: "digital-stars",
@@ -139,11 +121,11 @@ window.TT_DATA = {
       area: "すすきの駅",
       address: "北海道札幌市中央区南2条西5丁目6番地1 Sプラザ2 5ビル",
       station: "地下鉄南北線「すすきの駅」",
+      price: "未発表",
       theme: "orange",
       days: ["2027-02-06"],
       allDay: true,
       official: true,
-      note: "開場・開演・終演の時間は未発表です。",
       links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-digital-stars.html" }],
     },
     {
@@ -156,11 +138,12 @@ window.TT_DATA = {
       fan: true,
       address: "北海道札幌市北区北8条西7丁目",
       station: "JR北海道「札幌駅」",
+      price: "未発表",
       theme: "gold",
       days: ["2027-02-06"],
       allDay: true,
       official: false,
-      note: "<strong>ファン主催の非公式イベントです。</strong><br>開場・開演・終演の時間は未発表です。<br>北海道大学ボーカロイド同好会様からの掲載許可を頂いています。",
+      note: "<strong>ファン主催の非公式イベントです。</strong><br>開場・開演・終演の時間は未発表。<br>北海道大学ボーカロイド同好会様からの掲載許可を頂いています。",
       links: [
         { label: "開催告知ポスト", url: "https://x.com/HatsuneGinkasai/status/2112861563627679930" },
         { label: "北海道大学ボーカロイド同好会 X", url: "https://x.com/Hokkaidouniv_VC" },
@@ -175,13 +158,13 @@ window.TT_DATA = {
       area: "札幌市電",
       address: "札幌市電 全線",
       station: "市電各停留場",
+      price: "1乗車 230円",
       theme: "indigo",
       days: ["2027-02-05", "2027-02-06", "2027-02-07"],
       start: "07:00",
       end: "21:00",
       official: true,
       period: "2026年11月21日（土）～2027年3月21日（日）",
-      note: "運行時間はおおむねの目安です。",
       live: true,
       links: [
         { label: "公式ページ", url: "https://snowmiku.com/2027/event-train.html" },

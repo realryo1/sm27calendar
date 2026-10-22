@@ -314,10 +314,10 @@ button { font: inherit; color: inherit; }
     padding: 0 6px;
     overflow: hidden;
   }
-  .tt-head__letter { font-size: 1.1rem; }
+  .tt-head__letter { font-size: 1rem; }
   /* 会場名は改行せず1行で、見出しの幅に収まる大きさに自動で縮める（--nl は app.js が出す名前の幅の目安） */
   .tt-head__name {
-    font-size: clamp(.5rem, calc((100cqw - 44px) / var(--nl)), .95rem);
+    font-size: clamp(.5rem, calc((100cqw - 44px) / var(--nl)), .85rem);
     line-height: 1.3;
   }
   /* 下段は見出しの左右いっぱいに広げた帯。グラデーションは使わない */
@@ -333,7 +333,7 @@ button { font: inherit; color: inherit; }
     border-radius: 0;
     /* 帯の文字は改行させず、幅に応じて小さくする */
     white-space: nowrap;
-    font-size: clamp(.75rem, 9cqw, 1rem);
+    font-size: clamp(.6rem, 6cqw, .8rem);
     line-height: 1.3;
   }
   .tt-head .tt-head__kind--official { font-weight: 700; background: var(--c-light); }
@@ -442,6 +442,7 @@ button { font: inherit; color: inherit; }
 /* ---------- Event block ---------- */
 .ev {
   position: absolute;
+  container-type: size; /* 文字は予定の幅（cqw）に比例し、高さ（cqh）にも収まるよう min() で抑える。上限は各 clamp の第3引数 */
   left: 6px;
   right: 6px;
   display: flex;
@@ -491,21 +492,22 @@ button { font: inherit; color: inherit; }
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: .68rem;
+  font-size: clamp(.55rem, min(5cqw, 7cqh), .95rem);
   color: var(--c-dark);
   background: repeating-linear-gradient(-45deg, var(--c-tint) 0 6px, var(--col-paper) 6px 12px);
   border-bottom: 1px dashed var(--c);
 }
 .ev__inner {
   position: sticky;
+  z-index: 1; /* 終演側のグラデーション（::after）より前に出す */
   top: calc(var(--head) + var(--divider) + 4px); /* 会場見出し・日付帯の直下に貼り付き、長い予定でもタイトルが隠れない */
   flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 2px;
-  padding: 6px 6px 8px;
+  gap: 8px;
+  padding: 10px;
   min-height: 0;
 }
 .ev__time {
@@ -513,14 +515,21 @@ button { font: inherit; color: inherit; }
   padding: 1px 8px;
   border-radius: 999px;
   font-family: var(--font-display);
-  font-size: .7rem;
+  font-size: clamp(.58rem, min(5.2cqw, 8cqh), 1rem);
   letter-spacing: .02em;
   color: var(--col-paper);
   background: var(--c);
 }
-.ev__title { font-weight: 900; font-size: .9rem; line-height: 1.3; color: var(--c-dark); }
-.ev__sub { font-size: .72rem; font-weight: 700; }
+.ev__title { font-weight: 900; font-size: clamp(.83rem, min(7.5cqw, 10.5cqh), 1.43rem); line-height: 1.3; color: var(--c-dark); word-break: keep-all; overflow-wrap: anywhere; } /* 日本語を文字の途中で折らず、スペースの位置で折る（収まらない時だけ強制折り返し） */
+.ev__sub { font-size: clamp(.6rem, min(5.6cqw, 9cqh), 1.05rem); font-weight: 700; }
 .ev__badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 2px; }
+/* 予定の高さに収まらないときは app.js の fitEvents が付けるクラスで、バッジ→サブタイトル→時刻の順に隠す（最後はタイトルのみ） */
+.ev--nobadge .ev__badges,
+.ev--nosub .ev__sub,
+.ev--notime .ev__time { display: none; }
+/* OPEN の帯が低い／収まらないときは文字を消し（font-size: 0）、帯を背景にして、タイトルを上に詰める */
+.ev--noopentext .ev__open { font-size: 0; position: absolute; top: 0; left: 0; right: 0; } /* 斜線の帯は背景として残す */
+.tt .ev.ev--noopentext .ev__open + .ev__inner { padding-top: 2px; }
 
 /* 非公式（ファン主催）：エアメール風の斜めストライプの枠で囲み、大きな「非公式」ラベルを出す（公式は実線・グラデーション塗り） */
 .ev.ev--fan {
@@ -537,7 +546,7 @@ button { font: inherit; color: inherit; }
   width: fit-content;
   padding: 1px 12px;
   border-radius: 999px;
-  font-size: .85rem;
+  font-size: clamp(.7rem, min(6.5cqw, 10cqh), 1.2rem);
   letter-spacing: .08em;
   color: var(--col-paper);
   background: var(--col-fan);
@@ -551,24 +560,33 @@ button { font: inherit; color: inherit; }
   background: linear-gradient(to bottom, var(--c), var(--c-dark));
   box-shadow: 0 3px 0 var(--c-light);
 }
-/* 終演のみ仮：塗りは会場色のまま、終演側の底面だけ灰色の斜めストライプにする */
+/* 終演のみ仮（公式に「約2時間の予定」）：予定の終演時刻から15分だけ、会場色が下へ薄れていく（早朝待機の逆向きのグラデーション） */
 .ev:not(.ev--fan).ev--tentative-end {
-  background:
-    repeating-linear-gradient(-45deg, #8b8b96 0 6px, #c4c4cc 6px 12px) bottom / 100% 18px no-repeat,
-    linear-gradient(to bottom, var(--c), var(--c-dark));
-  /* 下端は角丸・枠・影をなくして、灰色の帯をすっぱり切る */
   border-bottom: none;
   border-radius: 10px 10px 0 0;
   box-shadow: none;
 }
+.ev:not(.ev--fan).ev--tentative-end::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: -2px; /* 予定の枠（2px）と同じ幅に揃える */
+  right: -2px;
+  height: calc(.25 * var(--hour));
+  border: 2px solid var(--c);
+  border-top: none;
+  border-bottom: none;
+  background: linear-gradient(to bottom, var(--c-dark), var(--c-dark));
+  -webkit-mask: linear-gradient(to bottom, #000, transparent);
+  mask: linear-gradient(to bottom, #000, transparent);
+  pointer-events: none;
+}
 .ev:not(.ev--fan) .ev__title,
-.ev:not(.ev--fan) .ev__open,
-.ev:not(.ev--fan) .ev__last { color: var(--col-paper); }
+.ev:not(.ev--fan) .ev__open { color: var(--col-paper); }
 .ev:not(.ev--fan) .ev__open {
   background: repeating-linear-gradient(-45deg, rgb(255 255 255 / .18) 0 6px, transparent 6px 12px);
   border-bottom-color: rgb(255 255 255 / .6);
 }
-.ev:not(.ev--fan) .ev__last { border-top-color: rgb(255 255 255 / .6); }
 .ev:not(.ev--fan) .ev__time { background: rgb(255 255 255 / .22); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .6); }
 .ev:not(.ev--fan) .badge--official { background: rgb(255 255 255 / .22); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .7); }
 
@@ -583,8 +601,7 @@ button { font: inherit; color: inherit; }
 
 @media (max-width: 640px) {
   .ev { left: 3px; right: 3px; }
-  .ev__title { font-size: .8rem; }
-  .ev__time { font-size: .62rem; padding: 1px 6px; }
+  .ev__time { padding: 1px 6px; } /* 文字サイズは画面幅ではなく列幅（cqw）だけで決める */
 }
 
 /* 縮小時の簡略表示（app.js の updateDensity で切り替え） */
@@ -592,15 +609,13 @@ button { font: inherit; color: inherit; }
 .tt[data-density="compact"] .ev__badges,
 .tt[data-density="tight"] .ev__sub,
 .tt[data-density="tight"] .ev__badges,
-.tt[data-density="tight"] .ev__open,
-.tt[data-density="tight"] .ev__last,
 .tt[data-density="tight"] .tt-axis__half,
 .tt[data-density="tight"] .tt-axis__m { display: none; }
 .tt[data-density="compact"] .ev__inner,
-.tt[data-density="tight"] .ev__inner { gap: 1px; padding: 3px 4px; }
-.tt[data-density="tight"] .ev__time { font-size: .6rem; padding: 0 5px; }
-.tt[data-density="tight"] .ev__title { font-size: .72rem; line-height: 1.2; }
-.tt[data-density="tight"] .ev__open + .ev__inner { padding-top: 3px; }
+.tt[data-density="tight"] .ev__inner { gap: 1px; padding: 8px 4px 3px; }
+.tt[data-density="tight"] .ev__time { padding: 0 5px; } /* 文字サイズは縦の縮小に連動させない */
+.tt[data-density="tight"] .ev__title { line-height: 1.2; }
+.tt[data-density="tight"] .ev__open + .ev__inner { padding-top: 6px; }
 
 /* 早朝待機：日の出から開場まで、徐々に濃くなるグラデーション */
 .ev-wait {
@@ -611,7 +626,7 @@ button { font: inherit; color: inherit; }
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: 10px;
+  padding-bottom: 20px; /* 下の10pxは予定の角丸の裏まで伸ばした分（app.js の height + 10px） */
   border-radius: 10px 10px 0 0;
   background: linear-gradient(to bottom, transparent, var(--c-light));
   cursor: pointer;
@@ -661,11 +676,21 @@ button { font: inherit; color: inherit; }
   position: absolute;
   left: 0;
   right: 0;
-  padding-top: 2px;
-  font-size: .62rem;
+  height: 0;
+  font-size: clamp(.55rem, min(5cqw, 7cqh), .95rem);
   font-weight: 700;
-  color: var(--c-dark);
-  border-top: 1px dashed var(--c);
+  line-height: 1;
+  color: #fff;
+  border-top: 2px solid #fff;
+}
+/* 文字は線の上に置く（線より下だと終演側で見切れるため） */
+.ev__last-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {
@@ -1130,7 +1155,7 @@ button { font: inherit; color: inherit; }
   font-size: .8rem;
 }
 .venue-card__info dt { font-weight: 700; color: var(--c); }
-.venue-card__info dd { margin: 0; }
+.venue-card__info dd { margin: 0; font-weight: 700; }
 
 /* イベント */
 /* 横幅に余裕があれば、カード内でイベントを横に並べる（1件なら全幅） */
@@ -1162,16 +1187,18 @@ button { font: inherit; color: inherit; }
   background: var(--col-paper);
 }
 .vc-live__period { margin: 0; font-size: .88rem; font-weight: 700; color: var(--c-dark); }
-.vc-live__time { margin: 2px 0 0; font-family: var(--font-display); font-size: 1.05rem; color: var(--c); }
-.vc-single__info { margin-top: 8px; }
-.vc-single__info dd { font-weight: 700; }
+.vc-live__time { margin: 2px 0 0; font-family: var(--font-display); font-size: 1.3rem; color: var(--c-dark); }
+.vc-single__info { margin-top: 8px; align-items: baseline; }
+.vc-single__info dd.vc-time { font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; line-height: 1.3; color: var(--c-dark); } /* 公演枠の時刻（.vc-ev__times dd）と同じ */
 @keyframes vc-flash {
   0%, 30% { box-shadow: 0 0 0 3px var(--col-ink-primary); }
   100% { box-shadow: 0 0 0 3px transparent; }
 }
 .vc-ev__head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.vc-ev__days { font-family: var(--font-display); font-size: .8rem; color: var(--c); }
-.vc-ev__days small { font-family: var(--font-base); font-weight: 700; font-size: .72rem; }
+.vc-days { margin: 10px 0 0; font-family: var(--font-display); font-size: 1.3rem; color: var(--c-dark); }
+.vc-ev__days { font-family: var(--font-display); font-size: 1.3rem; color: var(--c-dark); }
+.vc-ev__days small,
+.vc-days small { font-family: var(--font-base); font-weight: 700; font-size: .85rem; }
 /* 非公式の会場カードも予定ブロックと同じ赤の斜めストライプ枠で囲み、塗りは列と同じ市松模様にする */
 .venue-card.venue-card--fan {
   border: 8px solid transparent;
@@ -1179,6 +1206,14 @@ button { font: inherit; color: inherit; }
     conic-gradient(var(--c-tint) 25%, var(--col-paper) 0 50%, var(--c-tint) 0 75%, var(--col-paper) 0) 0 0 / 24px 24px round padding-box,
     repeating-linear-gradient(-45deg, var(--col-fan) 0 8px, transparent 8px 16px) border-box;
 }
+/* 市松模様の上でも読めるよう、文字に白い縁取り（塗りの外側にだけ描く）。ボタンとバッジは地色があるので除く */
+.venue-card--fan {
+  -webkit-text-stroke: 4px #fff;
+  paint-order: stroke fill;
+}
+.venue-card--fan .vc-ev__links a,
+.venue-card--fan .venue-card__letter,
+.venue-card--fan .badge { -webkit-text-stroke: 0; }
 .venue-card .ev__badges { justify-content: flex-start; margin: 0; }
 .vc-ev__title { margin: 6px 0 0; font-size: 1rem; font-weight: 900; line-height: 1.4; color: var(--c-dark); }
 .vc-ev__title small { font-size: .78em; color: var(--c); }
@@ -1190,8 +1225,8 @@ button { font: inherit; color: inherit; }
   font-size: .82rem;
 }
 .vc-ev__times div { display: flex; gap: 6px; align-items: baseline; }
-.vc-ev__times dt { font-size: .72rem; font-weight: 700; color: var(--c); }
-.vc-ev__times dd { margin: 0; font-weight: 900; }
+.vc-ev__times dt { font-size: .85rem; font-weight: 700; color: var(--c); }
+.vc-ev__times dd { margin: 0; font-family: var(--font-display); font-size: 1.3rem; color: var(--c-dark); }
 .vc-ev__note { margin: 8px 0 0; padding-left: 10px; font-size: .78rem; border-left: 3px solid var(--col-gold); }
 .vc-ev__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .vc-ev__links a {

@@ -1,11 +1,12 @@
 (() => {
-  const { site, range, days, events, updatedAt } = window.TT_DATA;
+  const { site, range, days, updatedAt } = window.TT_DATA;
+  // sessions を持つ予定は、共通項目に公演ごとの項目を重ねて、公演ごとの予定に展開する
+  const events = window.TT_DATA.events.flatMap(({ sessions, ...common }) => (sessions ? sessions.map((s) => ({ ...common, ...s })) : [common]));
   // データ中の文字列に "\n" を入れると改行（<br>）になる。本文は br（エスケープ＋改行）、属性は esc を使う
   const nl = (s) => String(s).replace(/\n/g, "<br>");
   const nlAll = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, nl(v)]));
   const B = nlAll(site.badges);
   const L = nlAll(site.labels);
-  const W = { ...nlAll(site.wait), imageAlt: site.wait.imageAlt };
   const TR = nlAll(window.TT_TRAIN.text);
   // 会場は各イベントの会場フィールドから重複を除いて集め、letter 順に並べる
   const venues = [...new Map(events.map((e) => [e.letter, e])).values()].sort((x, y) => x.letter.localeCompare(y.letter));
@@ -32,7 +33,7 @@
   const badge = (cls, text) => `<span class="badge badge--${cls}">${text}</span>`;
   const badges = (ev) =>
     (ev.official ? badge("official", B.official) : badge("fan", B.fan)) +
-    (ev.tentative === "end" ? badge("tentative", B.tentativeEnd) : ev.tentative ? badge("tentative", B.tentative) : "");
+    (ev.tentative === true ? badge("tentative", B.tentative) : "");
 
   // 会場見出し名（表の列見出しと下のカードで共通）。括弧書きは小さく表示
   // 見出しの会場名の幅の目安（全角=1、半角=0.6）。狭い見出しで改行せず収まる文字サイズを CSS で出すのに使う
@@ -40,10 +41,12 @@
   const headName = (v) => br(v.short ?? v.name).replace(/（(.+?)）/, "<small>（$1）</small>");
 
   // 仮の時刻は取り消し線で示す（tentative: true＝すべて仮、"end"＝終演のみ仮）
-  const tbd = (t) => `<s class="tbd">${t}</s>`;
-  const fmtTime = (e, which) => (e.tentative === true || (e.tentative === "end" && which === "end") ? tbd(e[which]) : e[which]);
+  // 表示する時刻は先頭の0を省く（07:00 → 7:00）。データは "HH:MM" のまま
+  const hm = (t) => t.replace(/^0/, "");
+  const tbd = (t) => `<s class="tbd">${hm(t)}</s>`;
+  const fmtTime = (e, which) => (e.tentative === true || (e.tentative === "end" && which === "end") ? tbd(e[which]) : hm(e[which]));
 
-  const timeText = (ev) => (ev.allDay ? L.allDayUnannounced : `${ev.start} – ${ev.end}`);
+  const timeText = (ev) => (ev.allDay ? L.allDayUnannounced : `${hm(ev.start)} – ${hm(ev.end)}`);
 
   const nowJST = () => {
     const now = new Date();
@@ -72,7 +75,6 @@
     $repo.innerHTML = `${br(site.repo.label)} ↗`;
     set("toBoard", br(site.toBoard));
     const mark = {
-      tbd: '<s class="tbd">18:00</s>',
       open: '<span class="legend__open"></span>',
       wait: '<span class="legend__wait"></span>',
     };
@@ -167,17 +169,17 @@
       ? `<span class="ev__open" style="height:${span(top, start)}">OPEN ${fmtTime(e, "open")}</span>`
       : "";
     const waitPart = e.wait
-      ? `<div class="ev-wait" data-wait="${e.id}" role="button" tabindex="0" style="top:${pos(toHour(e.wait))};height:${span(toHour(e.wait), top)}">
-          <span class="ev-wait__label">${W.label}</span>
+      ? `<div class="ev-wait" data-wait="${e.id}" role="button" tabindex="0" style="top:${pos(toHour(e.wait.start))};height:calc(${span(toHour(e.wait.start), top)} + 10px)">
+          <span class="ev-wait__label">${e.wait.label}</span>
         </div>`
       : "";
     const lastEntry = e.lastEntry
-      ? `<span class="ev__last" style="top:${span(top, toHour(e.lastEntry))}">${L.lastEntry} ${e.lastEntry}</span>`
+      ? `<span class="ev__last" style="top:${span(top, toHour(e.lastEntry))}"><span class="ev__last-label">${L.lastEntry} ${hm(e.lastEntry)}</span></span>`
       : "";
     const marks = (e.marks ?? [])
       .map(
         (m) => `<div class="ev-mark" data-wait="${e.id}" style="top:${pos(toHour(m.time))}" title="${esc(m.detail)}">
-          <span class="ev-mark__label">${br(m.label)} ${m.time.replace(/^0/, "")}</span>
+          <span class="ev-mark__label">${br(m.label)} ${hm(m.time)}</span>
         </div>`
       )
       .join("");
@@ -215,22 +217,37 @@
             } else groups.push({ key: groupKey(e), ids: [e.id], days: [...e.days], e });
           });
         const live = events.some((e) => e.letter === v.letter && e.live);
-        // 予定が1件だけの会場（早朝待機・在線予測なし）は、枠で分けずにカードへ直接載せる
-        const single = groups.length === 1 && !live && !groups[0].e.wait ? groups[0] : null;
+        // 予定が1件だけの会場（在線予測なし）は、枠で分けずにカードへ直接載せる
+        const single = groups.length === 1 && !live ? groups[0] : null;
         const place = `<dt>${L.place}</dt><dd>${v.short ? `${br(v.name)}<br>` : ""}${br(v.address)}</dd>
             <dt>${L.station}</dt><dd>${br(v.station)}</dd>`;
         const liveEv = live ? groups[0].e : null;
+        // 複数公演が並ぶカード：イベント名が共通なら見出しに出し、日付が共通なら見出しの下に1行で出す（各枠はシンプルに）
+        const multi = !live && !single && groups.length > 1;
+        const commonTitle = multi && groups.every((g) => g.e.title === groups[0].e.title) ? groups[0].e.title : "";
+        const dayText = (g) => [...new Set(g.days)].sort().map(dayLabel).join(" ・ ");
+        // 1件だけでも、イベント名が会場の見出しと違うとき（メインイベントなど）は、見出しをイベント名にして会場名を小さく添える
+        const singleTitle = single && single.e.title !== (v.short ?? v.name) ? single.e.title : "";
+        const cardTitle = (commonTitle || singleTitle).replace(/\n/g, " ");
+        const commonDays = multi && groups.every((g) => dayText(g) === dayText(groups[0])) ? dayText(groups[0]) : "";
+        // 入場料は「最寄り」の下に並べる。複数公演のカードでは、全公演で同じときだけカードに出す
+        const commonPrice = multi && groups.every((g) => JSON.stringify(g.e.price) === JSON.stringify(groups[0].e.price)) ? groups[0].e.price : undefined;
+        // note も全公演で同じならカードに1回だけ出し、各枠には出さない
+        const commonNote = multi && groups.every((g) => g.e.note === groups[0].e.note) ? groups[0].e.note : "";
+        // リンクも全公演で同じならカードの末尾に1回だけ出す
+        const commonLinks = multi && groups.every((g) => JSON.stringify(g.e.links) === JSON.stringify(groups[0].e.links)) ? groups[0].e.links ?? [] : [];
+        const priceRows = priceRow(single ? single.e.price : commonPrice);
         const list = liveEv
           ? renderLiveHead(liveEv)
           : single
-          ? renderVenueEventBody(single.e, single.days, place)
-          : `<dl class="venue-card__info">${place}</dl>
-            <ul class="vc-events">${groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds)).join("")}</ul>`;
+          ? renderVenueEventBody(single.e, single.days, place + priceRows, { simple: true })
+          : `${commonDays ? `<p class="vc-days">${commonDays}</p>` : ""}<dl class="venue-card__info">${place}${priceRows}</dl>${noteBlocks(commonNote)}
+            <ul class="vc-events">${groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds, { simple: true, commonTitle, commonDays, hideNote: !!commonNote, hideLinks: commonLinks.length > 0 })).join("")}</ul>${commonLinks.length ? linkButtons(commonLinks) : ""}`;
         const flat = single ?? (live ? groups[0] : null);
         return `<article class="venue-card theme-${v.theme}${v.fan ? " venue-card--fan" : ""}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.letter}"${
           flat ? ` data-ids="${flat.ids.join(" ")}"` : ""
         }>
-          <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${v.fan ? `${badge("fan", B.fan)} ` : ""}${headName(v)}<small class="venue-card__area">${br(v.area)}</small></h3>
+          <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${v.fan ? `${badge("fan", B.fan)} ` : ""}${cardTitle ? `${br(cardTitle)}<small class="venue-card__area">${br(v.name)}</small>` : `${headName(v)}<small class="venue-card__area">${br(v.area)}</small>`}</h3>
           ${list}
           ${
             live
@@ -245,64 +262,87 @@
       .join("");
   }
 
+  // 注記。改行（\n と <br>）ごとに別の段落（左線つき）に分けて描画する
+  const noteBlocks = (note) =>
+    String(note ?? "")
+      .split(/\n|<br\s*\/?>/i)
+      .filter((t) => t.trim())
+      .map((t) => `<p class="vc-ev__note">${br(t)}</p>`)
+      .join("");
+
+  // リンクのボタン列（links は { label, url } の配列）
+  const linkButtons = (links) =>
+    `<div class="vc-ev__links">${links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${br(l.label)} ↗</a>`).join("")}</div>`;
+
+  // 入場料の行（price は文字列、または複数行の配列）
+  const priceRow = (price) =>
+    price ? `<dt>${L.price}</dt><dd>${[].concat(price).map(br).join("<br>")}</dd>` : "";
+
   // 雪ミク電車：運行期間・時間・注記・リンクだけを見出しの下に置く（在線予測はその下）
   function renderLiveHead(e) {
     const links = e.links ?? [];
     return `<p class="vc-live__period">${br(e.period)}</p>
-      <p class="vc-live__time">${e.start} – ${e.end}</p>
-      ${e.note ? `<p class="vc-ev__note">${br(e.note)}</p>` : ""}
-      <div class="vc-ev__links">${links
-        .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${br(l.label)} ↗</a>`)
-        .join("")}</div>`;
+      <p class="vc-live__time">${hm(e.start)} – ${hm(e.end)}</p>
+      ${e.price ? `<dl class="venue-card__info vc-live__info">${priceRow(e.price)}</dl>` : ""}
+      ${noteBlocks(e.note)}
+      ${linkButtons(links)}`;
   }
 
-  function renderVenueEvent(e, ids, ds) {
-    return `<li class="vc-ev" id="ev-${ids[0]}" data-ids="${ids.join(" ")}">${renderVenueEventBody(e, ds)}</li>`;
+  function renderVenueEvent(e, ids, ds, opts) {
+    return `<li class="vc-ev" id="ev-${ids[0]}" data-ids="${ids.join(" ")}">${renderVenueEventBody(e, ds, undefined, opts)}</li>`;
   }
 
   // place を渡すと会場カードに直接載せる形（タイトルは見出しと重複するので省き、時間の下に場所・最寄りを並べる）
-  function renderVenueEventBody(e, ds, place) {
+  // opts.simple: 複数公演カードの枠（バッジなし・日付とイベント名は共通なら省く・終演は出さない）
+  function renderVenueEventBody(e, ds, place, opts = {}) {
     const links = e.links ?? [];
     const times = [
       e.open && [L.open, fmtTime(e, "open")],
-      [e.open ? L.startWithOpen : L.startOnly, e.allDay ? L.unannounced : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`],
-      e.lastEntry && [L.lastEntry, e.lastEntry],
+      [
+        e.open ? L.startWithOpen : L.startOnly,
+        e.allDay ? L.unannounced : opts.simple && e.tentative ? `${fmtTime(e, "start")} 〜` : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`,
+      ],
+      e.lastEntry && [L.lastEntry, hm(e.lastEntry)],
     ].filter(Boolean);
     const wait = e.wait
       ? `<details class="vc-wait" id="wait-${e.id}">
-          <summary>${W.summary}</summary>
+          <summary>${e.wait.summary}</summary>
           <div class="vc-wait__body">
             ${
-              e.waitImage
-                ? `<a class="vc-image" href="${esc(e.waitSource ?? e.waitImage)}" target="_blank" rel="noopener">
-                    <img src="${esc(e.waitImage)}" alt="${W.imageAlt}" loading="lazy">
+              e.wait.image
+                ? `<a class="vc-image" href="${esc(e.wait.source ?? e.wait.image)}" target="_blank" rel="noopener">
+                    <img src="${esc(e.wait.image)}" alt="${esc(e.wait.imageAlt)}" loading="lazy">
                   </a>`
                 : ""
             }
             ${(e.marks ?? [])
-              .map((m) => `<p class="vc-wait__mark"><span class="ev-mark__label">${br(m.label)} ${m.time}</span>${br(m.detail)}</p>`)
+              .map((m) => `<p class="vc-wait__mark"><span class="ev-mark__label">${br(m.label)} ${hm(m.time)}</span>${br(m.detail)}</p>`)
               .join("")}
-            <p class="vc-ev__note">${e.note ? `${br(e.note)}<br>` : ""}${W.imageNote}</p>
+            ${noteBlocks(e.wait.imageNote)}
           </div>
         </details>`
       : "";
-    return `
-      <div class="vc-ev__head">
+    const head = opts.simple
+      ? opts.commonDays
+        ? ""
+        : `<div class="vc-ev__head"><span class="vc-ev__days">${[...new Set(ds)].sort().map(dayLabel).join(" ・ ")}</span></div>`
+      : `<div class="vc-ev__head">
         <span class="vc-ev__days">${[...new Set(ds)].sort().map(dayLabel).join(" ・ ")}</span>
         <span class="ev__badges">${badges(e)}</span>
-      </div>
+      </div>`;
+    const title = opts.commonTitle ? br(e.sub ?? "") : `${br(e.title)}${e.sub ? ` <small>${br(e.sub)}</small>` : ""}`;
+    return `
+      ${head}
       ${
         place
-          ? `<dl class="venue-card__info vc-single__info">${times.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join("")}${place}</dl>`
-          : `<p class="vc-ev__title">${br(e.title)}${e.sub ? ` <small>${br(e.sub)}</small>` : ""}</p>
+          ? `<dl class="venue-card__info vc-single__info">${times.map(([k, val]) => `<dt>${k}</dt><dd${val === L.unannounced ? "" : ' class="vc-time"'}>${val}</dd>`).join("")}${place}</dl>`
+          : `<p class="vc-ev__title">${title}</p>
       <dl class="vc-ev__times">${times.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join("")}</dl>`
       }
-      ${e.note && !e.wait ? `<p class="vc-ev__note">${br(e.note)}</p>` : ""}
-      ${e.lead ? `<p class="vc-ev__note">${br(e.lead)}</p>` : ""}
+      ${opts.hideNote ? "" : noteBlocks(e.note)}
+      ${noteBlocks(e.lead)}
       ${wait}
-      <div class="vc-ev__links">${links
-        .map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${br(l.label)} ↗</a>`)
-        .join("")}</div>`;
+      ${opts.hideLinks ? "" : linkButtons(links)}`;
   }
 
   // 予定のタップで、下の会場カード（venue-○○）へ移動し、該当イベントを強調する
@@ -406,6 +446,38 @@
   const updateDensity = () => {
     const h = hourPx();
     $tt.dataset.density = h < 44 ? "tight" : h < 60 ? "compact" : "";
+    fitEvents();
+  };
+
+  // 予定カードの内容（OPEN 帯＋文字）が高さに収まらないとき、バッジ→サブタイトル→時刻→OPEN の文字の順に隠し、最後はタイトルだけにする。
+  // OPEN の文字を消すと帯は背景に回り、タイトルが上に詰まる。
+  // 文字の大きさがカードの高さに比例するため、境目で出たり消えたりしないよう、一度隠したものを戻すには余裕（SLACK）を要求する
+  const HIDE = ["ev--nobadge", "ev--nosub", "ev--notime", "ev--noopentext"];
+  const SLACK = 10;
+  const fitEvents = () => {
+    $tt.querySelectorAll(".ev:not(.ev--allday)").forEach((ev) => {
+      const inner = ev.querySelector(".ev__inner");
+      if (!inner) return;
+      const open = ev.querySelector(".ev__open");
+      const prev = Number(ev.dataset.fit ?? 0);
+      const reserved = 0;
+      const apply = (level, noOpenText) => {
+        HIDE.forEach((c, i) => ev.classList.toggle(c, i < level || (i === 3 && noOpenText)));
+        const openH = ev.classList.contains("ev--noopentext") ? 0 : open?.offsetHeight ?? 0;
+        return openH + inner.offsetHeight;
+      };
+      // OPEN の帯が文字より低いときは、最初から文字を消す
+      apply(0, false);
+      const tiny = open && open.offsetHeight < parseFloat(getComputedStyle(open).fontSize) * 1.6;
+      let level = 0;
+      for (; level < HIDE.length; level++) {
+        const used = apply(level, tiny);
+        if (used <= ev.clientHeight - reserved - (level < prev ? SLACK : 0)) break;
+      }
+      level = Math.min(level, HIDE.length);
+      apply(Math.min(level, HIDE.length), tiny);
+      ev.dataset.fit = level;
+    });
   };
 
   // 拡大率 ky（縦）/ kx（横）を、開始時の大きさ base に掛けて適用。
@@ -498,6 +570,8 @@
   renderNav();
   renderBoard();
   updateDensity();
+  window.addEventListener("resize", fitEvents);
+  document.fonts?.ready.then(fitEvents); // Webフォント読み込みで文字の大きさが変わるため
 
   // URL の #日付、またはイベント当日なら現在時刻付近を初期表示
   const hashId = location.hash.slice(1);
