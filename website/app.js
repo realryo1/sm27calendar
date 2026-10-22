@@ -1,13 +1,14 @@
 (() => {
-  const { site, range, days, venues, events, updatedAt } = window.TT_DATA;
+  const { site, range, days, events, updatedAt } = window.TT_DATA;
   // データ中の文字列に "\n" を入れると改行（<br>）になる。本文は br（エスケープ＋改行）、属性は esc を使う
   const nl = (s) => String(s).replace(/\n/g, "<br>");
   const nlAll = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, nl(v)]));
   const B = nlAll(site.badges);
-  const L = { ...nlAll(site.labels), defaultLink: site.labels.defaultLink };
+  const L = nlAll(site.labels);
   const W = { ...nlAll(site.wait), imageAlt: site.wait.imageAlt };
   const TR = nlAll(window.TT_TRAIN.text);
-  const venueById = Object.fromEntries(venues.map((v) => [v.id, v]));
+  // 会場は各イベントの会場フィールドから重複を除いて集め、letter 順に並べる
+  const venues = [...new Map(events.map((e) => [e.letter, e])).values()].sort((x, y) => x.letter.localeCompare(y.letter));
 
   const $dayNav = document.getElementById("dayNav");
   const $scroll = document.getElementById("ttScroll");
@@ -24,7 +25,9 @@
   const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  const br = (s) => nl(esc(s));
+  // エスケープ後に、許可タグ（<strong> と <br>）だけ復活させる
+  const br = (s) =>
+    nl(esc(s)).replace(/&lt;(\/?strong|br\s*\/?)&gt;/gi, "<$1>");
 
   const badge = (cls, text) => `<span class="badge badge--${cls}">${text}</span>`;
   const badges = (ev) =>
@@ -123,7 +126,7 @@
         const cols = venues
           .map((v) => {
             const blocks = dayEvents
-              .filter((e) => e.venue === v.id)
+              .filter((e) => e.letter === v.letter)
               .map((e) => renderEvent(e))
               .join("");
             return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}" style="grid-row:${bodyRow(i)}">${blocks}</div>`;
@@ -192,7 +195,7 @@
   }
 
   // 同じ内容で日付だけ違うイベント（LIVE の各日公演など）は1件にまとめて表示する
-  const groupKey = (e) => [e.venue, e.title, e.sub, e.open, e.start, e.end].join("|");
+  const groupKey = (e) => [e.letter, e.title, e.sub, e.open, e.start, e.end].join("|");
   const dayLabel = (id) => {
     const d = days.find((x) => x.id === id);
     return d ? `${d.label}<small>(${d.weekJa})</small>` : id;
@@ -203,7 +206,7 @@
       .map((v) => {
         const groups = [];
         events
-          .filter((e) => e.venue === v.id)
+          .filter((e) => e.letter === v.letter)
           .forEach((e) => {
             const g = groups.find((x) => x.key === groupKey(e));
             if (g) {
@@ -211,7 +214,7 @@
               g.days.push(...e.days);
             } else groups.push({ key: groupKey(e), ids: [e.id], days: [...e.days], e });
           });
-        const live = events.some((e) => e.venue === v.id && e.live);
+        const live = events.some((e) => e.letter === v.letter && e.live);
         // 予定が1件だけの会場（早朝待機・在線予測なし）は、枠で分けずにカードへ直接載せる
         const single = groups.length === 1 && !live && !groups[0].e.wait ? groups[0] : null;
         const place = `<dt>${L.place}</dt><dd>${v.short ? `${br(v.name)}<br>` : ""}${br(v.address)}</dd>
@@ -224,7 +227,7 @@
           : `<dl class="venue-card__info">${place}</dl>
             <ul class="vc-events">${groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds)).join("")}</ul>`;
         const flat = single ?? (live ? groups[0] : null);
-        return `<article class="venue-card theme-${v.theme}${v.fan ? " venue-card--fan" : ""}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.id}"${
+        return `<article class="venue-card theme-${v.theme}${v.fan ? " venue-card--fan" : ""}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.letter}"${
           flat ? ` data-ids="${flat.ids.join(" ")}"` : ""
         }>
           <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${v.fan ? `${badge("fan", B.fan)} ` : ""}${headName(v)}<small class="venue-card__area">${br(v.area)}</small></h3>
@@ -244,7 +247,7 @@
 
   // 雪ミク電車：運行期間・時間・注記・リンクだけを見出しの下に置く（在線予測はその下）
   function renderLiveHead(e) {
-    const links = e.links ?? [{ label: L.defaultLink, url: e.url }];
+    const links = e.links ?? [];
     return `<p class="vc-live__period">${br(e.period)}</p>
       <p class="vc-live__time">${e.start} – ${e.end}</p>
       ${e.note ? `<p class="vc-ev__note">${br(e.note)}</p>` : ""}
@@ -259,7 +262,7 @@
 
   // place を渡すと会場カードに直接載せる形（タイトルは見出しと重複するので省き、時間の下に場所・最寄りを並べる）
   function renderVenueEventBody(e, ds, place) {
-    const links = e.links ?? [{ label: L.defaultLink, url: e.url }];
+    const links = e.links ?? [];
     const times = [
       e.open && [L.open, fmtTime(e, "open")],
       [e.open ? L.startWithOpen : L.startOnly, e.allDay ? L.unannounced : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`],
