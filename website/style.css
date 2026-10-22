@@ -551,7 +551,16 @@ button { font: inherit; color: inherit; }
   background: linear-gradient(to bottom, var(--c), var(--c-dark));
   box-shadow: 0 3px 0 var(--c-light);
 }
-.ev:not(.ev--fan).ev--tentative-end { background: linear-gradient(to bottom, var(--c), var(--c-dark) 55%, #8b8b96); }
+/* 終演のみ仮：塗りは会場色のまま、終演側の底面だけ灰色の斜めストライプにする */
+.ev:not(.ev--fan).ev--tentative-end {
+  background:
+    repeating-linear-gradient(-45deg, #8b8b96 0 6px, #c4c4cc 6px 12px) bottom / 100% 18px no-repeat,
+    linear-gradient(to bottom, var(--c), var(--c-dark));
+  /* 下端は角丸・枠・影をなくして、灰色の帯をすっぱり切る */
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  box-shadow: none;
+}
 .ev:not(.ev--fan) .ev__title,
 .ev:not(.ev--fan) .ev__open,
 .ev:not(.ev--fan) .ev__last { color: var(--col-paper); }

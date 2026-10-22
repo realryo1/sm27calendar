@@ -173,11 +173,9 @@ window.TT_DATA = {
       title: "Digital Stars",
       venue: "sync",
       days: ["2027-02-06"],
-      start: "20:00",
-      end: "22:00",
+      allDay: true,
       official: true,
-      tentative: true,
-      note: "時間は未発表。仮で20時から2時間としています。",
+      note: "開場・開演・終演の時間は未発表です。",
       url: "https://snowmiku.com/2027/event-digital-stars.html",
     },
     {

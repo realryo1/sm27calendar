@@ -182,7 +182,7 @@
         style="top:${pos(top)};height:${span(top, end)}">
       ${openPart}
       <span class="ev__inner">
-        <span class="ev__time">${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}</span>
+        <span class="ev__time">${e.live ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
         <span class="ev__title">${br(e.title)}</span>
         ${e.sub ? `<span class="ev__sub">${br(e.sub)}</span>` : ""}
         <span class="ev__badges">${badges(e)}</span>
