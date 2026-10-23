@@ -40,13 +40,13 @@ window.TT_DATA = {
       startOnly: "時間",
       lastEntry: "最終入場",
       unannounced: "未発表",
-      allDayUnannounced: "時間未発表",
+      allDayUnannounced: "時間<wbr>未発表",
     },
     // 雪ミク電車いまどこ（市電マップ）の文言。運行期間・時刻表などのデータは train.js
     train: {
       chip: "市電いまどこ",
       chipEn: "TRAIN",
-      title: "雪ミク電車いまどこ？",
+      title: "雪ミク<wbr>電車<wbr>いまどこ？",
       titleSub: "（在線予測）",
       tripsSummary: "発車時刻（2024年ダイヤ）",
       note: "すすきの～西4丁目間の時刻から計算しています。<br>27年の運行計画は未発表です。2024年の時刻を使用しています。",
@@ -60,7 +60,7 @@ window.TT_DATA = {
   },
 
   // 表示する時間帯（時）
-  range: { start: 6, end: 22 },
+  range: { start: 6, end: 23 },
 
   days: [
     { id: "2027-02-05", label: "2/5", week: "FRI", weekJa: "金" },
@@ -73,7 +73,7 @@ window.TT_DATA = {
   events: [
     {
       id: "wingbay",
-      title: "SNOW MIKU 2027\nメインイベント",
+      title: "SNOW <wbr>MIKU <wbr>2027\nメイン<wbr>イベント",
       letter: "A",
       name: "ウイングベイ小樽",
       area: "小樽築港駅",
@@ -110,7 +110,7 @@ window.TT_DATA = {
       links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-wingbay.html" }],
     },
     {
-      title: "SNOW MIKU LIVE! 2027",
+      title: "SNOW <wbr>MIKU <wbr>LIVE! <wbr>2027",
       letter: "B",
       name: "Zepp Sapporo",
       area: "中島公園駅",
@@ -147,7 +147,7 @@ window.TT_DATA = {
     },
     {
       id: "ginkasai",
-      title: "初音銀華祭2027",
+      title: "初音<wbr>銀華祭 <wbr>2027",
       letter: "E",
       name: "北海道大学 クラーク会館講堂",
       short: "初音銀華祭2027",
@@ -169,7 +169,7 @@ window.TT_DATA = {
     },
     {
       id: "train",
-      title: "雪ミク電車",
+      title: "雪ミク<wbr>電車",
       letter: "D",
       name: "雪ミク電車",
       area: "札幌市電",

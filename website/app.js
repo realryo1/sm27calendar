@@ -28,7 +28,7 @@
 
   // エスケープ後に、許可タグ（<strong> と <br>）だけ復活させる
   const br = (s) =>
-    nl(esc(s)).replace(/&lt;(\/?strong|br\s*\/?)&gt;/gi, "<$1>");
+    nl(esc(s)).replace(/&lt;(\/?strong|br\s*\/?|wbr\s*\/?)&gt;/gi, "<$1>");
 
   const badge = (cls, text) => `<span class="badge badge--${cls}">${text}</span>`;
   const badges = (ev) =>
@@ -510,7 +510,7 @@
   $toBoard.addEventListener("click", () => $board.scrollIntoView({ behavior: "smooth" }));
 
   // ---------- 拡大縮小（縦ピンチ＝時間方向、横ピンチ＝会場列の幅。リロードで元に戻る） ----------
-  const ZOOM = { hour: [28, 220], col: [72, 420] };
+  const ZOOM = { hour: [28, 220], col: [75, 420] };
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v));
   // スマホで開いたときは、会場列の幅も1時間の高さも、最小の縮小から始める
   // （横スクロールを減らし、1日の流れと会場を一目で見渡せるように）
@@ -624,6 +624,79 @@
   };
   $scroll.addEventListener("touchend", endPinch);
   $scroll.addEventListener("touchcancel", endPinch);
+  // 表を下までスクロールしきったら、同じ指の動きのままボトムバー下のページ側へスクロールをつなぐ
+  // （iOS はブラウザ任せだと一度跳ね返ってからでないとつながらないため、自前で渡す）
+  // 指を離したあとの慣性もブラウザ任せにできないので、離す直前の速度から自前で減速させながら続ける
+  let lastY = null;
+  let lastT = 0;
+  let velocity = 0; // px/ms（ページを動かす向きが正）
+  let handed = false; // この指の動きでページ側を動かしたか
+  let momentumRaf = 0;
+  const startMomentum = (v) => {
+    let prev = performance.now();
+    const step = (now) => {
+      const dt = now - prev;
+      prev = now;
+      const before = window.scrollY;
+      window.scrollBy(0, v * dt);
+      v *= Math.pow(0.995, dt); // 時間あたりの減衰（約1.5秒で止まる）
+      if (Math.abs(v) > 0.02 && window.scrollY !== before) momentumRaf = requestAnimationFrame(step);
+    };
+    momentumRaf = requestAnimationFrame(step);
+  };
+  $scroll.addEventListener(
+    "touchstart",
+    (ev) => {
+      cancelAnimationFrame(momentumRaf);
+      lastY = ev.touches.length === 1 ? ev.touches[0].clientY : null;
+      lastT = ev.timeStamp;
+      velocity = 0;
+      handed = false;
+    },
+    { passive: true }
+  );
+  $scroll.addEventListener(
+    "touchend",
+    (ev) => {
+      if (handed && ev.touches.length === 0 && ev.timeStamp - lastT < 80 && Math.abs(velocity) > 0.1) startMomentum(velocity);
+      handed = false;
+    },
+    { passive: true }
+  );
+  $scroll.addEventListener(
+    "touchmove",
+    (ev) => {
+      if (ev.touches.length !== 1 || lastY === null) return;
+      const y = ev.touches[0].clientY;
+      const dy = y - lastY; // 負＝指を上へ（内容は下へ進む）
+      lastY = y;
+      const atBottom = $scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 1;
+      if ((dy < 0 && atBottom) || (dy > 0 && window.scrollY > 0)) {
+        ev.preventDefault();
+        window.scrollBy(0, -dy);
+        const dt = ev.timeStamp - lastT;
+        if (dt > 0) velocity = 0.8 * velocity + 0.2 * (-dy / dt);
+        handed = true;
+      } else {
+        handed = false;
+      }
+      lastT = ev.timeStamp;
+    },
+    { passive: false }
+  );
+  // PC: マウスホイールも同様。overscroll-behavior: none のため、表の下端（と、ページが下がっている間の上向き）はページ側へ渡す
+  $scroll.addEventListener(
+    "wheel",
+    (ev) => {
+      if (ev.ctrlKey || ev.shiftKey || !ev.deltaY) return;
+      const atBottom = $scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 1;
+      if (!((ev.deltaY > 0 && atBottom) || (ev.deltaY < 0 && window.scrollY > 0))) return;
+      ev.preventDefault();
+      const px = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? window.innerHeight : 1;
+      window.scrollBy(0, ev.deltaY * px);
+    },
+    { passive: false }
+  );
   // iOS Safari のページ全体のピンチズームを抑止
   $scroll.addEventListener("gesturestart", (ev) => ev.preventDefault());
 
