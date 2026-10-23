@@ -13,7 +13,7 @@ window.TT_DATA = {
   site: {
     name: "SNOW MIKU 2027",
     subtitle: "非公式カレンダー",
-    boardHint: "※ピンチで拡大縮小、予定タップで詳細",
+    boardHint: "二本指で拡大縮小、予定タップで詳細表示",
     venuesTitle: "公式イベント",
     // 非公式の会場カードの前に置く表題
     fanTitle: "非公式イベント",

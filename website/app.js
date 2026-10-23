@@ -456,6 +456,12 @@
   // ---------- 拡大縮小（縦ピンチ＝時間方向、横ピンチ＝会場列の幅。リロードで元に戻る） ----------
   const ZOOM = { hour: [28, 220], col: [72, 420] };
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v));
+  // スマホで開いたときは、会場列の幅も1時間の高さも、最小の縮小から始める
+  // （横スクロールを減らし、1日の流れと会場を一目で見渡せるように）
+  if (matchMedia("(max-width: 640px)").matches) {
+    $tt.style.setProperty("--colmin", `${ZOOM.col[0]}px`);
+    $tt.style.setProperty("--hour", `${ZOOM.hour[0]}px`);
+  }
   const cssPx = (name) => parseFloat(getComputedStyle($tt).getPropertyValue(name));
   const colWidth = () => $tt.querySelector(".tt-col").getBoundingClientRect().width;
   const hourPx = () => cssPx("--hour");
