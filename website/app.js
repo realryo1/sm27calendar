@@ -67,7 +67,7 @@
   function renderStatic() {
     const set = (id, html) => (document.getElementById(id).innerHTML = html);
     set("siteTitle", `<span class="day-nav__brand">${br(site.name)}</span> <span class="day-nav__sub">${br(site.subtitle)}</span>`);
-    set("trainChip", `${TR.chip}<span class="day-chip__week">${TR.chipEn}</span>`);
+    set("trainChip", `<span class="day-chip__label">${TR.chip}</span><span class="day-chip__week">${TR.chipEn}</span>`);
     set("boardHint", br(site.boardHint));
     set("venuesTitle", br(site.venuesTitle));
     set("disclaimer", br(site.disclaimer));
@@ -91,7 +91,7 @@
     $dayNav.innerHTML = days
       .map(
         (d) => `<button class="day-chip" data-day="${d.id}">
-          <span class="day-chip__date">${d.label}</span><span class="day-chip__week">${d.week}</span>
+          <span class="day-chip__date notranslate" translate="no">${d.label}</span><span class="day-chip__week">${d.week}</span>
         </button>`
       )
       .join("");
@@ -104,10 +104,10 @@
     const axis = (row) => `<div class="tt-axis" style="grid-row:${row}">${hours
       .map(
         (h, i) => `<div class="tt-axis__hour" style="top:${pos(h)}">
-          <span class="tt-axis__h">${h}</span><span class="tt-axis__m">00</span>
+          <span class="tt-axis__h notranslate" translate="no">${h}</span><span class="tt-axis__m notranslate" translate="no">00</span>
         </div>${
           i < hours.length - 1
-            ? `<div class="tt-axis__half" style="top:${pos(h + 0.5)}"><span class="tt-axis__m">30</span></div>`
+            ? `<div class="tt-axis__half" style="top:${pos(h + 0.5)}"><span class="tt-axis__m notranslate" translate="no">30</span></div>`
             : ""
         }`
       )
@@ -153,7 +153,7 @@
   }
 
   const dayBand = (d) => `<span class="tt-day__label">
-      <span class="tt-day__date">${d.label}</span>
+      <span class="tt-day__date notranslate" translate="no">${d.label}</span>
       <span class="tt-day__week">${d.week}</span>
       <span class="tt-day__ja">（${d.weekJa}）</span>
       <span class="tt-day__sub">${br(site.subtitle)}</span>

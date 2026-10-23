@@ -139,6 +139,19 @@ button { font: inherit; color: inherit; }
   background: linear-gradient(to bottom right, var(--col-ink-primary), var(--col-secondary));
 }
 .day-chip.is-active .day-chip__week { color: var(--col-paper); }
+/* ブラウザの翻訳などで極端に長い文字列になっても、枠からはみ出さず … で省略する */
+.day-chip--train { max-width: 12em; min-width: 0; overflow: hidden; }
+.day-chip--train .day-chip__label,
+.day-chip--train .day-chip__week {
+  display: block;
+  box-sizing: border-box;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .day-chip--train {
   text-decoration: none;
   font-weight: 900;
@@ -197,7 +210,9 @@ button { font: inherit; color: inherit; }
   .day-chip--train { flex: 1 1 0; min-width: 0; padding: 4px 2px; }
   .day-chip__date { font-size: 1.05rem; }
   .day-chip__week { display: block; font-size: .58rem; }
-  .day-chip--train { font-size: .78rem; line-height: 1.2; letter-spacing: 0; }
+  .day-chip--train { font-size: .78rem; line-height: 1.2; letter-spacing: 0; max-width: none; }
+  .day-chip--train .day-chip__label,
+  .day-chip--train .day-chip__week { width: 100%; text-align: center; }
   .day-chip--train .day-chip__week { display: block; }
 }
 @media (max-width: 360px) {
@@ -977,12 +992,12 @@ button { font: inherit; color: inherit; }
 .tl-sign--inner { --line: var(--track-inner); --sign-bg: #f6faff; }
 .tl-sign__top { padding: 3cqw 3cqw 2.4cqw; text-align: center; background: var(--line); }
 .tl-sign__name { margin: 0; font-size: min(8cqw, calc(78cqw / var(--len, 6))); font-weight: 900; line-height: 1.15; letter-spacing: .14em; }
-.tl-sign__roma { margin: .8cqw 0 0; font-size: 3.4cqw; font-weight: 700; text-transform: uppercase; }
+.tl-sign__roma { margin: .8cqw 0 0; font-size: min(3.4cqw, calc(88cqw / var(--rlen, 20))); font-weight: 700; text-transform: uppercase; white-space: nowrap; }
 
 /* 中段の直上の時刻（前駅・当駅・次駅）。当駅だけ大きく */
 .tl-sign__times {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: baseline;
   padding: 2.6cqw 3cqw 0;
   text-align: center;
@@ -1000,7 +1015,7 @@ button { font: inherit; color: inherit; }
   --tip: calc(2.4cqw + 7cqw * 3 / 20); /* 矢印の先端の右端からの位置（viewBox の x=17/20） */
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 3.5cqw var(--mid-pad) 2.5cqw;
 }
 .tl-sign__mid::before {
@@ -1059,7 +1074,7 @@ button { font: inherit; color: inherit; }
 .tl-sign.is-here .tl-sign__st--cur .tl-sign__num { animation: tl-here 1.6s ease-in-out infinite; }
 @keyframes tl-here { 50% { box-shadow: 0 0 0 2cqw rgb(226 64 58 / .25); } }
 .tl-sign__st b { margin-top: 2.4cqw; font-size: min(4.1cqw, calc(28cqw / var(--len, 4))); font-weight: 900; white-space: nowrap; }
-.tl-sign__st small { margin-top: .4cqw; font-size: 2.7cqw; font-weight: 500; }
+.tl-sign__st small { margin-top: .4cqw; max-width: 100%; font-size: min(2.7cqw, calc(29cqw / var(--rlen, 12))); font-weight: 500; white-space: nowrap; }
 
 /* 走行中の電車（前の停留場 → この駅 の間） */
 .tl-sign__train {

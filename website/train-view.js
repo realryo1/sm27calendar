@@ -330,12 +330,14 @@
     anim.dist = dist;
     anim.gap = gap;
   };
-  function moveTrain(dist, gap) {
+  // travel: 路線の進行方向に沿って動かす向き（+1 線路順 / -1 逆順）。null なら近い方向へ
+  function moveTrain(dist, gap, travel = null) {
     cancelAnimationFrame(anim.raf);
     if (anim.dist == null || reduceMotion) return placeTrain(dist, gap);
-    // ループ上で近い方向へ進む
     let delta = (((dist - anim.dist) % TOTAL) + TOTAL) % TOTAL;
-    if (delta > TOTAL / 2) delta -= TOTAL;
+    if (travel != null && Math.sign(gap) === Math.sign(anim.gap)) {
+      if (travel < 0 && delta > 0) delta -= TOTAL;
+    } else if (delta > TOTAL / 2) delta -= TOTAL;
     const from = anim.dist;
     const fromGap = anim.gap;
     const t0 = performance.now();
@@ -380,7 +382,7 @@
     const next = at(center + dir.step);
     const side = (i, cls) => `<div class="tl-sign__st tl-sign__st--${cls}">
         <span class="tl-sign__num">SC<br>${SC(i)}</span>
-        <b style="--len:${T.stations[i].name.length}">${T.stations[i].name}</b><small>${T.stations[i].roma}</small>
+        <b style="--len:${T.stations[i].name.length}">${T.stations[i].name}</b><small style="--rlen:${T.stations[i].roma.length}">${T.stations[i].roma}</small>
       </div>`;
     const train =
       trainAt != null
@@ -391,7 +393,7 @@
     return `<div class="tl-sign tl-sign--${direction}${here ? " is-here" : ""}">
       <div class="tl-sign__top">
         <p class="tl-sign__name" style="--len:${T.stations[center].name.length}">${T.stations[center].name}</p>
-        <p class="tl-sign__roma">${T.stations[center].roma}</p>
+        <p class="tl-sign__roma" style="--rlen:${T.stations[center].roma.length}">${T.stations[center].roma}</p>
       </div>
       <div class="tl-sign__times">${times
         .map((t, k) => `<span class="${k === 1 ? "is-cur" : ""}">${t ? `${t[0] ? fmt(t[0]) : ""}<small>${t[1]}</small>` : ""}</span>`)
@@ -407,8 +409,11 @@
     </div>`;
   }
 
+  let lastMin = state.min;
   function render() {
     if (state.live) Object.assign(state, nowJST());
+    const prevMin = lastMin;
+    lastMin = state.min;
     $now.classList.toggle("is-active", state.live);
     $date.value = state.dateId;
     setWheel(Math.floor(state.min));
@@ -468,7 +473,10 @@
       const dist = posDist(loc.pos);
       const gap = cfg.direction === "outer" ? GAP : -GAP;
       $train.style.display = "";
-      moveTrain(dist, gap);
+      // 時刻を進めたら路線の進行方向へ、戻したらその逆へ動かす（30分送り・戻しで逆走して見えないように）
+      const dirSign = cfg.direction === "outer" ? 1 : -1;
+      const dt = state.min - prevMin;
+      moveTrain(dist, gap, dt === 0 || Math.abs(dt) > 60 ? null : dt > 0 ? dirSign : -dirSign);
       if (loc.state === "stop") $sts[loc.pos % N].classList.add("is-current");
       else $sts[loc.to.pos % N].classList.add("is-next");
     } else {
