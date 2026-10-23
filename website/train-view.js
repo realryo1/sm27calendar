@@ -368,6 +368,7 @@
     anim.dist = null;
   }
 
+
   const cache = {};
   const keypoints = (type) => (cache[type] ??= buildKeypoints(type));
 

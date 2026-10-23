@@ -167,7 +167,7 @@
             <span class="ev__time">${timeText(e)}</span>
             <span class="ev__badges">${badges(e)}</span>
           </span>
-          <span class="ev__title">${br(e.title)}</span>
+          <span class="ev__title">${e.official ? "" : `<span class="ev__fan-label">${B.fan}</span>`}${br(e.title)}</span>
         </span>
       </button>`;
     }
@@ -200,7 +200,7 @@
           <span class="ev__time">${e.live ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
           <span class="ev__badges">${badges(e)}</span>
         </span>
-        <span class="ev__title">${br(e.title)}</span>
+        <span class="ev__title">${e.official ? "" : `<span class="ev__fan-label">${B.fan}</span>`}${br(e.title)}</span>
         ${e.sub ? `<span class="ev__sub">${br(e.sub)}</span>` : ""}
       </span>
       ${lastEntry}
