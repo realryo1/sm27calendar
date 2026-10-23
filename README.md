@@ -43,6 +43,19 @@ python -m http.server 8000
 - サイト名や説明文を変える場合は、`index.html` の title / meta タグも合わせて直してください。
 - `updatedAt`（最終更新日時）はデプロイ時に自動で書き換えられます。
 
+## 画像の形式
+
+`website/image/` の PNG（`favicon-32.png` を除く）は PNG-8（256色）に減色しています。中央値カット（MEDIANCUT）でディザなしの設定です。オクトリーや、ディザありの減色では、背景のグラデーションに段差やノイズが出ました。
+
+`tools/` で書き出した直後の画像は減色前（24bit）になるので、置き換えるときは次の手順で減色してください。
+
+```python
+from PIL import Image
+
+im = Image.open("ogp.png").convert("RGB")
+im.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save("ogp.png", optimize=True)
+```
+
 ## デプロイ
 
 GitHub Actions の `Deploy website to GitHub Pages`（[deploy-pages.yml](.github/workflows/deploy-pages.yml)）を手動実行すると、`website/` が GitHub Pages に公開されます。
