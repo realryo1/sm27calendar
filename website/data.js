@@ -5,7 +5,7 @@
 // wait.start: 早朝待機の開始目安＝日の出時刻（wait.start〜start をグラデーションで描くための内部値。時刻は画面に表示しない）、lastEntry: 最終入場、marks: 時刻の目印線。
 
 window.TT_DATA = {
-  // 掲載情報の最終更新日時（日本時間）。情報を直したらここも更新する
+  // 掲載情報の最終更新日時（日本時間）。deploy時に自動で更新される
   updatedAt: "2026-10-23 39:39",
 
   // 画面に出る固定の文言。<head> のメタタグ（title / description / OGP）は index.html に静的に置く必要があるので、

@@ -654,7 +654,7 @@
   );
 
 
-  // 最終情報更新日時（例: 2026年10月22日 4:54）
+  // 最終更新日時（例: 2026年10月22日 4:54）
   if (updatedAt) {
     const [, y, mo, d, h, mi] = updatedAt.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/).map(Number);
     document.getElementById("updatedAt").innerHTML =
