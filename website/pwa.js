@@ -53,7 +53,7 @@
     deferred = ev;
     if (dismissed()) return;
     show(`<p class="install__title">アプリとしてインストール</p>
-      <p class="install__text">ホーム画面から開けて、電波のない会場でもオフラインで見られます。</p>
+      <p class="install__text">・オフラインや、電波が悪くてもすぐ見れる！<br>・アプリのような画面でわかりやすい！</p>
       <button type="button" class="install__btn" data-install>インストール</button>`);
   });
   window.addEventListener("appinstalled", () => ($card.hidden = true));
@@ -61,8 +61,8 @@
   // iOS Safari：自動のダイアログがないので、ホーム画面への追加手順を案内する
   if (isIOS && !dismissed()) {
     show(`<p class="install__title">ホーム画面に追加</p>
-      <p class="install__text">
-        <svg class="install__share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        共有ボタンから「ホーム画面に追加」を選ぶと、アプリのように開けてオフラインでも見られます。</p>`);
+      <p class="install__text">・オフラインや、電波が悪くてもすぐ見れる！<br>・アプリのような画面でわかりやすい！<br>
+        右下「 … 」の 「<svg class="install__share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+       共有 」から「ホーム画面に追加」しよう！</p>`);
   }
 })();

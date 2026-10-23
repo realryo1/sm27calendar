@@ -193,11 +193,19 @@
     toast("更新中です。オフラインや回線が遅いと表示に時間がかかるかもしれません", 30000);
     try {
       // 先に最新を取得できるか確かめる（失敗したら今のキャッシュは消さない＝オフラインで真っ白にならない）
-      const urls = [location.href, ...performance.getEntriesByType("resource").map((r) => r.name)].filter((u) => new URL(u).origin === location.origin);
+      // 取得対象は precache.js の一覧（確実に全ファイル）＋ 読み込み済みの同一オリジンのリソース
+      const urls = [
+        location.href,
+        ...(self.PRECACHE || []).map((u) => new URL(u, location.href).href),
+        ...performance.getEntriesByType("resource").map((r) => r.name),
+      ].filter((u) => new URL(u).origin === location.origin);
       const res = await Promise.all([...new Set(urls)].map((u) => fetch(u, { cache: "reload" })));
       if (res.some((r) => !r.ok)) throw new Error("fetch failed");
       if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
       if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
+      try {
+        localStorage.removeItem("sm27-install-dismissed");
+      } catch {}
       location.reload();
     } catch {
       refreshing = false;
@@ -670,4 +678,18 @@
   updateActiveChip();
 
   setInterval(updateNow, 60 * 1000);
+
+  // 起動時に一度だけ data.js の最終更新日時を確かめ、新しい情報があれば読み込み直す
+  // （sessionStorage の印で、取得できなかった場合などに読み込み直しを繰り返さないようにする）
+  (async () => {
+    if (!navigator.onLine) return;
+    try {
+      if (sessionStorage.getItem("sm27-update-checked") === "1") return;
+      sessionStorage.setItem("sm27-update-checked", "1");
+      const res = await fetch("data.js", { cache: "no-cache" });
+      if (!res.ok) return;
+      const latest = (await res.text()).match(/updatedAt:\s*"([^"]+)"/)?.[1];
+      if (latest && latest !== updatedAt) location.reload();
+    } catch {}
+  })();
 })();

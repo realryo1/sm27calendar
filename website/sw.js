@@ -1,23 +1,10 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
-// ファイルを追加・削除したときは PRECACHE を更新し、VERSION を上げる。
-const VERSION = "v5";
+// ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
+const VERSION = "v7";
 const CACHE = `sm27-${VERSION}`;
-const PRECACHE = [
-  "./",
-  "index.html",
-  "style.css",
-  "data.js",
-  "app.js",
-  "train.js",
-  "train-view.js",
-  "pwa.js",
-  "manifest.webmanifest",
-  "favicon.ico",
-  "image/favicon-32.png",
-  "image/icon-512.png",
-  "image/souchou.png",
-];
+importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）
+const PRECACHE = self.PRECACHE;
 // フォント（Google Fonts）も保存してオフラインで使う
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 
@@ -43,6 +30,12 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {
+      // ページからの最新確認（cache: no-cache / reload）はキャッシュを返さず、取得できたらキャッシュも更新する
+      if (sameOrigin && (req.cache === "no-cache" || req.cache === "reload")) {
+        const res = await fetch(req);
+        if (res.ok) cache.put(req, res.clone());
+        return res;
+      }
       // ?at= などのクエリ付きでもページ本体はキャッシュを使う
       const key = sameOrigin && req.mode === "navigate" ? "index.html" : req;
       const cached = await cache.match(key, { ignoreSearch: req.mode === "navigate" });
