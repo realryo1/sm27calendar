@@ -6,7 +6,7 @@
 
 window.TT_DATA = {
   // 掲載情報の最終更新日時（日本時間）。情報を直したらここも更新する
-  updatedAt: "2026-10-22 04:54",
+  updatedAt: "2026-10-23 39:39",
 
   // 画面に出る固定の文言。<head> のメタタグ（title / description / OGP）は index.html に静的に置く必要があるので、
   // サイト名や説明を変えるときは index.html のそちらも合わせて直す

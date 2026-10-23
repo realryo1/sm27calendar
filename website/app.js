@@ -138,7 +138,7 @@
         // 1日目の帯は一番上に貼り付く「現在の日付」（スクロールに合わせて updateActiveChip が書き換える）。2日目以降は日の境目に置く普通の帯
         const band =
           i === 0
-            ? `<div class="tt-day tt-day--top" style="grid-row:${dayRow(i)}">${dayBand(d)}</div>`
+            ? `<div class="tt-day tt-day--top" style="grid-row:${dayRow(i)}">${dayBand(d)}${refreshBtn}</div>`
             : `<div class="tt-day" style="grid-row:${dayRow(i)}">${dayBand(d)}</div>`;
         return `${band}${axis(bodyRow(i))}${cols}`;
       })
@@ -158,6 +158,53 @@
       <span class="tt-day__ja">（${d.weekJa}）</span>
       <span class="tt-day__sub">${br(site.subtitle)}</span>
     </span>`;
+
+  // 右端の更新ボタン：ページと画像のキャッシュを消して読み込み直す
+  const refreshBtn = `<button type="button" class="tt-refresh" data-refresh aria-label="キャッシュを消して更新">更新</button>`;
+
+  let toastTimer;
+  function toast(msg, ms = 6000) {
+    let $t = document.querySelector(".toast");
+    if (!$t) {
+      $t = document.createElement("div");
+      $t.className = "toast";
+      $t.setAttribute("role", "status");
+      document.body.append($t);
+    }
+    $t.textContent = msg;
+    $t.hidden = false;
+    // 更新ボタンの真下に、ボタンを指す吹き出しとして出す
+    const r = document.querySelector("[data-refresh]")?.getBoundingClientRect();
+    if (r) {
+      $t.style.top = `${r.bottom + 12}px`;
+      $t.style.right = `${Math.max(8, innerWidth - r.right)}px`;
+      $t.style.setProperty("--tail", `${Math.max(12, r.width / 2 - 6)}px`);
+    }
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => ($t.hidden = true), ms);
+  }
+
+  let refreshing = false;
+  async function hardRefresh() {
+    if (refreshing) return;
+    if (!navigator.onLine) return toast("オフラインのため更新できませんでした");
+    refreshing = true;
+    document.body.classList.add("is-refreshing");
+    toast("更新中です。オフラインや回線が遅いと表示に時間がかかるかもしれません", 30000);
+    try {
+      // 先に最新を取得できるか確かめる（失敗したら今のキャッシュは消さない＝オフラインで真っ白にならない）
+      const urls = [location.href, ...performance.getEntriesByType("resource").map((r) => r.name)].filter((u) => new URL(u).origin === location.origin);
+      const res = await Promise.all([...new Set(urls)].map((u) => fetch(u, { cache: "reload" })));
+      if (res.some((r) => !r.ok)) throw new Error("fetch failed");
+      if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+      if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
+      location.reload();
+    } catch {
+      refreshing = false;
+      document.body.classList.remove("is-refreshing");
+      toast(navigator.onLine ? "更新できませんでした。通信状況を確認してもう一度お試しください" : "オフラインのため更新できませんでした");
+    }
+  }
 
   function renderEvent(e) {
     if (e.allDay) {
@@ -417,7 +464,7 @@
     const $top = $tt.querySelector(".tt-day--top");
     if ($top.dataset.day !== String(active)) {
       $top.dataset.day = String(active);
-      $top.innerHTML = dayBand(days[active]);
+      $top.innerHTML = dayBand(days[active]) + refreshBtn;
     }
   }
 
@@ -434,6 +481,7 @@
   $scroll.addEventListener("scroll", () => requestAnimationFrame(updateActiveChip), { passive: true });
 
   $tt.addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-refresh]")) return hardRefresh();
     const wait = ev.target.closest("[data-wait]");
     if (wait) return showWait(wait.dataset.wait);
     const btn = ev.target.closest("[data-ev]");

@@ -25,7 +25,7 @@
 
   --hour: 72px;
   --head: 56px;
-  --divider: 36px;
+  --divider: 39px;
   --axis: 56px;
   --axis-bleed: 8px; /* 時刻軸・左上の角が右の列の間隔へはみ出す量（両者の右端をそろえる） */
   --colmin: 96px;
@@ -42,7 +42,7 @@
   :root {
     --hour: 60px;
     --head: 66px;
-    --divider: 34px;
+    --divider: 39px;
     --axis: 26px;
     --axis-bleed: 4px;
     --colmin: 112px;
@@ -375,6 +375,57 @@ button { font: inherit; color: inherit; }
   top: 0;
   z-index: 6; /* 会場見出しより前 */
 }
+.tt-refresh {
+  position: sticky;
+  right: 6px;
+  z-index: 1;
+  flex: none;
+  margin-left: auto;
+  margin-right: 6px;
+  padding: 8px 14px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font-size: .8rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--col-primary-dark);
+  /* 白抜き：中は白、縁だけグラデーション */
+  background: linear-gradient(var(--col-paper), var(--col-paper)) padding-box, var(--brand-gradient) border-box;
+  cursor: pointer;
+}
+/* 押している間と更新中はグラデーションで塗りつぶす */
+.tt-refresh:active,
+.is-refreshing .tt-refresh {
+  color: var(--col-paper);
+  background: var(--brand-gradient);
+}
+.is-refreshing .tt-refresh { pointer-events: none; }
+.toast {
+  position: fixed;
+  top: 60px;
+  right: 8px;
+  z-index: 40;
+  max-width: min(280px, calc(100% - 16px));
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: #fff;
+  background: rgb(40 34 70 / .94);
+  box-shadow: 0 6px 18px rgb(79 69 143 / .3);
+  animation: install-in .2s ease-out;
+}
+/* 更新ボタンを指すしっぽ */
+.toast::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: var(--tail, 20px);
+  border: 6px solid transparent;
+  border-top: 0;
+  border-bottom-color: rgb(40 34 70 / .94);
+}
+.toast[hidden] { display: none; }
 .tt-day__label {
   position: sticky;
   left: 0;
@@ -382,24 +433,23 @@ button { font: inherit; color: inherit; }
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  margin-left: 2px;
-  padding: 8px;
+  margin: 10px;
   line-height: 1;
 }
 .tt-day__date {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.69rem;
   color: var(--col-ink-primary);
   background: var(--brand-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.tt-day__week { font-family: var(--font-display); font-size: .66rem; letter-spacing: .14em; color: var(--col-secondary); }
-.tt-day__sub { display: none; margin-left: 4px; font-size: .72rem; font-weight: 700; color: var(--col-ink); } /* 上のバーのタイトルと同じ色 */
-.tt-day__ja { font-size: .68rem; font-weight: 700; opacity: .6; }
+.tt-day__week { font-family: var(--font-display); font-size: .858rem; letter-spacing: .14em; color: var(--col-secondary); }
+.tt-day__sub { display: none; margin-left: 4px; font-size: .936rem; font-weight: 700; color: var(--col-ink); } /* 上のバーのタイトルと同じ色 */
+.tt-day__ja { font-size: .884rem; font-weight: 700; opacity: .6; }
 @media (max-width: 640px) {
-  .tt-day__date { font-size: 1.15rem; }
+  .tt-day__date { font-size: 1.495rem; }
 }
 
 .tt-axis {
