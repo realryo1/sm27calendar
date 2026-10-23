@@ -178,10 +178,11 @@
   const trackPath = (d) => "M" + pts.map((_, k) => offPt(k, d).map((v) => v.toFixed(1)).join(",")).join("L") + "Z";
 
   // 進行方向の矢印（＞の形）。見やすいよう大きめにして、数は駅間の1つおきに間引き、外回りと内回りで互い違いにする
+  const ARROW_NUDGE = { 10: 16, 13: -16 }; // 角に近い矢印だけ、線路に沿って少しずらす（駅番号 i → 線路順の距離）
   const arrows = (d, reverse) =>
     MAP_ST.map((_, i) => {
       if ((i % 2 === 1) !== reverse) return ""; // 外回りは偶数番目、内回りは奇数番目に置いて、隣り合う線で互い違いにする
-      const p = pointAt((stDist[i] + stDist[i + 1]) / 2, d);
+      const p = pointAt((stDist[i] + stDist[i + 1]) / 2 + (ARROW_NUDGE[i] ?? 0), d);
       return `<path d="M-5,-10L5,0L-5,10" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${p.angle + (reverse ? 180 : 0)})"/>`;
     }).join("");
 
@@ -246,6 +247,18 @@
     </g>`;
   }
 
+  // 電車マーカー（路線図と駅名標で共通）。中心が原点、進行方向は右（+x）。路線図では heading を回転させて向きを合わせる
+  const trainMark = (mapIds) => `
+        <circle class="tl-map__pulse" r="18"/>
+        <g class="tl-map__heading"${mapIds ? ' id="tlHeading"' : ""}><path d="M23,-11L41,0L23,11L27,0Z"/></g>
+        <circle class="tl-map__body" r="16"/>
+        <g transform="translate(-9,-10) scale(.75)">
+          <rect x="5" y="3" width="14" height="15" rx="3" fill="#fff"/>
+          <rect x="7.5" y="6" width="9" height="5" rx="1" class="tl-map__win"/>
+          <circle cx="9" cy="14.5" r="1.3" class="tl-map__win"/><circle cx="15" cy="14.5" r="1.3" class="tl-map__win"/>
+          <path d="M8 18l-2 3M16 18l2 3" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+        </g>`;
+
   const buildMapSvg = () => `
     <svg class="tl-map" id="tlMap" viewBox="0 ${-TOP_PAD} ${layout.width} ${layout.height + TOP_PAD}" role="img" aria-label="${TEXT.mapLabel}">
       ${subwaySvg()}
@@ -265,21 +278,12 @@
           <g class="tl-map__label">${label(m, T.stations[i], i)}</g>
         </g>`
       ).join("")}
-      <g class="tl-map__train" id="tlTrain">
-        <circle class="tl-map__pulse" r="18"/>
-        <g class="tl-map__heading" id="tlHeading"><path d="M23,-11L41,0L23,11L27,0Z"/></g>
-        <circle class="tl-map__body" r="16"/>
-        <g transform="translate(-9,-10) scale(.75)">
-          <rect x="5" y="3" width="14" height="15" rx="3" fill="#fff"/>
-          <rect x="7.5" y="6" width="9" height="5" rx="1" class="tl-map__win"/>
-          <circle cx="9" cy="14.5" r="1.3" class="tl-map__win"/><circle cx="15" cy="14.5" r="1.3" class="tl-map__win"/>
-          <path d="M8 18l-2 3M16 18l2 3" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
-        </g>
-      </g>
+      <g class="tl-map__train" id="tlTrain">${trainMark(true)}</g>
     </svg>`;
 
   // ---------- 描画 ----------
   $root.innerHTML = `
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tlBrandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9185de"/><stop offset="1" stop-color="#e9a1eb"/></linearGradient></defs></svg>
     <div class="tl-grid">
     <div class="tl-side">
     <h4 class="train-live__title">${nl(TEXT.title)}<small>${nl(TEXT.titleSub)}</small></h4>
@@ -289,14 +293,14 @@
       <input type="date" class="tl-date" id="tlDate" min="${T.period.start}" max="${T.period.end}" aria-label="${TEXT.dateLabel}">
     </div>
     <div class="tl-time">
-      <button type="button" class="tl-step" data-step="-30" aria-label="30分前">30分前</button>
+      <button type="button" class="tl-step" data-step="-30" aria-label="30分前">- 30</button>
       <div class="tl-wheel" role="group" aria-label="${TEXT.timeLabel}">
         <div class="tl-wheel__band" aria-hidden="true"></div>
         <div class="tl-wheel__col" id="tlHour" role="listbox" tabindex="0" aria-label="時">${Array.from({ length: 17 }, (_, i) => `<div class="tl-wheel__item" role="option">${6 + i}</div>`).join("")}</div>
         <span class="tl-wheel__colon" aria-hidden="true">:</span>
         <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: 180 }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i % 60).padStart(2, "0")}</div>`).join("")}</div>
       </div>
-      <button type="button" class="tl-step" data-step="30" aria-label="30分後">30分後</button>
+      <button type="button" class="tl-step" data-step="30" aria-label="30分後">+ 30</button>
     </div>
       <div class="tl-status" id="tlStatus"></div>
     </div>
@@ -386,9 +390,7 @@
       </div>`;
     const train =
       trainAt != null
-        ? `<span class="tl-sign__train" style="--p:${(0.27 + trainAt * 0.085).toFixed(3)}" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="15" rx="3"/><rect x="7.5" y="6" width="9" height="5" rx="1" fill="#fff"/><circle cx="9" cy="14.5" r="1.3" fill="#fff"/><circle cx="15" cy="14.5" r="1.3" fill="#fff"/><path d="M8 18l-2 3M16 18l2 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
-          </span>`
+        ? `<svg class="tl-sign__train" style="--p:${(0.29 + trainAt * 0.04).toFixed(3)}" viewBox="-16 -16 32 32" aria-hidden="true">${trainMark(false)}</svg>`
         : "";
     return `<div class="tl-sign tl-sign--${direction}${here ? " is-here" : ""} notranslate" translate="no">
       <div class="tl-sign__top">
@@ -442,17 +444,17 @@
     let curTime; // 当駅の時刻 [時刻, 説明]
     if (loc.state === "before") {
       center = kps[0].pos % N;
-      curTime = [kps[0].t, "発車予定"];
+      curTime = [kps[0].t, "発"];
     } else if (loc.state === "after") {
       center = kps[kps.length - 1].pos % N;
       curTime = [null, "運行終了"];
     } else if (loc.state === "stop") {
       center = loc.pos % N;
-      curTime = [loc.until.t, "発車予定"];
+      curTime = [loc.until.t, "発"];
     } else {
       center = loc.to.pos % N;
       trainAt = loc.frac;
-      curTime = [loc.to.t, "到着予定"];
+      curTime = [loc.to.t, "着"];
     }
     // 前駅＝直近にその駅を出た時刻、次駅＝当駅の後に着く時刻
     const step = DIR[cfg.direction].step;
@@ -461,7 +463,7 @@
     const prevDep = kps.filter((k) => k.pos % N === prevPos && k.t <= state.min).at(-1);
     const after = curTime[0] ?? state.min;
     const nextArr = loc.state === "after" ? null : kps.find((k) => k.pos % N === nextPos && k.t > after);
-    const times = [prevDep && [prevDep.t, "発"], curTime, nextArr && [nextArr.t, "到着予定"]];
+    const times = [prevDep && [prevDep.t, "発"], curTime, nextArr && [nextArr.t, "着"]];
     $status.innerHTML = stationSign(cfg.direction, center, trainAt, loc.state === "stop", times);
 
     $times.forEach((t) => {
