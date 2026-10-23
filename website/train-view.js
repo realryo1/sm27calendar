@@ -382,7 +382,7 @@
     const next = at(center + dir.step);
     const side = (i, cls) => `<div class="tl-sign__st tl-sign__st--${cls}">
         <span class="tl-sign__num">SC<br>${SC(i)}</span>
-        <b style="--len:${T.stations[i].name.length}">${T.stations[i].name}</b><small style="--rlen:${T.stations[i].roma.length}">${T.stations[i].roma}</small>
+        <b style="--len:${T.stations[i].name.length}">${T.stations[i].name}</b><small${T.stations[i].roma.length > 24 ? " class=\"is-long\"" : ""}>${T.stations[i].roma}</small>
       </div>`;
     const train =
       trainAt != null
@@ -390,7 +390,7 @@
             <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="15" rx="3"/><rect x="7.5" y="6" width="9" height="5" rx="1" fill="#fff"/><circle cx="9" cy="14.5" r="1.3" fill="#fff"/><circle cx="15" cy="14.5" r="1.3" fill="#fff"/><path d="M8 18l-2 3M16 18l2 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
           </span>`
         : "";
-    return `<div class="tl-sign tl-sign--${direction}${here ? " is-here" : ""}">
+    return `<div class="tl-sign tl-sign--${direction}${here ? " is-here" : ""} notranslate" translate="no">
       <div class="tl-sign__top">
         <p class="tl-sign__name" style="--len:${T.stations[center].name.length}">${T.stations[center].name}</p>
         <p class="tl-sign__roma" style="--rlen:${T.stations[center].roma.length}">${T.stations[center].roma}</p>

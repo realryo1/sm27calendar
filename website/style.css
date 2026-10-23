@@ -981,16 +981,14 @@ button { font: inherit; color: inherit; }
   --line: var(--track-outer);
   --sign-bg: #fbf7ea;
   overflow: hidden;
-  border-radius: 8px;
   color: #1e1e1e;
   background: var(--sign-bg);
   box-shadow: 0 0 0 1px rgb(0 0 0 / .08), 0 3px 8px rgb(0 0 0 / .08);
   font-family: var(--font-base);
-  letter-spacing: .02em;
   font-feature-settings: normal;
 }
 .tl-sign--inner { --line: var(--track-inner); --sign-bg: #f6faff; }
-.tl-sign__top { padding: 3cqw 3cqw 2.4cqw; text-align: center; background: var(--line); }
+.tl-sign__top { padding: 2cqw; text-align: center; background: var(--line); }
 .tl-sign__name { margin: 0; font-size: min(8cqw, calc(78cqw / var(--len, 6))); font-weight: 900; line-height: 1.15; letter-spacing: .14em; }
 .tl-sign__roma { margin: .8cqw 0 0; font-size: min(3.4cqw, calc(88cqw / var(--rlen, 20))); font-weight: 700; text-transform: uppercase; white-space: nowrap; }
 
@@ -999,7 +997,7 @@ button { font: inherit; color: inherit; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: baseline;
-  padding: 2.6cqw 3cqw 0;
+  padding: 2cqw;
   text-align: center;
   font-size: 3.4cqw;
   font-weight: 900;
@@ -1011,12 +1009,12 @@ button { font: inherit; color: inherit; }
 
 .tl-sign__mid {
   --mid-pad: 3cqw;
-  --cy: calc(3.5cqw + 9cqw); /* 線の高さ＝中央の丸の中心 */
+  --cy: calc(1.5cqw + 9cqw); /* 線の高さ＝中央の丸の中心 */
   --tip: calc(2.4cqw + 7cqw * 3 / 20); /* 矢印の先端の右端からの位置（viewBox の x=17/20） */
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 3.5cqw var(--mid-pad) 2.5cqw;
+  padding: 1.5cqw var(--mid-pad) 2.5cqw;
 }
 .tl-sign__mid::before {
   content: "";
@@ -1074,7 +1072,11 @@ button { font: inherit; color: inherit; }
 .tl-sign.is-here .tl-sign__st--cur .tl-sign__num { animation: tl-here 1.6s ease-in-out infinite; }
 @keyframes tl-here { 50% { box-shadow: 0 0 0 2cqw rgb(226 64 58 / .25); } }
 .tl-sign__st b { margin-top: 2.4cqw; font-size: min(4.1cqw, calc(28cqw / var(--len, 4))); font-weight: 900; white-space: nowrap; }
-.tl-sign__st small { margin-top: .4cqw; max-width: 100%; font-size: min(2.7cqw, calc(29cqw / var(--rlen, 12))); font-weight: 500; white-space: nowrap; }
+.tl-sign__st small { margin-top: .4cqw; font-size: 2.7cqw; font-weight: 500; white-space: nowrap; }
+/* 右端の矢印に寄る次駅の列は、少し左へ寄せて長いローマ字を1行に収める */
+.tl-sign__st--next { transform: translateX(-3cqw); }
+/* 1行に収まらないほど長い名前だけ折り返す（高さは2行ぶん確保） */
+.tl-sign__st small.is-long { max-width: 100%; min-height: 2.5em; white-space: normal; text-wrap: balance; }
 
 /* 走行中の電車（前の停留場 → この駅 の間） */
 .tl-sign__train {
@@ -1099,7 +1101,7 @@ button { font: inherit; color: inherit; }
 
 .tl-sign__dir {
   margin: 0 3cqw 3cqw;
-  padding: 1.3cqw;
+  padding: 1cqw;
   border-radius: 999px;
   font-size: 3.9cqw;
   font-weight: 900;
