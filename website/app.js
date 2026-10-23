@@ -243,7 +243,7 @@
         const singleTitle = single && single.e.title !== (v.short ?? v.name) ? single.e.title : "";
         const cardTitle = (commonTitle || singleTitle).replace(/\n/g, " ");
         const commonDays = multi && groups.every((g) => dayText(g) === dayText(groups[0])) ? dayText(groups[0]) : "";
-        // 入場料は「最寄り」の下に並べる。複数公演のカードでは、全公演で同じときだけカードに出す
+        // 値段は「最寄り」の下に並べる。複数公演のカードでは、全公演で同じときだけカードに出す
         const commonPrice = multi && groups.every((g) => JSON.stringify(g.e.price) === JSON.stringify(groups[0].e.price)) ? groups[0].e.price : undefined;
         // note も全公演で同じならカードに1回だけ出し、各枠には出さない
         const commonNote = multi && groups.every((g) => g.e.note === groups[0].e.note) ? groups[0].e.note : "";
@@ -286,7 +286,7 @@
   const linkButtons = (links) =>
     `<div class="vc-ev__links">${links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${br(l.label)} ↗</a>`).join("")}</div>`;
 
-  // 入場料の行（price は文字列、または複数行の配列）
+  // 値段の行（price は文字列、または複数行の配列）
   const priceRow = (price) =>
     price ? `<dt>${L.price}</dt><dd>${[].concat(price).map(br).join("<br>")}</dd>` : "";
 
