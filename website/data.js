@@ -90,6 +90,7 @@ window.TT_DATA = {
         label: "早朝待機",
         summary: "早朝待機について",
         image: "image/souchou.png",
+        imageSize: [1018, 720], // 画像の幅・高さ（読み込み前に枠を確保してレイアウトのずれを防ぐ）
         source: "https://snowmiku.com/2026/location_wingbay.html#wingbay_top",
         imageAlt: "前年の早朝待機列の案内図",
         imageNote: "早朝待機は例年日の出前から。（あまり早すぎると返されます）現地の警備員の指示に従うこと。<br>画像は26年のもので仮置き。タップすると出典（SNOW MIKU 2026 公式サイト）が開きます。",

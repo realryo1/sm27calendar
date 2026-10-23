@@ -141,7 +141,17 @@ button { font: inherit; color: inherit; }
 }
 .day-chip.is-active .day-chip__week { color: var(--col-paper); }
 /* ブラウザの翻訳などで極端に長い文字列になっても、枠からはみ出さず … で省略する */
-.day-chip--train { max-width: 12em; min-width: 0; overflow: hidden; }
+.day-chip--train {
+  max-width: 12em;
+  min-width: 0;
+  overflow: hidden;
+  text-decoration: none;
+  font-weight: 900;
+  font-size: .85rem;
+  color: var(--col-paper);
+  border-color: transparent;
+  background: #4F458F;
+}
 .day-chip--train .day-chip__label,
 .day-chip--train .day-chip__week {
   display: block;
@@ -152,14 +162,6 @@ button { font: inherit; color: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.day-chip--train {
-  text-decoration: none;
-  font-weight: 900;
-  font-size: .85rem;
-  color: var(--col-paper);
-  border-color: transparent;
-  background: #4F458F;
 }
 .day-chip--train .day-chip__week { color: var(--col-secondary-light); }
 .day-chip--train:hover { background: #352d6b; }
@@ -214,7 +216,6 @@ button { font: inherit; color: inherit; }
   .day-chip--train { font-size: .78rem; line-height: 1.2; letter-spacing: 0; max-width: none; }
   .day-chip--train .day-chip__label,
   .day-chip--train .day-chip__week { width: 100%; text-align: center; }
-  .day-chip--train .day-chip__week { display: block; }
 }
 @media (max-width: 360px) {
   .day-chip--train { font-size: .68rem; }
@@ -1024,15 +1025,17 @@ button { font: inherit; color: inherit; }
   position: sticky;
   top: 16px;
   z-index: 3;
+  /* 状況表示（駅名標風）。サイズは .tl-status の幅に合わせて cqw で伸縮。1カラム時に横幅いっぱいだと大きすぎるので最大幅を設ける */
+  container-type: inline-size;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
 }
 .tl-off { margin: 0; padding: 16px; border-radius: 12px; font-weight: 700; text-align: center; background: var(--c-tint); }
 @media (max-width: 767px) {
   .tl-status { position: static; }
 }
 
-/* 状況表示（駅名標風）。サイズは .tl-status の幅に合わせて cqw で伸縮 */
-/* 1カラム時に横幅いっぱいだと大きすぎるので最大幅を設ける */
-.tl-status { container-type: inline-size; width: 100%; max-width: 400px; margin: 0 auto; }
 
 .tl-sign {
   --line: var(--track-outer);
@@ -1263,21 +1266,6 @@ button { font: inherit; color: inherit; }
   animation: tl-pulse 1.8s ease-out infinite;
 }
 @keyframes tl-pulse { from { transform: scale(1); opacity: .45; } to { transform: scale(1.9); opacity: 0; } }
-
-.tl-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 6px 0 0;
-  padding: 0;
-  list-style: none;
-  font-size: .75rem;
-}
-.tl-legend li { display: flex; align-items: center; gap: 6px; }
-.tl-legend__line { display: inline-block; width: 22px; height: 5px; border-radius: 3px; }
-.tl-legend__line--outer { background: var(--track-outer); }
-.tl-legend__line--inner { background: var(--track-inner); }
-.tl-legend__dot { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--col-ink); border-radius: 50%; background: #FFE45C; }
 
 .tl-trips { margin-top: 18px; font-size: .85rem; }
 .tl-trips summary { cursor: pointer; font-weight: 700; color: var(--c); }

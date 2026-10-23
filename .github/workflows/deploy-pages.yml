@@ -33,6 +33,10 @@ jobs:
           grep -q "updatedAt: \"${now}\"" website/data.js
           echo "updatedAt: ${now}"
 
+      # 公開するファイルだけ JS / CSS を圧縮する（リポジトリのソースは読みやすいまま）。updatedAt の書き換えより後に行う
+      - name: Minify JS / CSS
+        run: npx -y esbuild@0.25.10 website/*.js website/style.css --minify --charset=utf8 --outdir=website --allow-overwrite --log-level=warning
+
       - name: Upload website directory
         uses: actions/upload-pages-artifact@v3
         with:

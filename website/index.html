@@ -39,8 +39,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <!-- フォントの CSS は大きく表示を止めてしまうので、非同期で読み込む（読み込むまでは端末のフォントで表示） -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
   <link rel="stylesheet" href="style.css">
+  <script src="data.js" defer></script>
+  <script src="train.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="train-view.js" defer></script>
+  <script src="pwa.js" defer></script>
 </head>
 <body>
   <main class="main">
@@ -74,11 +81,5 @@
   </footer>
 
   <button type="button" class="to-board" id="toBoard" hidden></button>
-
-  <script src="data.js"></script>
-  <script src="train.js"></script>
-  <script src="app.js"></script>
-  <script src="train-view.js"></script>
-  <script src="pwa.js"></script>
 </body>
 </html>

@@ -370,7 +370,7 @@
             ${
               e.wait.image
                 ? `<a class="vc-image" href="${esc(e.wait.source ?? e.wait.image)}" target="_blank" rel="noopener">
-                    <img src="${esc(e.wait.image)}" alt="${esc(e.wait.imageAlt)}" loading="lazy">
+                    <img src="${esc(e.wait.image)}" alt="${esc(e.wait.imageAlt)}"${e.wait.imageSize ? ` width="${e.wait.imageSize[0]}" height="${e.wait.imageSize[1]}"` : ""} loading="lazy" decoding="async">
                   </a>`
                 : ""
             }
@@ -526,30 +526,31 @@
   // 文字の大きさがカードの高さに比例するため、境目で出たり消えたりしないよう、一度隠したものを戻すには余裕（SLACK）を要求する
   const HIDE = ["ev--nobadge", "ev--nosub", "ev--notime", "ev--noopentext"];
   const SLACK = 10;
+  // 1枚ずつ「隠す→測る」を繰り返すとカードの数だけレイアウトの再計算が起きるので、
+  // 全カードまとめて隠してからまとめて測る（段階ごとに再計算1回）
   const fitEvents = () => {
-    $tt.querySelectorAll(".ev:not(.ev--allday)").forEach((ev) => {
-      const inner = ev.querySelector(".ev__inner");
-      if (!inner) return;
-      const open = ev.querySelector(".ev__open");
-      const prev = Number(ev.dataset.fit ?? 0);
-      const reserved = 0;
-      const apply = (level, noOpenText) => {
-        HIDE.forEach((c, i) => ev.classList.toggle(c, i < level || (i === 3 && noOpenText)));
-        const openH = ev.classList.contains("ev--noopentext") ? 0 : open?.offsetHeight ?? 0;
-        return openH + inner.offsetHeight;
-      };
-      // OPEN の帯が文字より低いときは、最初から文字を消す
-      apply(0, false);
-      const tiny = open && open.offsetHeight < parseFloat(getComputedStyle(open).fontSize) * 1.6;
-      let level = 0;
-      for (; level < HIDE.length; level++) {
-        const used = apply(level, tiny);
-        if (used <= ev.clientHeight - reserved - (level < prev ? SLACK : 0)) break;
-      }
-      level = Math.min(level, HIDE.length);
-      apply(Math.min(level, HIDE.length), tiny);
-      ev.dataset.fit = level;
+    const items = [...$tt.querySelectorAll(".ev:not(.ev--allday)")]
+      .map((ev) => ({ ev, inner: ev.querySelector(".ev__inner"), open: ev.querySelector(".ev__open"), prev: Number(ev.dataset.fit ?? 0) }))
+      .filter((it) => it.inner);
+    const apply = (it, level, noOpenText) => HIDE.forEach((c, i) => it.ev.classList.toggle(c, i < level || (i === 3 && noOpenText)));
+    // OPEN の帯が文字より低いときは、最初から文字を消す
+    items.forEach((it) => apply(it, 0, false));
+    items.forEach((it) => (it.tiny = !!it.open && it.open.offsetHeight < parseFloat(getComputedStyle(it.open).fontSize) * 1.6));
+    let pending = items;
+    for (let level = 0; level < HIDE.length && pending.length; level++) {
+      pending.forEach((it) => apply(it, level, it.tiny));
+      pending = pending.filter((it) => {
+        const openH = it.ev.classList.contains("ev--noopentext") ? 0 : it.open?.offsetHeight ?? 0;
+        if (openH + it.inner.offsetHeight > it.ev.clientHeight - (level < it.prev ? SLACK : 0)) return true;
+        it.level = level;
+        return false;
+      });
+    }
+    pending.forEach((it) => {
+      apply(it, HIDE.length, it.tiny);
+      it.level = HIDE.length;
     });
+    items.forEach((it) => (it.ev.dataset.fit = it.level));
   };
 
   // 拡大率 ky（縦）/ kx（横）を、開始時の大きさ base に掛けて適用。
@@ -657,7 +658,9 @@
   renderBoard();
   updateDensity();
   window.addEventListener("resize", fitEvents);
-  document.fonts?.ready.then(fitEvents); // Webフォント読み込みで文字の大きさが変わるため
+  // Webフォント読み込みで文字の大きさが変わるため（フォントの CSS は後から非同期で読み込むので、読み込み完了のたびに測り直す）
+  document.fonts?.ready.then(fitEvents);
+  document.fonts?.addEventListener?.("loadingdone", fitEvents);
 
   // URL の #日付、またはイベント当日なら現在時刻付近を初期表示
   const hashId = location.hash.slice(1);
