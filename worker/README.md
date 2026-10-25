@@ -2,7 +2,7 @@
 
 `website/delay/` に表示する運行情報を集める Cloudflare Worker です。設計の元は `document/tienResearch.md`。
 
-- Cron（5分ごと）で各事業者から取得し、Workers KV に1本の JSON（キー `status`）として保存
+- Cron（5分ごと、毎時 :02, :07, …。新千歳空港 FIS の更新 :01, :06, … の直後）で各事業者から取得し、Workers KV に1本の JSON（キー `status`）として保存
 - `GET /status.json` で KV の JSON を `Access-Control-Allow-Origin: *` 付きで返す（エッジで60秒キャッシュ）
 - 閲覧者が増えても、事業者サイトへのアクセスは5分に1回のまま
 
@@ -42,7 +42,7 @@ KV（`DELAY_KV`）はダッシュボードで作成済みで、ID は `wrangler.
 ## 手元で Worker ごと動かす
 
 `cd worker` → `npm install` → `npm run dev`（KV は手元の仮のものが使われる）  
-別のターミナルで `curl "http://localhost:8787/__scheduled?cron=*/5+*+*+*+*"` を叩くと収集が1回動き、`http://localhost:8787/status.json` で結果を見られる。  
+別のターミナルで `curl "http://localhost:8787/__scheduled?cron=2-59/5+*+*+*+*"` を叩くと収集が1回動き、`http://localhost:8787/status.json` で結果を見られる。  
 ページ側は Live Server などで `website/delay/?api=http://localhost:8787/status.json` を開く（`?api=` は localhost で開いたときだけ有効）。
 
 ## 無料枠の目安

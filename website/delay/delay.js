@@ -4,7 +4,7 @@
   // Cloudflare Worker（worker/）の配信先。空にすると sample.json を表示する
   const ENDPOINT = "https://sm27-delay.realryo1.workers.dev/status.json";
   const REFRESH_MS = 60 * 1000;
-  const STALE_MIN = 20; // これより古ければ「更新が止まっている」と表示（Cron は5分ごと）
+  const STALE_MIN = 20; // これより古ければ「更新が止まっている」と表示
 
   const params = new URLSearchParams(location.search);
   const local = ["localhost", "127.0.0.1"].includes(location.hostname);
@@ -137,7 +137,12 @@
       }
     }
     $banners.innerHTML = banners.join("");
-    $updated.textContent = `${hhmm(data.updated_at)} 更新`;
+    // 次回の予定時刻は Worker が入れる（next_update_at）。配信のキャッシュ（60秒）と画面の再取得（60秒）の分だけ少し遅れて反映される
+    let next = "";
+    if (!data.sample && data.next_update_at) {
+      next = Date.parse(data.next_update_at) > Date.now() ? ` ／ 次は ${hhmm(data.next_update_at)}ごろ` : " ／ まもなく更新";
+    }
+    $updated.textContent = `${hhmm(data.updated_at)} 更新${next}`;
     $sections.innerHTML = Object.entries(RENDER)
       .filter(([id]) => data.services?.[id])
       .map(([id, fn]) => fn(data.services[id]))

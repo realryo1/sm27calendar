@@ -1,9 +1,11 @@
 // SNOWMIKU2027 非公式カレンダー 運行情報 Worker
 // - scheduled：Cron（5分ごと）で各事業者から取得し、KV に1本の JSON として保存する
 // - fetch：KV の JSON を CORS ヘッダー付きで返す（閲覧が増えても事業者へのアクセスは Cron の回数のまま）
-import { collect } from "./collect.js";
+import { collect, jstIso } from "./collect.js";
 
 const KEY = "status";
+// wrangler.toml の crons と合わせる（次回の予定時刻 next_update_at の計算に使う）
+const INTERVAL_MIN = 5;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -18,11 +20,13 @@ function json(body, status, cacheControl) {
 }
 
 export default {
-  async scheduled(_event, env, ctx) {
+  async scheduled(event, env, ctx) {
     ctx.waitUntil(
       (async () => {
         const prev = await env.DELAY_KV.get(KEY, "json").catch(() => null);
         const next = await collect(prev);
+        // scheduledTime はこの回の予定時刻（例 21:02:00）。次の回はその INTERVAL_MIN 分後
+        next.next_update_at = jstIso(new Date(event.scheduledTime + INTERVAL_MIN * 60000));
         await env.DELAY_KV.put(KEY, JSON.stringify(next));
       })()
     );
