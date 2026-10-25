@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- 試験版のため検索結果に出さない。メインページへ組み込むときに外す -->
+  <meta name="robots" content="noindex">
+  <title>運行情報（試験版） | SNOWMIKU2027 非公式カレンダー</title>
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="../favicon.ico" sizes="48x48">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
+  <!-- 配色・フォント・背景はメインページの style.css を流用し、この画面の部品は delay.css に置く -->
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="delay.css">
+  <script src="delay.js" defer></script>
+</head>
+<body>
+  <main class="dl">
+    <header class="dl-head">
+      <a class="dl-head__back" href="../">← カレンダーへ</a>
+      <h1 class="dl-head__title">運行情報<span class="dl-head__beta">試験版</span></h1>
+      <p class="dl-head__meta">
+        <span id="updated">読み込み中…</span>
+        <button type="button" class="dl-head__reload" id="reload">更新</button>
+      </p>
+    </header>
+
+    <div id="banners"></div>
+    <div id="sections"></div>
+
+    <section class="dl-card">
+      <h2 class="dl-card__title">そのほかの交通（準備中）</h2>
+      <p class="dl-card__note">下記は自動取得に未対応です。公式サイトで確認してください。</p>
+      <ul class="dl-links">
+        <li><a href="https://www.stsp.or.jp/" target="_blank" rel="noopener">札幌市電（札幌市交通事業振興公社）</a></li>
+        <li><a href="https://www.chuo-bus.co.jp/" target="_blank" rel="noopener">北海道中央バス（高速おたる号・空港連絡バス）</a></li>
+        <li><a href="https://www.hokto.co.jp/" target="_blank" rel="noopener">北都交通（空港連絡バス）</a></li>
+        <li><a href="https://www.driveplaza.com/traffic/" target="_blank" rel="noopener">高速道路（NEXCO東日本 ドラとら）</a></li>
+        <li><a href="https://www.silverferry.jp/" target="_blank" rel="noopener">シルバーフェリー（八戸〜苫小牧）</a></li>
+        <li><a href="https://www.sunflower.co.jp/" target="_blank" rel="noopener">さんふらわあ（大洗〜苫小牧）</a></li>
+        <li><a href="https://www.snf.jp/" target="_blank" rel="noopener">新日本海フェリー</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer dl-foot">
+    <p>このページは非公式です。各社の公開情報を5分ごとに自動で集めて表示しており、内容の正確さ・最新であることは保証しません。<br>
+      お出かけの前には、必ず各社の公式情報を確認してください。<br>
+      このページについて、交通事業者へのお問い合わせはしないでください。</p>
+  </footer>
+</body>
+</html>

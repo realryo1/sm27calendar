@@ -1,0 +1,34 @@
+// JR北海道：運行情報サイト（webunkou）が画面描画に使っている JSON
+// area_01.json（札幌近郊エリア）1本に、全エリア・全線区の「本日／明日」の状態が入っている。
+// 状態は 0：遅れの情報なし、1：運休や遅れあり の2値で、遅れと運休の区別はない。
+import { get } from "../http.js";
+
+const BASE = "https://www3.jrhokkaido.co.jp/webunkou/";
+
+// 来訪者の移動に関わる線区だけを載せる。key は senkuStatus / areaStatus のキー、id は webunkou の線区番号
+const LINES = [
+  { id: "airport", name: "快速エアポート", key: "airport", from: "senkuStatus", senku: "02" },
+  { id: "hakochise", name: "函館線・千歳線（札幌近郊）", key: "hakochise", from: "senkuStatus", senku: "03" },
+  { id: "gakuen", name: "学園都市線", key: "gakuen", from: "senkuStatus", senku: "04" },
+  { id: "express", name: "特急列車（北斗・カムイ など）", key: "express", from: "senkuStatus", senku: "01" },
+  { id: "shinkansen", name: "北海道新幹線", key: "shin", from: "areaStatus", senku: "24" },
+];
+
+const toStatus = (v) => (v === 0 ? "normal" : v === 1 ? "delay" : "unknown");
+
+export async function fetchJr() {
+  const data = await get(`${BASE}json/area/area_01.json`, { type: "json" });
+  if (!data.today || !data.tomorrow) throw new Error("JR: 想定外の形式");
+
+  const items = LINES.map((l) => ({
+    id: l.id,
+    name: l.name,
+    status: toStatus(data.today[l.from]?.[l.key]),
+    tomorrow: toStatus(data.tomorrow[l.from]?.[l.key]),
+    url: `${BASE}senku.html?id=${l.senku}`,
+  }));
+  return {
+    source_time: data.time || null, // 例「2026年10月25日 19時56分現在」
+    items,
+  };
+}

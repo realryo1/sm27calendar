@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "sample": true,
+  "updated_at": "2027-02-06T10:30:00+09:00",
+  "services": {
+    "jr": {
+      "name": "JR北海道",
+      "url": "https://www3.jrhokkaido.co.jp/webunkou/",
+      "ok": true,
+      "fetched_at": "2027-02-06T10:30:00+09:00",
+      "last_success_at": "2027-02-06T10:30:00+09:00",
+      "source_time": "2027年2月6日 10時28分現在",
+      "items": [
+        { "id": "airport", "name": "快速エアポート", "status": "delay", "tomorrow": "normal", "url": "https://www3.jrhokkaido.co.jp/webunkou/senku.html?id=02" },
+        { "id": "hakochise", "name": "函館線・千歳線（札幌近郊）", "status": "delay", "tomorrow": "normal", "url": "https://www3.jrhokkaido.co.jp/webunkou/senku.html?id=03" },
+        { "id": "gakuen", "name": "学園都市線", "status": "normal", "tomorrow": "normal", "url": "https://www3.jrhokkaido.co.jp/webunkou/senku.html?id=04" },
+        { "id": "express", "name": "特急列車（北斗・カムイ など）", "status": "delay", "tomorrow": "delay", "url": "https://www3.jrhokkaido.co.jp/webunkou/senku.html?id=01" },
+        { "id": "shinkansen", "name": "北海道新幹線", "status": "normal", "tomorrow": "normal", "url": "https://www3.jrhokkaido.co.jp/webunkou/senku.html?id=24" }
+      ]
+    },
+    "subway": {
+      "name": "札幌市営地下鉄",
+      "url": "https://operationstatus.city.sapporo.jp/unkojoho/",
+      "ok": true,
+      "fetched_at": "2027-02-06T10:30:00+09:00",
+      "last_success_at": "2027-02-06T10:30:00+09:00",
+      "source_time": null,
+      "items": [
+        { "id": "nanboku", "name": "南北線", "status": "normal", "message": "平常運転しています", "url": "https://operationstatus.city.sapporo.jp/unkojoho/" },
+        { "id": "tozai", "name": "東西線", "status": "delay", "message": "遅れが発生しています", "url": "https://operationstatus.city.sapporo.jp/unkojoho/" },
+        { "id": "toho", "name": "東豊線", "status": "normal", "message": "平常運転しています", "url": "https://operationstatus.city.sapporo.jp/unkojoho/" }
+      ]
+    },
+    "airport": {
+      "name": "新千歳空港（国内線）",
+      "url": "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/",
+      "ok": false,
+      "fetched_at": "2027-02-06T10:30:00+09:00",
+      "last_success_at": "2027-02-06T10:15:00+09:00",
+      "source_time": "2027-02-06T10:14:03+0900",
+      "groups": [
+        { "id": "ana", "name": "ANA系（ANA・AIRDO・IBEX ほか）", "status": "delay", "total": 166, "cancelled": 4, "delayed": 9, "diverted": 0, "delayed_30": 6 },
+        { "id": "jal", "name": "JAL系（JAL・J-AIR・FDA ほか）", "status": "suspended", "total": 102, "cancelled": 33, "delayed": 5, "diverted": 1, "delayed_30": 4 },
+        { "id": "other", "name": "スカイマーク・LCC ほか", "status": "normal", "total": 98, "cancelled": 0, "delayed": 1, "diverted": 0, "delayed_30": 0 }
+      ],
+      "flights": [
+        { "dir": "departure", "group": "jal", "flight": "JAL0000", "airline": "（サンプル）", "place": "東京", "scheduled": "10:00", "estimated": null, "delay_min": null, "kind": "cancelled" },
+        { "dir": "arrival", "group": "ana", "flight": "ANA0000", "airline": "（サンプル）", "place": "東京", "scheduled": "10:20", "estimated": "11:05", "delay_min": 45, "kind": "delayed" },
+        { "dir": "arrival", "group": "jal", "flight": "JAL0001", "airline": "（サンプル）", "place": "大阪（伊丹）", "scheduled": "10:40", "estimated": null, "delay_min": null, "kind": "diverted" },
+        { "dir": "departure", "group": "ana", "flight": "ADO0000", "airline": "（サンプル）", "place": "東京", "scheduled": "11:00", "estimated": "11:10", "delay_min": 10, "kind": "delayed" }
+      ]
+    }
+  },
+  "meta": {
+    "source_errors": [{ "id": "airport", "message": "サンプル：取得失敗時の表示例" }],
+    "fallback_active": true
+  }
+}

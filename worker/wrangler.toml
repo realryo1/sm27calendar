@@ -1,0 +1,12 @@
+name = "sm27-delay"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# 5分ごとに収集（無料枠の KV 書き込みは1日1,000回まで。5分ごとなら1日288回）
+[triggers]
+crons = ["*/5 * * * *"]
+
+# id は `npx wrangler kv namespace create DELAY_KV` で表示された値に置き換える（README 参照）
+[[kv_namespaces]]
+binding = "DELAY_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
