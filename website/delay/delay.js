@@ -80,7 +80,9 @@
   }
 
   const KIND = { cancelled: "欠航", delayed: "遅れ", diverted: "引き返し等" };
-  const KIND_STATUS = { cancelled: "suspended", delayed: "delay", diverted: "suspended" };
+  const KIND_STATUS = { cancelled: "suspended", delayed: "delay", diverted: "suspended", done: "done" };
+  // 出発・到着済みで30分以上遅れた便（kind: "done"）は、これから飛ぶ便と見分けられるよう薄い色にする
+  const kindLabel = (f) => (f.kind === "done" ? (f.dir === "arrival" ? "遅れ（到着済）" : "遅れ（出発済）") : KIND[f.kind]);
 
   function renderAirport(svc) {
     const groups = (svc.groups || [])
@@ -90,6 +92,7 @@
         if (g.cancelled) parts.push(`欠航 ${g.cancelled}`);
         if (g.diverted) parts.push(`引き返し等 ${g.diverted}`);
         if (g.delayed) parts.push(`遅れ ${g.delayed}`);
+        if (g.done_late) parts.push(`30分以上遅れて出発・到着済 ${g.done_late}`);
         return `<li class="dl-row">
           <span class="dl-row__name">${esc(g.name)}</span>
           ${badge(g.status, label)}
@@ -99,20 +102,21 @@
       .join("");
 
     const flights = svc.flights || [];
+    const doneCount = flights.filter((f) => f.kind === "done").length;
     const list = flights.length
       ? `<details class="dl-flights">
-          <summary>遅れ・欠航の便（${flights.length}便）</summary>
+          <summary>遅れ・欠航の便（${flights.length}便${doneCount ? `、うち出発・到着済 ${doneCount}便` : ""}）</summary>
           <table class="dl-table dl-table--flights">
             <thead><tr><th>出/着</th><th>定刻</th><th>変更</th><th>便名</th><th>行先・出発地</th><th>状況</th></tr></thead>
             <tbody>${flights
               .map(
-                (f) => `<tr>
+                (f) => `<tr${f.kind === "done" ? ' class="is-done"' : ""}>
                   <td>${f.dir === "arrival" ? "着" : "発"}</td>
                   <td>${esc(f.scheduled)}</td>
                   <td>${esc(f.estimated || "")}${f.delay_min > 0 ? `<small>（+${f.delay_min}分）</small>` : ""}</td>
                   <td>${esc(f.flight)}</td>
                   <td>${esc(f.place)}</td>
-                  <td>${badge(KIND_STATUS[f.kind] || "unknown", KIND[f.kind])}</td>
+                  <td>${badge(KIND_STATUS[f.kind] || "unknown", kindLabel(f))}</td>
                 </tr>`
               )
               .join("")}</tbody>

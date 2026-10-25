@@ -104,6 +104,8 @@
 .dl-badge--normal { color: var(--st-normal); background: var(--st-normal-bg); }
 .dl-badge--delay { color: var(--st-delay); background: var(--st-delay-bg); }
 .dl-badge--suspended { color: var(--st-suspended); background: var(--st-suspended-bg); }
+/* 出発・到着済みで遅れた便：遅れの色の枠線だけにして、これから飛ぶ便より控えめに */
+.dl-badge--done { color: var(--st-delay); background: transparent; box-shadow: inset 0 0 0 1px var(--col-link-light); }
 
 /* 線区 × 本日・明日 */
 .dl-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
@@ -135,6 +137,7 @@
 .dl-table--flights { font-size: .78rem; }
 .dl-table--flights td { width: auto; }
 .dl-table--flights small { font-size: .7rem; opacity: .8; }
+.dl-table--flights tr.is-done td { opacity: .7; }
 @media (max-width: 640px) {
   .dl-flights { overflow-x: auto; }
 }

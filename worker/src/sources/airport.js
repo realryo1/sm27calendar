@@ -50,7 +50,7 @@ export async function fetchAirport() {
   if (data.status !== "success" || !Array.isArray(data.items)) throw new Error("空港: 想定外の形式");
 
   const counts = Object.fromEntries(
-    GROUPS.map((g) => [g.id, { total: 0, cancelled: 0, delayed: 0, diverted: 0, delayed_30: 0 }])
+    GROUPS.map((g) => [g.id, { total: 0, cancelled: 0, delayed: 0, diverted: 0, delayed_30: 0, done_late: 0 }])
   );
   const flights = [];
 
@@ -63,8 +63,11 @@ export async function fetchAirport() {
     const c = counts[group];
     c.total++;
     if (kind in c) c[kind]++;
-    if (kind === "cancelled" || kind === "delayed" || kind === "diverted") {
-      const min = delayMin(f);
+    const min = delayMin(f);
+    // 出発・到着済みの便は、30分以上遅れたものだけ一覧に残す（平常の日でも15分以上の遅れは数十便あるため）。状態の判定には使わない
+    const doneLate = kind === "done" && min >= 30;
+    if (doneLate) c.done_late++;
+    if (kind === "cancelled" || kind === "delayed" || kind === "diverted" || doneLate) {
       if (kind === "delayed" && (min == null || min >= 30)) c.delayed_30++;
       flights.push({
         dir: dir === "D" ? "departure" : "arrival",
@@ -75,7 +78,7 @@ export async function fetchAirport() {
         scheduled: f.ST,
         estimated: f.ET_AT || null,
         delay_min: min,
-        kind,
+        kind, // cancelled / delayed / diverted / done（出発・到着済みで30分以上遅れた便）
       });
     }
   }

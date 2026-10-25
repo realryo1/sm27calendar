@@ -39,11 +39,12 @@
       "last_success_at": "2027-02-06T10:15:00+09:00",
       "source_time": "2027-02-06T10:14:03+0900",
       "groups": [
-        { "id": "ana", "name": "ANA系（ANA・AIRDO・IBEX ほか）", "status": "delay", "total": 166, "cancelled": 4, "delayed": 9, "diverted": 0, "delayed_30": 6 },
+        { "id": "ana", "name": "ANA系（ANA・AIRDO・IBEX ほか）", "status": "delay", "total": 166, "cancelled": 4, "delayed": 9, "diverted": 0, "delayed_30": 6, "done_late": 1 },
         { "id": "jal", "name": "JAL系（JAL・J-AIR・FDA ほか）", "status": "suspended", "total": 102, "cancelled": 33, "delayed": 5, "diverted": 1, "delayed_30": 4 },
         { "id": "other", "name": "スカイマーク・LCC ほか", "status": "normal", "total": 98, "cancelled": 0, "delayed": 1, "diverted": 0, "delayed_30": 0 }
       ],
       "flights": [
+        { "dir": "departure", "group": "ana", "flight": "ANA0001", "airline": "（サンプル）", "place": "東京", "scheduled": "08:30", "estimated": "09:40", "delay_min": 70, "kind": "done" },
         { "dir": "departure", "group": "jal", "flight": "JAL0000", "airline": "（サンプル）", "place": "東京", "scheduled": "10:00", "estimated": null, "delay_min": null, "kind": "cancelled" },
         { "dir": "arrival", "group": "ana", "flight": "ANA0000", "airline": "（サンプル）", "place": "東京", "scheduled": "10:20", "estimated": "11:05", "delay_min": 45, "kind": "delayed" },
         { "dir": "arrival", "group": "jal", "flight": "JAL0001", "airline": "（サンプル）", "place": "大阪（伊丹）", "scheduled": "10:40", "estimated": null, "delay_min": null, "kind": "diverted" },
