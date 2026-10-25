@@ -1,8 +1,8 @@
 // 運行情報（試験版）
 // Cloudflare Worker（worker/）が5分ごとに集めた JSON を1本だけ取得して描画する。事業者サイトへは直接アクセスしない。
 (() => {
-  // Worker を公開したら URL を入れる（例 "https://sm27-delay.<account>.workers.dev/status.json"）。空のあいだは sample.json を表示する
-  const ENDPOINT = "";
+  // Cloudflare Worker（worker/）の配信先。空にすると sample.json を表示する
+  const ENDPOINT = "https://sm27-delay.realryo1.workers.dev/status.json";
   const REFRESH_MS = 60 * 1000;
   const STALE_MIN = 20; // これより古ければ「更新が止まっている」と表示（Cron は5分ごと）
 
