@@ -60,6 +60,9 @@
 
   // 行構成: 1行目=会場見出し、以降は日ごとに [日付帯, カレンダー本体]
   // 行の並び：1日目の日付帯 → 会場見出し（2行目・style.css） → 1日目の本体 → 2日目の日付帯 → 2日目の本体 …（日付帯が会場見出しの上に来る）
+  // 1日目は「日付帯・会場見出し・本体」、2日目以降は「日付帯・本体」（会場見出しは一番上の1つだけ）
+  const WEEK_EN = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const WEEK_JA = ["日", "月", "火", "水", "木", "金", "土"];
   const dayRow = (i) => (i === 0 ? 1 : 2 + i * 2);
   const bodyRow = (i) => 3 + i * 2;
 
@@ -101,7 +104,7 @@
     const hours = [];
     for (let h = range.start; h <= range.end; h++) hours.push(h);
 
-    const axis = (row) => `<div class="tt-axis" style="grid-row:${row}">${hours
+    const axis = (row, extra = "") => `<div class="tt-axis${extra}" style="grid-row:${row}">${hours
       .map(
         (h, i) => `<div class="tt-axis__hour" style="top:${pos(h)}">
           <span class="tt-axis__h notranslate" translate="no">${h}</span><span class="tt-axis__m notranslate" translate="no">00</span>
@@ -113,7 +116,7 @@
       )
       .join("")}</div>`;
 
-    const heads = venues
+    const heads = `<div class="tt-corner"></div>${venues
       .map(
         (v) => `<div class="tt-head-cell"><div class="tt-head theme-${v.theme}">
           <span class="tt-head__letter">${v.letter}</span>
@@ -121,7 +124,7 @@
           <span class="tt-head__kind tt-head__kind--${v.fan ? "fan" : "official"}">${v.fan ? B.fan : B.official}</span>
         </div></div>`
       )
-      .join("");
+      .join("")}`;
 
     const sections = days
       .map((d, i) => {
@@ -135,18 +138,25 @@
             return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}${i > 0 ? " tt-col--round" : ""}" style="grid-row:${bodyRow(i)}">${blocks}</div>`;
           })
           .join("");
-        // 1日目の帯は一番上に貼り付く「現在の日付」（スクロールに合わせて updateActiveChip が書き換える）。2日目以降は日の境目に置く普通の帯
-        const band =
-          i === 0
-            ? `<div class="tt-day tt-day--top" style="grid-row:${dayRow(i)}">${dayBand(d)}${refreshBtn}</div>`
-            : `<div class="tt-day" style="grid-row:${dayRow(i)}">${dayBand(d)}</div>`;
+        // 日付帯は日ごとに上へ貼り付く。次の日の帯が下から来て、前の日の帯を押し上げて入れ替わる（updateActiveChip）
+        const band = `<div class="tt-day${i === 0 ? " tt-day--top" : ""}" style="grid-row:${dayRow(i)}">${dayBand(d)}</div>`;
         return `${band}${axis(bodyRow(i))}${cols}`;
       })
       .join("");
 
+    // 最終日の次の日（2/8）は、最終日の日付帯を上端まで届かせるための埋め草。画面に収まる分だけ見せる（fitTail）
+    const n = days.length;
+    const next = new Date(Date.parse(days[n - 1].id) + 864e5);
+    const ghostDay = { label: `${next.getUTCMonth() + 1}/${next.getUTCDate()}`, week: WEEK_EN[next.getUTCDay()], weekJa: WEEK_JA[next.getUTCDay()] };
+    const ghostCols = venues
+      .map((v) => `<div class="tt-col tt-ghost theme-${v.theme}${v.fan ? " tt-fan" : ""} tt-col--round" style="grid-row:${bodyRow(n)}"></div>`)
+      .join("");
+    const ghost = `<div class="tt-day tt-ghost" style="grid-row:${dayRow(n)}">${dayBand(ghostDay)}</div>${axis(bodyRow(n), " tt-ghost")}${ghostCols}`;
+
     $tt.style.setProperty("--cols", venues.length);
-    $tt.style.gridTemplateRows = `var(--divider) var(--head) calc(${range.end - range.start} * var(--hour)) repeat(${days.length - 1}, var(--divider) calc(${range.end - range.start} * var(--hour)))`;
-    $tt.innerHTML = `<div class="tt-corner"></div>${heads}${sections}<div class="tt-now" hidden></div>`;
+    const body = `calc(${range.end - range.start} * var(--hour))`;
+    $tt.style.gridTemplateRows = `var(--divider) var(--head) ${body} repeat(${n - 1}, var(--divider) ${body}) var(--ghost-band, 0px) var(--ghost, 0px)`;
+    $tt.innerHTML = `${heads}${sections}${ghost}<div class="tt-day-tools">${refreshBtn}</div><div class="tt-now" hidden></div>`;
 
     renderVenues();
     updateNow();
@@ -448,32 +458,69 @@
 
   function scrollToDay(id, hour, behavior = "smooth") {
     const i = days.findIndex((d) => d.id === id);
-    const col = $tt.querySelectorAll(".tt-axis")[i];
+    const col = $tt.querySelectorAll(".tt-axis:not(.tt-ghost)")[i];
     const hourPx = col.offsetHeight / (range.end - range.start);
     const offset = hour ? (hour - range.start) * hourPx : 0;
-    $scroll.scrollTo({ top: col.offsetTop - stickyOffset() + offset, behavior });
+    const top = col.offsetTop - stickyOffset() + offset;
+    $scroll.scrollTo({ top, behavior });
   }
 
   // 日付ボタンで選んだ日は、ユーザーが自分でスクロールするまで選択状態を保つ
   // （縮小時など、最後の日の先頭まで届かず下端で止まる場合でも選んだ日を表示する）
   let pinnedDay = null;
+  // 日付ラベル：列が会場見出しに着いたら、そのラベルがシュッと上端へ上がり、前の日のラベルは上へ押し出される（時間で動くイージング）。
+  // lift＝自分の位置から上端へ上がった割合、out＝上へ押し出された割合（どちらも 0〜1）
+  let labelDay = 0;
+  let labelRaf = 0;
+  const lift = [];
+  const out = [];
+  function setLabelDay(i) {
+    if (i === labelDay && lift.length) return;
+    labelDay = i;
+    if (!labelRaf) labelRaf = requestAnimationFrame(stepLabels);
+  }
+  function stepLabels() {
+    labelRaf = 0;
+    const bands = $tt.querySelectorAll(".tt-day");
+    let moving = false;
+    bands.forEach((_, i) => {
+      const l = i <= labelDay ? 1 : 0;
+      const o = i < labelDay ? 1 : 0;
+      lift[i] = (lift[i] ?? 0) + (l - (lift[i] ?? 0)) * 0.28;
+      out[i] = (out[i] ?? 0) + (o - (out[i] ?? 0)) * 0.28;
+      if (Math.abs(l - lift[i]) < 0.01) lift[i] = l;
+      else moving = true;
+      if (Math.abs(o - out[i]) < 0.01) out[i] = o;
+      else moving = true;
+    });
+    paintLabels();
+    if (moving) labelRaf = requestAnimationFrame(stepLabels);
+  }
+  function paintLabels() {
+    const bands = $tt.querySelectorAll(".tt-day");
+    const bandH = bands[0].offsetHeight;
+    const headH = $tt.querySelector(".tt-head-cell").offsetHeight;
+    bands.forEach((band, i) => {
+      // 2日目以降の帯は CSS で会場見出しの高さ分だけ早く上端に貼り付く（スクロールと同じ動きなので震えない）。
+      // ラベルは自然な位置（見出しの高さ分下）から、時間で上端へ上がる。スクロール位置は使わない
+      const dy = (i ? headH * (1 - (lift[i] ?? 0)) : 0) - bandH * (out[i] ?? 0);
+      band.firstElementChild.style.transform = dy ? `translateY(${dy}px)` : "";
+    });
+  }
+
   function updateActiveChip() {
-    const y = $scroll.scrollTop + stickyOffset() + 1;
-    const axes = [...$tt.querySelectorAll(".tt-axis")];
+    const top = $scroll.scrollTop;
+    const axes = [...$tt.querySelectorAll(".tt-axis:not(.tt-ghost)")];
     let active = 0;
     axes.forEach((a, i) => {
-      if (a.offsetTop - $tt.querySelector(".tt-day").offsetHeight <= y) active = i;
+      if (a.offsetTop - stickyOffset() <= top + 1) active = i;
     });
     // 下端まで来ていれば最後の日
     if ($scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 2) active = axes.length - 1;
-    if (pinnedDay != null) active = pinnedDay;
+    if (pinnedDay != null) active = pinnedDay; // 日付ボタンで移動中は、着いてからではなく押した時点から日付バーを動かす
+    setLabelDay(active);
     $dayNav.querySelectorAll(".day-chip").forEach((c, i) => c.classList.toggle("is-active", i === active));
-    // 一番上に貼り付いている日付帯を、今見ている日に合わせる
-    const $top = $tt.querySelector(".tt-day--top");
-    if ($top.dataset.day !== String(active)) {
-      $top.dataset.day = String(active);
-      $top.innerHTML = dayBand(days[active]) + refreshBtn;
-    }
+    paintLabels();
   }
 
   $dayNav.addEventListener("click", (ev) => {
@@ -522,8 +569,22 @@
   const colWidth = () => $tt.querySelector(".tt-col").getBoundingClientRect().width;
   const hourPx = () => cssPx("--hour");
 
+  // 最後の日が画面より短いと、下端で止まって日付帯が上端まで届かない。
+  // 最後の日の先頭を上端に出せるだけ、次の日（ghost）で下を埋める。1日分でも足りない高い画面では、残りを余白にする
+  const fitTail = () => {
+    const last = [...$tt.querySelectorAll(".tt-axis:not(.tt-ghost)")].pop();
+    const bandH = $tt.querySelector(".tt-day").offsetHeight;
+    const fill = Math.ceil($scroll.clientHeight - stickyOffset() - last.offsetHeight - bandH);
+    const show = fill > 0;
+    $tt.classList.toggle("no-ghost", !show);
+    $tt.style.setProperty("--ghost-band", show ? `${bandH}px` : "0px");
+    $tt.style.setProperty("--ghost", `${show ? Math.min(fill, last.offsetHeight) : 0}px`);
+    $tt.style.paddingBottom = `${Math.max(12, fill - last.offsetHeight)}px`;
+  };
+
   // 縮小時は予定ブロックの表示を簡略化する
   const updateDensity = () => {
+    fitTail();
     const h = hourPx();
     $tt.dataset.density = h < 44 ? "tight" : h < 60 ? "compact" : "";
     fitEvents();
@@ -572,6 +633,7 @@
     const col = clamp(base.col * kx, ZOOM.col);
     $tt.style.setProperty("--hour", `${hour}px`);
     $tt.style.setProperty("--colmin", `${col.toFixed(1)}px`);
+    fitTail(); // スクロール位置を入れる前に余白を直す（足りないと下端で切られる）
     const ry = hour / base.hour;
     const rx = colWidth() / base.colW;
     $scroll.scrollTop = (base.top + ay) * ry - ay;
@@ -738,7 +800,10 @@
   renderNav();
   renderBoard();
   updateDensity();
-  window.addEventListener("resize", fitEvents);
+  window.addEventListener("resize", () => {
+    fitEvents();
+    fitTail();
+  });
   // Webフォント読み込みで文字の大きさが変わるため（フォントの CSS は後から非同期で読み込むので、読み込み完了のたびに測り直す）
   document.fonts?.ready.then(fitEvents);
   document.fonts?.addEventListener?.("loadingdone", fitEvents);

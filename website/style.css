@@ -88,6 +88,7 @@ button { font: inherit; color: inherit; }
 
 /* ---------- Board ---------- */
 .board {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100svh;
@@ -97,17 +98,35 @@ button { font: inherit; color: inherit; }
 @media (max-width: 640px) {
   .board { padding: 0 0 8px; } /* 上左右の余白をなくし、表を画面いっぱいに使う */
 }
+/* 【テスト】PC：左に時間割（画面に固定）、右に凡例・会場一覧（こちらだけスクロール） */
+@media (min-width: 1100px) {
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .board {
+    position: sticky;
+    top: 0;
+  }
+  .main__inner {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 16px 24px 0;
+  }
+}
 .board__hint { display: none; margin: 4px 0 0; font-size: .7rem; text-align: center; opacity: .7; }
 
 /* 日付ジャンプ（タブではなくスクロール位置へのショートカット） */
 .day-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 10px 0 10px;
+  gap: 6px;
 }
 .day-nav__title {
-  margin: 0 auto 0 0;
+  margin: 0;
+  padding: 15px 15px 0;
   font-size: 1rem;
   font-weight: 900;
   line-height: 1.3;
@@ -165,18 +184,38 @@ button { font: inherit; color: inherit; }
 }
 .day-chip--train .day-chip__week { color: var(--col-secondary-light); }
 .day-chip--train:hover { background: #352d6b; }
-/* 641〜900px：上部バーと会場見出しを詰めて、5会場を収めたまま崩れないようにする */
-@media (max-width: 900px) {
-  /* サブタイトル（非公式カレンダー）は隠さない。入りきらないときは、日付ボタンを折り返さず、
-     タイトル側が縮んで（ブランド名の下の行にサブタイトルが回って）収まる */
-  .day-nav { gap: 6px; }
-  .day-nav__title { flex: 1 1 0; min-width: 0; }
-  .day-nav__brand { white-space: nowrap; font-size: .9rem; }
-  .day-chip { padding: 4px 10px; }
-  .day-chip__week { display: none; }
-}
 .day-nav__break { display: none; }
-/* スマホは画面下部のボトムバー：日付ボタンを3等分＋操作ボタン。タイトルは省く */
+/* 日付ボタン：スマホは画面下部のボトムバー（3等分＋操作ボタン）、それ以外は表の右下に浮かぶ角丸ウィンドウ */
+.day-chip {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 46px;
+  border-radius: 14px;
+}
+.day-chip[data-day],
+.day-chip--train { flex: 1 1 0; min-width: 0; padding: 4px 2px; }
+.day-chip__date { font-size: 1.05rem; }
+.day-chip__week { display: block; font-size: .58rem; }
+.day-chip--train { font-size: .78rem; line-height: 1.2; letter-spacing: 0; max-width: none; }
+.day-chip--train .day-chip__label,
+.day-chip--train .day-chip__week { width: 100%; text-align: center; }
+@media (min-width: 641px) {
+  .day-nav {
+    position: absolute; /* .board 基準＝表の右下 */
+    right: 28px; /* 表の縦スクロールバーを避ける */
+    bottom: 20px;
+    z-index: 20;
+    width: 360px;
+    padding: 8px;
+    border: 1px solid var(--col-secondary-light);
+    border-radius: 20px;
+    background: var(--col-paper);
+    box-shadow: 0 8px 24px rgb(79 69 143 / .25);
+  }
+  .to-board { display: none; } /* 表は常に左に見えているので不要 */
+}
 @media (max-width: 640px) {
   .board { padding-bottom: 0; }
   .board__hint { order: 2; margin: 4px 0; }
@@ -200,22 +239,6 @@ button { font: inherit; color: inherit; }
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
-  .day-nav__break { display: none; }
-  .day-chip {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    min-height: 46px;
-    border-radius: 14px;
-  }
-  .day-chip[data-day],
-  .day-chip--train { flex: 1 1 0; min-width: 0; padding: 4px 2px; }
-  .day-chip__date { font-size: 1.05rem; }
-  .day-chip__week { display: block; font-size: .58rem; }
-  .day-chip--train { font-size: .78rem; line-height: 1.2; letter-spacing: 0; max-width: none; }
-  .day-chip--train .day-chip__label,
-  .day-chip--train .day-chip__week { width: 100%; text-align: center; }
 }
 @media (max-width: 360px) {
   .day-chip--train { font-size: .68rem; }
@@ -232,10 +255,6 @@ button { font: inherit; color: inherit; }
   overscroll-behavior: none; /* 端で止める。下端からページ側へのつなぎは app.js が行う（iOS は標準だと跳ね返りを待つため） */
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  border-radius: 12px;
-}
-@media (max-width: 640px) {
-  .tt-scroll { border-radius: 0; } /* スマホは画面端まで使うので角丸なし */
 }
 .tt {
   position: relative;
@@ -247,17 +266,18 @@ button { font: inherit; color: inherit; }
   background: var(--col-paper);
 }
 
-.tt-corner,
-.tt-head-cell { grid-row: 2; } /* 日付帯（1行目）の下 */
 .tt-corner {
+  grid-row: 2;
   position: sticky;
   top: var(--divider);
   left: 0;
   z-index: 5;
   margin-right: calc(-1 * var(--axis-bleed));
+  background: var(--col-paper); /* 会場見出しの左で、前の日の最後の時刻（22時など）が透けて見えないように */
 }
 
 .tt-head-cell {
+  grid-row: 2; /* 日付帯（1行目）の下 */
   position: sticky;
   top: var(--divider); /* 日付帯の直下に貼り付く */
   z-index: 4;
@@ -370,16 +390,35 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   height: var(--divider);
-  position: relative;
-  z-index: 3; /* 時刻軸（z-index: 2）より前に出し、日付を優先して時刻が重なる分は隠す */
-  padding-left: 10px; /* 見出しの左余白。sticky は margin を無視して端に付くため、余白は帯側に持つ */
-  background: var(--col-paper);
+  position: sticky; /* 日ごとの帯が上に貼り付く。次の帯が来ると前の帯は押し上げられる（app.js） */
+  top: 0;
+  z-index: 6; /* 時刻軸（2）・会場見出し（4）・左上の角（5）より前に出し、日付を優先して重なる分は隠す */
+  pointer-events: none;
 }
-.tt-day--top {
+/* 2日目以降の帯は、自然な位置より会場見出しの高さ分だけ上に貼り付きの基準を置く（行の高さは変えない）。ラベルを自然な位置に見せる分は app.js の paintLabels */
+.tt-day:not(.tt-day--top) {
+  margin-top: calc(-1 * var(--head));
+  margin-bottom: var(--head);
+}
+/* 最終日の次の日（埋め草）。高さは app.js の fitTail が決め、はみ出す分は切る。足りているときは出さない */
+.tt-axis.tt-ghost,
+.tt-col.tt-ghost { overflow: hidden; }
+.tt.no-ghost .tt-ghost { display: none; }
+/* 一番上に貼り付く1日目の帯だけが全幅の白地。下の日は日付の部分だけに地をつけ、左から飛び出るU字型にして隠れる範囲を減らす */
+.tt-day--top { background: var(--col-paper); }
+/* 更新ボタンは日付帯と別に、一番上の右端に1つだけ置く */
+.tt-day-tools {
+  grid-column: 1 / -1;
+  grid-row: 1;
   position: sticky;
   top: 0;
-  z-index: 6; /* 会場見出しより前 */
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  height: var(--divider);
+  pointer-events: none;
 }
+.tt-day-tools .tt-refresh { pointer-events: auto; }
 .tt-refresh {
   position: sticky;
   right: 6px;
@@ -433,12 +472,17 @@ button { font: inherit; color: inherit; }
 .toast[hidden] { display: none; }
 .tt-day__label {
   position: sticky;
-  left: 10px;
+  left: 0;
   z-index: 1;
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  margin: 10px 10px 10px 0;
+  margin: 0 10px 0 0;
+  box-sizing: border-box;
+  height: var(--divider); /* 帯の行からはみ出して、上下の列を侵食しない */
+  padding: 7px 20px 0 10px; /* 見出しの左余白（sticky は margin を無視して端に付くため、余白は内側に持つ） */
+  border-radius: 0 999px 999px 0;
+  background: var(--col-paper);
   line-height: 1;
 }
 .tt-day__date {
