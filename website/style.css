@@ -27,7 +27,7 @@
   --head: 56px;
   --divider: 39px;
   --axis: 56px;
-  --axis-bleed: 8px; /* 時刻軸・左上の角が右の列の間隔へはみ出す量（両者の右端をそろえる） */
+  --axis-bleed: 5px; /* 時刻軸・左上の角が右の列の間隔へはみ出す量（両者の右端をそろえる）。.tt の column-gap を超えると列に重なる */
   --colmin: 96px;
 }
 
