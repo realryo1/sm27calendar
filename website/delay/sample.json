@@ -61,6 +61,7 @@
   },
   "meta": {
     "source_errors": [{ "id": "airport", "message": "サンプル：取得失敗時の表示例" }],
+    "source_warnings": [],
     "fallback_active": true
   }
 }

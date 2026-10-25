@@ -6,13 +6,15 @@
 - `GET /status.json` で KV の JSON を `Access-Control-Allow-Origin: *` 付きで返す（エッジで60秒キャッシュ）
 - 閲覧者が増えても、事業者サイトへのアクセスは5分に1回のまま
 
+- `GET /health` は外部の監視サービス向け。異常なら 503（KV を読むだけで、事業者へは取りに行かない）
+
 公開先：`https://sm27-delay.realryo1.workers.dev/status.json`
 
 ## ファイル
 
 | パス | 内容 |
 | --- | --- |
-| `src/index.js` | Cron（収集して KV に保存、`next_update_at` を付ける）と `/status.json` の配信 |
+| `src/index.js` | Cron（収集して KV に保存、`next_update_at` を付ける）、`/status.json` の配信、`/health` |
 | `src/collect.js` | 全事業者を並行して取得し、1本の JSON にまとめる。失敗した事業者は前回のデータを残す |
 | `src/sources/jr.js` | JR北海道（`webunkou/json/area/area_01.json`） |
 | `src/sources/subway.js` | 札幌市営地下鉄（`operationstatus.city.sapporo.jp/unkojoho/top.html`） |
@@ -54,14 +56,30 @@ node worker/scripts/collect-local.mjs out.json   # ファイルへ
 別のターミナルで `curl "http://localhost:8787/__scheduled?cron=2-59/5+*+*+*+*"` を叩くと収集が1回動き、`http://localhost:8787/status.json` で結果を見られる。  
 ページ側は Live Server などで `website/delay/?api=http://localhost:8787/status.json` を開く（`?api=` は localhost で開いたときだけ有効）。
 
+## 監視（/health）
+
+`https://sm27-delay.realryo1.workers.dev/health` を Worker の外から定期的に見る（今は Grok Bot の Routine に頼んでいる）。`ok` が false なら `problems` を確認する。
+
+| 結果 | 条件 |
+| --- | --- |
+| 503 | `updated_at` が17分以上古い（Cron が3回動いていない）／同じ事業者で3回続けて失敗／`source_warnings` がある／KV にデータがない |
+| 200 | それ以外。1〜2回だけの失敗は `notes` に載る |
+
+```jsonc
+{ "ok": false, "updated_at": "…", "problems": ["jr: HTTP 503 …（3回連続）"], "notes": [] }
+```
+
 ## 無料枠の目安
 
 - Workers リクエスト：1日10万回
 - KV 書き込み：1日1,000回（5分ごとで1日288回）
-- KV 読み取り：1日10万回（エッジで60秒キャッシュするので実際はもっと少ない）
+- KV 読み取り：1日10万回（エッジで60秒キャッシュするので実際はもっと少ない。`/health` は見る回数の分だけ）
 
 ## 障害時の動き
 
 - 事業者ごとに取得し、失敗した事業者は前回のデータを残したまま `ok: false` にして `meta.source_errors` に記録する。ページにはその事業者の公式リンクが出る
+- 連続で失敗した回数は各事業者の `fail_count` に入る（成功で0に戻る）
+- 一部だけ読めない（構造変更の疑い）ときは `meta.source_warnings` に入る。まったく読めないときは失敗扱い
+- Worker に一度もつながらないときは、ページに各社の公式リンクが出る
 - `updated_at` が20分以上古いと、ページに「情報の更新が止まっています」と出る
 - JR北海道と札幌市の配信元は Imperva（ボット対策）の配下。今は Cloudflare から取得できているが、弾かれるようになったら `source_errors` に出る

@@ -83,6 +83,9 @@ export async function fetchAirport() {
     }
   }
 
+  // today.json には当日の全便（出発・到着済みを含む）が入るので、0便なら形式が変わったとみなす
+  if (!GROUPS.some((g) => counts[g.id].total)) throw new Error("空港: 便が1件も読めない");
+
   const groups = GROUPS.map((g) => {
     const c = counts[g.id];
     const bad = c.cancelled + c.diverted;

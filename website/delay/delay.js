@@ -172,6 +172,18 @@
 
   const RENDER = { jr: renderJr, subway: renderSubway, airport: renderAirport };
 
+  // Worker に一度もつながらなかったとき（前回の内容もない）に出す公式リンク。名前と URL は worker/src/collect.js の SOURCES と合わせる
+  const OFFICIAL = [
+    { name: "JR北海道", url: "https://www3.jrhokkaido.co.jp/webunkou/" },
+    { name: "札幌市営地下鉄", url: "https://operationstatus.city.sapporo.jp/unkojoho/" },
+    { name: "新千歳空港（国内線）", url: "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/" },
+  ];
+  const officialLinks = () =>
+    `<section class="dl-card">
+      <h2 class="dl-card__title">各社の公式の運行情報</h2>
+      <ul class="dl-links">${OFFICIAL.map((o) => `<li><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.name)}</a></li>`).join("")}</ul>
+    </section>`;
+
   function render(data) {
     const banners = [];
     if (data.sample) {
@@ -206,7 +218,10 @@
     } catch {
       // 取得できなくても、前に表示した内容は消さない
       $banners.innerHTML = `<p class="dl-banner">運行情報を取得できませんでした${last ? "（前回の内容を表示中）" : ""}。各社の公式情報を確認してください。</p>`;
-      if (!last) $updated.textContent = "取得できませんでした";
+      if (!last) {
+        $updated.textContent = "取得できませんでした";
+        $sections.innerHTML = officialLinks();
+      }
     } finally {
       $reload.disabled = false;
     }

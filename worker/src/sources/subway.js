@@ -31,6 +31,7 @@ export async function fetchSubway() {
       ? { id: l.id, name: l.name, status: judge(f.mark, f.text), message: f.text, url: OFFICIAL }
       : { id: l.id, name: l.name, status: "unknown", message: null, url: OFFICIAL };
   });
-  if (items.every((i) => i.status === "unknown")) throw new Error("地下鉄: 運行情報パーツが見つからない");
-  return { source_time: null, items };
+  const unknown = items.filter((i) => i.status === "unknown");
+  if (unknown.length === items.length) throw new Error("地下鉄: 運行情報パーツが見つからない");
+  return { source_time: null, items, warnings: unknown.map((i) => `地下鉄: ${i.name} が見つからない`) };
 }

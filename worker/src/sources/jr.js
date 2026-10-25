@@ -27,8 +27,12 @@ export async function fetchJr() {
     tomorrow: toStatus(data.tomorrow[l.from]?.[l.key]),
     url: `${BASE}senku.html?id=${l.senku}`,
   }));
+  // キー名が変わると unknown になる。全部なら失敗扱い（前回のデータを残す）、一部なら警告だけ出す
+  const unknown = items.filter((i) => i.status === "unknown" || i.tomorrow === "unknown");
+  if (unknown.length === items.length) throw new Error("JR: 線区の状態が1つも読めない");
   return {
     source_time: data.time || null, // 例「2026年10月25日 19時56分現在」
     items,
+    warnings: unknown.map((i) => `JR: ${i.name} の状態が読めない`),
   };
 }
