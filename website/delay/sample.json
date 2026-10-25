@@ -48,7 +48,14 @@
         { "dir": "departure", "group": "jal", "flight": "JAL0000", "airline": "（サンプル）", "place": "東京", "scheduled": "10:00", "estimated": null, "delay_min": null, "kind": "cancelled" },
         { "dir": "arrival", "group": "ana", "flight": "ANA0000", "airline": "（サンプル）", "place": "東京", "scheduled": "10:20", "estimated": "11:05", "delay_min": 45, "kind": "delayed" },
         { "dir": "arrival", "group": "jal", "flight": "JAL0001", "airline": "（サンプル）", "place": "大阪（伊丹）", "scheduled": "10:40", "estimated": null, "delay_min": null, "kind": "diverted" },
-        { "dir": "departure", "group": "ana", "flight": "ADO0000", "airline": "（サンプル）", "place": "東京", "scheduled": "11:00", "estimated": "11:10", "delay_min": 10, "kind": "delayed" }
+        { "dir": "departure", "group": "ana", "flight": "ADO0000", "airline": "（サンプル）", "place": "東京", "scheduled": "11:00", "estimated": "11:10", "delay_min": 10, "kind": "delayed" },
+        { "dir": "departure", "group": "ana", "flight": "IBX0000", "airline": "（サンプル）", "place": "仙台", "scheduled": "11:15", "estimated": null, "delay_min": null, "kind": "cancelled" },
+        { "dir": "arrival", "group": "jal", "flight": "FDA0000", "airline": "（サンプル）", "place": "名古屋（小牧）", "scheduled": "11:30", "estimated": "12:10", "delay_min": 40, "kind": "delayed" },
+        { "dir": "departure", "group": "other", "flight": "SKY0000", "airline": "（サンプル）", "place": "東京", "scheduled": "11:45", "estimated": "12:20", "delay_min": 35, "kind": "delayed" },
+        { "dir": "arrival", "group": "other", "flight": "APJ0000", "airline": "（サンプル）", "place": "大阪（関西）", "scheduled": "12:00", "estimated": null, "delay_min": null, "kind": "cancelled" },
+        { "dir": "departure", "group": "other", "flight": "JJP0000", "airline": "（サンプル）", "place": "成田", "scheduled": "12:15", "estimated": "13:00", "delay_min": 45, "kind": "delayed" },
+        { "dir": "arrival", "group": "other", "flight": "SJO0000", "airline": "（サンプル）", "place": "成田", "scheduled": "12:30", "estimated": "13:05", "delay_min": 35, "kind": "delayed" },
+        { "dir": "departure", "group": "other", "flight": "XXX0000", "airline": "その他航空", "place": "（サンプル）", "scheduled": "12:45", "estimated": "13:20", "delay_min": 35, "kind": "delayed" }
       ]
     }
   },

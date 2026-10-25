@@ -9,6 +9,29 @@
   --st-suspended-bg: var(--col-fan);
   --st-unknown: #555;
   --st-unknown-bg: #e6e6e6;
+
+  /* 各社のコーポレートカラー・ラインカラー（各社公式サイトの CSS で使われている色）。
+     文字色にはコントラストが足りないものがあるので、帯・枠線・印にだけ使う */
+  --brand-jr: #59bb32;       /* JR北海道 */
+  --brand-subway: #005eaa;   /* 札幌市交通局 */
+  --brand-airport: #0e819f;  /* 北海道エアポート */
+  --line-nanboku: #008000;
+  --line-tozai: #e46c0a;
+  --line-toho: #1d1dff;
+  /* 航空会社の機体色（PANTONE・DIC の色見本を sRGB に変換した参考値）。ここにない会社は灰色 */
+  --air-ana: #003896;  /* トリトンブルー PANTONE 661C */
+  --air-jal: #ce323e;  /* JALレッド DIC-N724 */
+  --air-sky: #002855;  /* SKY BLUE PANTONE 295C */
+  --air-sky-2: #ffcc00; /* SKY YELLOW PANTONE 116C（2色目） */
+  --air-ado: #00b4f3;  /* AIRDOブルー PANTONE 298C */
+  --air-ado-2: #fed100; /* AIRDOイエロー PANTONE 109C（2色目） */
+  --air-ibx: #e4007f;  /* アイベックス マゼンタ */
+  --air-fda: #d5011d;  /* FDA 赤 */
+  --air-fda-2: #feed02; /* FDA 黄（2色目） */
+  --air-apj: #e65080;  /* Peach ピンク */
+  --air-jjp: #ff5115;  /* ジェットスター オレンジ */
+  --air-sjo: #008856;  /* 春秋航空日本 緑 */
+  --air-other: #c8c8c8;
 }
 
 .dl {
@@ -78,6 +101,12 @@
   background: var(--col-paper);
   box-shadow: 0 4px 16px rgb(79 69 143 / .12);
 }
+/* 会社ごとの色はカード上部の帯で示す */
+.dl-card--jr { --brand: var(--brand-jr); }
+.dl-card--subway { --brand: var(--brand-subway); }
+.dl-card--airport { --brand: var(--brand-airport); }
+.dl-card[class*="dl-card--"] { border-top: 5px solid var(--brand); }
+
 .dl-card__title {
   display: flex;
   flex-wrap: wrap;
@@ -130,9 +159,84 @@
 .dl-row__name { flex: 1 1 auto; min-width: 8em; font-weight: 700; }
 .dl-row__msg { flex-basis: 100%; font-size: .75rem; opacity: .8; }
 
+/* 地下鉄の路線名の前にラインカラーの丸印 */
+.dl-line::before {
+  content: "";
+  display: inline-block;
+  width: .7em;
+  height: .7em;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--line, currentColor);
+  vertical-align: .02em;
+}
+.dl-line--nanboku { --line: var(--line-nanboku); }
+.dl-line--tozai { --line: var(--line-tozai); }
+.dl-line--toho { --line: var(--line-toho); }
+/* 航空会社の行（便・系列）：背景にごく薄く機体色を敷き、便の一覧は左端の社名の列を機体色で塗る。
+   行全体を塗りつぶすと状態のバッジが埋もれるため、濃い色は社名の列だけにしている。
+   色は便名の先頭3文字（運航会社コード）か、系列の id（ana / jal / other）で決める。
+   2色の会社（FDA・スカイマーク・AIRDO）は --line2 に2色目を指定する。境目はぼかさずに分ける
+   （社名の列は右端の約3分の1を斜めに区切ったアクセント。FDA は左端、AIRDO は斜めにせず上下で分け、スカイマークは2色目を★の色に使う。系列の細い帯は下半分）。
+   社名の文字は白。白では読みにくい明るい色の会社は --line-ink で文字色を変える */
+.dl-airrow { --line: var(--air-other); }
+.dl-air--ANA, .dl-air--AKX, .dl-air--ana { --line: var(--air-ana); }
+.dl-air--JAL, .dl-air--jal { --line: var(--air-jal); }
+.dl-air--SKY { --line: var(--air-sky); --line2: var(--air-sky-2); }
+.dl-air--ADO { --line: var(--air-ado); --line2: var(--air-ado-2); --line-ink: #002855; }
+.dl-air--IBX { --line: var(--air-ibx); }
+.dl-air--FDA { --line: var(--air-fda); --line2: var(--air-fda-2); }
+.dl-air--APJ { --line: var(--air-apj); }
+.dl-air--JJP { --line: var(--air-jjp); }
+.dl-air--SJO { --line: var(--air-sjo); }
+li.dl-airrow,
+tr.dl-airrow > td {
+  background: color-mix(in srgb, var(--line) 9%, var(--col-paper));
+}
+/* 系列の行の左端の帯は背景の重ね塗りで描く（border では2色に分けられないため） */
+li.dl-airrow {
+  padding-left: 15px;
+  padding-right: 8px;
+  background:
+    linear-gradient(var(--line) 50%, var(--line2, var(--line)) 50%) left / 5px 100% no-repeat,
+    color-mix(in srgb, var(--line) 9%, var(--col-paper));
+}
+/* 便の一覧の社名の列：帯を広げて中に社名を入れる */
+tr.dl-airrow > td.dl-airname {
+  padding: 8px 10px;
+  /* 右端の約3分の1を斜めの境目で2色目にする（1色の会社は --line2 がないので全体が1色） */
+  background: linear-gradient(110deg, var(--line) 67%, var(--line2, var(--line)) 67%);
+  color: var(--line-ink, #fff);
+  font-weight: 700;
+  text-align: center;
+}
+/* 2色の会社は、社名の文字がアクセント部分にかからないよう右に余白を取る */
+/* スカイマークは斜めにせず紺一色にし、右端に黄色の★を背景として置く。
+   data URI の中では CSS 変数が使えないので、★の色は --air-sky-2 と同じ値（#ffcc00 → %23ffcc00）を直接書く */
+/* 文字が列の真ん中に来るよう左右の余白をそろえ、★は右の余白に収める */
+tr.dl-air--SKY > td.dl-airname {
+  padding-left: 3.1em;
+  padding-right: 3.1em;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffcc00' d='M12 2l2.9 6.9 7.1.6-5.4 4.7 1.7 7-6.3-3.8-6.3 3.8 1.7-7L2 9.5l7.1-.6z'/%3E%3C/svg%3E")
+      right .3em center / 2.6em no-repeat,
+    var(--line);
+}
+/* AIRDO だけは斜めにせず上下で分ける（文字が紺なので、水色・黄のどちらにかかっても読める） */
+tr.dl-air--ADO > td.dl-airname {
+  background: linear-gradient(var(--line) 50%, var(--line2) 50%);
+}
+/* FDA だけはアクセント（黄）を左端の約3分の1に置く */
+tr.dl-air--FDA > td.dl-airname {
+  padding-left: 2.2em;
+  background: linear-gradient(110deg, var(--line2) 33%, var(--line) 33%);
+}
+
 /* 遅れ・欠航の便の一覧（便数が多いので折りたたむ） */
 .dl-flights { margin-top: 10px; }
 .dl-flights summary { cursor: pointer; font-size: .85rem; font-weight: 700; }
+.dl-check { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: .78rem; cursor: pointer; }
+.dl-check input { margin: 0; accent-color: var(--col-secondary-dark); }
 .dl-flights .dl-table { margin-top: 6px; }
 .dl-table--flights { font-size: .78rem; }
 .dl-table--flights td { width: auto; }
@@ -160,6 +264,22 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+/* カード下の情報元ボタン */
+.dl-source {
+  display: block;
+  width: fit-content;
+  margin: 12px 0 0 auto;
+  padding: 5px 14px;
+  border: 1px solid var(--brand, var(--col-secondary-light));
+  border-radius: 999px;
+  color: var(--col-ink);
+  font-size: .75rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.dl-source::after { content: " ↗"; }
+.dl-source:hover { background: var(--col-secondary-lighter); }
 
 /* 未対応の交通機関のリンク */
 .dl-links { margin: 8px 0 0; padding-left: 1.2em; font-size: .85rem; }

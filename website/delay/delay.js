@@ -39,12 +39,18 @@
     </div>`;
   }
 
-  function card(svc, body, timeText) {
+  // id（jr / subway / airport）でカードにコーポレートカラーを付ける（delay.css の .dl-card--{id}）
+  function card(id, svc, body, timeText) {
     const time = timeText ? `<span class="dl-card__time">${esc(timeText)}</span>` : "";
-    return `<section class="dl-card">
+    // 情報元へのボタン。取得失敗時は staleNote に目立つ公式ボタンがあるので出さない
+    const source = svc.ok
+      ? `<a class="dl-source" href="${esc(svc.url)}" target="_blank" rel="noopener">情報元：${esc(svc.name)}</a>`
+      : "";
+    return `<section class="dl-card dl-card--${esc(id)}">
       <h2 class="dl-card__title"><a href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)}</a>${time}</h2>
       ${staleNote(svc)}
       ${svc.ok || svc.last_success_at ? body : ""}
+      ${source}
     </section>`;
   }
 
@@ -63,25 +69,44 @@
       <tbody>${rows}</tbody>
     </table>
     <p class="dl-card__note">JR北海道の情報は「遅れや運休があるかどうか」のみです。詳しくは各線区のリンク先へ。</p>`;
-    return card(svc, body, svc.source_time);
+    return card("jr", svc, body, svc.source_time);
   }
 
   function renderSubway(svc) {
     const rows = (svc.items || [])
       .map(
         (i) => `<li class="dl-row">
-          <span class="dl-row__name">${esc(i.name)}</span>
+          <span class="dl-row__name dl-line dl-line--${esc(i.id)}">${esc(i.name)}</span>
           ${badge(i.status)}
           ${i.message ? `<span class="dl-row__msg">${esc(i.message)}</span>` : ""}
         </li>`
       )
       .join("");
-    return card(svc, `<ul class="dl-rows">${rows}</ul>`, svc.ok ? `${hhmm(svc.fetched_at)} 取得` : "");
+    return card("subway", svc, `<ul class="dl-rows">${rows}</ul>`, svc.ok ? `${hhmm(svc.fetched_at)} 取得` : "");
   }
+
+  // 1分ごとの描き直しで消えないよう、一覧の開閉とチェックの状態をここに持つ（出発・到着済の便は最初は隠す）
+  const ui = { flightsOpen: false, showDone: false };
 
   const KIND = { cancelled: "欠航", delayed: "遅れ", diverted: "引き返し等" };
   const KIND_STATUS = { cancelled: "suspended", delayed: "delay", diverted: "suspended", done: "done" };
   // 出発・到着済みで30分以上遅れた便（kind: "done"）は、これから飛ぶ便と見分けられるよう薄い色にする
+  // 一覧の社名の列に出す短い表記（運航会社コード → 名前）。ない会社は空港データの社名をそのまま出す
+  const AIRLINE_SHORT = {
+    ANA: "ANA",
+    AKX: "ANA",
+    ADO: "AIRDO",
+    IBX: "IBEX",
+    JAL: "JAL",
+    JLJ: "J-AIR",
+    NTH: "HAC",
+    FDA: "FDA",
+    SKY: "スカイマーク",
+    APJ: "Peach",
+    JJP: "ジェットスター",
+    SJO: "春秋航空",
+    SNJ: "ソラシド",
+  };
   const kindLabel = (f) => (f.kind === "done" ? (f.dir === "arrival" ? "遅れ（到着済）" : "遅れ（出発済）") : KIND[f.kind]);
 
   function renderAirport(svc) {
@@ -93,7 +118,7 @@
         if (g.diverted) parts.push(`引き返し等 ${g.diverted}`);
         if (g.delayed) parts.push(`遅れ ${g.delayed}`);
         if (g.done_late) parts.push(`30分以上遅れて出発・到着済 ${g.done_late}`);
-        return `<li class="dl-row">
+        return `<li class="dl-row dl-airrow dl-air--${esc(g.id)}">
           <span class="dl-row__name">${esc(g.name)}</span>
           ${badge(g.status, label)}
           <span class="dl-row__msg">${esc(parts.join(" / "))}</span>
@@ -101,16 +126,19 @@
       })
       .join("");
 
-    const flights = svc.flights || [];
-    const doneCount = flights.filter((f) => f.kind === "done").length;
-    const list = flights.length
-      ? `<details class="dl-flights">
-          <summary>遅れ・欠航の便（${flights.length}便${doneCount ? `、うち出発・到着済 ${doneCount}便` : ""}）</summary>
-          <table class="dl-table dl-table--flights">
-            <thead><tr><th>出/着</th><th>定刻</th><th>変更</th><th>便名</th><th>行先・出発地</th><th>状況</th></tr></thead>
+    const all = svc.flights || [];
+    const doneCount = all.filter((f) => f.kind === "done").length;
+    const flights = ui.showDone ? all : all.filter((f) => f.kind !== "done");
+    const toggle = doneCount
+      ? `<label class="dl-check"><input type="checkbox" data-show-done${ui.showDone ? " checked" : ""}> 出発・到着済を表示（${doneCount}便）</label>`
+      : "";
+    const table = flights.length
+      ? `<table class="dl-table dl-table--flights">
+            <thead><tr><th>航空会社</th><th>出/着</th><th>定刻</th><th>変更</th><th>便名</th><th>行先・出発地</th><th>状況</th></tr></thead>
             <tbody>${flights
               .map(
-                (f) => `<tr${f.kind === "done" ? ' class="is-done"' : ""}>
+                (f) => `<tr class="dl-airrow dl-air--${esc(String(f.flight).slice(0, 3))}${f.kind === "done" ? " is-done" : ""}">
+                  <td class="dl-airname">${esc(AIRLINE_SHORT[String(f.flight).slice(0, 3)] || f.airline)}</td>
                   <td>${f.dir === "arrival" ? "着" : "発"}</td>
                   <td>${esc(f.scheduled)}</td>
                   <td>${esc(f.estimated || "")}${f.delay_min > 0 ? `<small>（+${f.delay_min}分）</small>` : ""}</td>
@@ -120,12 +148,19 @@
                 </tr>`
               )
               .join("")}</tbody>
-          </table>
+          </table>`
+      : `<p class="dl-card__note">これから出発・到着する便に、遅れ・欠航はありません。</p>`;
+    const current = all.length - doneCount;
+    const list = all.length
+      ? `<details class="dl-flights"${ui.flightsOpen ? " open" : ""}>
+          <summary>遅れ・欠航の便（${current}便）</summary>
+          ${toggle}
+          ${table}
         </details>`
       : "";
     const body = `<ul class="dl-rows">${groups}</ul>${list}
       <p class="dl-card__note">運航会社ごとの集計です（コードシェア便は運航会社側に数えます）。</p>`;
-    return card(svc, body, svc.source_time ? `${hhmm(svc.source_time)} 時点` : "");
+    return card("airport", svc, body, svc.source_time ? `${hhmm(svc.source_time)} 時点` : "");
   }
 
   const RENDER = { jr: renderJr, subway: renderSubway, airport: renderAirport };
@@ -171,6 +206,19 @@
   }
 
   $reload.addEventListener("click", load);
+  // カードは描き直すたびに作り直すので、イベントは外側の #sections で受ける（toggle は伝わらないので捕捉段階で）
+  $sections.addEventListener(
+    "toggle",
+    (ev) => {
+      if (ev.target.matches?.(".dl-flights")) ui.flightsOpen = ev.target.open;
+    },
+    true
+  );
+  $sections.addEventListener("change", (ev) => {
+    if (!ev.target.matches("[data-show-done]")) return;
+    ui.showDone = ev.target.checked;
+    if (last) render(last);
+  });
   // 画面を見ているあいだだけ1分ごとに更新し、戻ってきたときにもすぐ更新する
   setInterval(() => document.visibilityState === "visible" && load(), REFRESH_MS);
   document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && load());
