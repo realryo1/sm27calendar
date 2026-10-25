@@ -11,15 +11,36 @@ const INTERVAL_MIN = 5;
 const HEALTH_STALE_MIN = INTERVAL_MIN * 3 + 2;
 const HEALTH_FAIL_COUNT = 3;
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-};
+// /status.json を読めるのは自サイトと手元の確認用（localhost）だけにする
+// Origin（なければ Referer）で見る。ヘッダーは偽れるので、他サイトへの埋め込みや流用を防ぐための節度としての制限
+const SITE_ORIGIN = "https://realryo1.github.io";
+const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
-function json(body, status, cacheControl) {
+function allowedOrigin(request) {
+  const origin = request.headers.get("Origin");
+  if (origin) return origin === SITE_ORIGIN || LOCAL_ORIGIN.test(origin) ? origin : null;
+  const referer = request.headers.get("Referer");
+  if (!referer) return null;
+  try {
+    const o = new URL(referer).origin;
+    return o === SITE_ORIGIN || LOCAL_ORIGIN.test(o) ? o : null;
+  } catch {
+    return null;
+  }
+}
+
+function cors(origin) {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    Vary: "Origin",
+  };
+}
+
+function json(body, status, cacheControl, headers = {}) {
   return new Response(body, {
     status,
-    headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": cacheControl },
+    headers: { ...headers, "Content-Type": "application/json; charset=utf-8", "Cache-Control": cacheControl },
   });
 }
 
@@ -53,10 +74,16 @@ export default {
   },
 
   async fetch(request, env, ctx) {
-    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+    const url = new URL(request.url);
+    // wrangler dev（localhost:8787）では curl などでそのまま見られるようにする
+    const origin = LOCAL_ORIGIN.test(url.origin) ? request.headers.get("Origin") || "*" : allowedOrigin(request);
+
+    if (request.method === "OPTIONS") {
+      return origin ? new Response(null, { status: 204, headers: cors(origin) }) : new Response(null, { status: 403 });
+    }
     if (request.method !== "GET") return json('{"error":"method not allowed"}', 405, "no-store");
 
-    const url = new URL(request.url);
+    // /health は外部の監視（Origin も Referer もない）から見るので制限しない。CORS ヘッダーも付けない
     if (url.pathname === "/health") {
       const data = await env.DELAY_KV.get(KEY, "json").catch(() => null);
       if (!data) return json('{"ok":false,"problems":["KV にデータがない"]}', 503, "no-store");
@@ -64,19 +91,21 @@ export default {
       return json(JSON.stringify(h), h.ok ? 200 : 503, "no-store");
     }
     if (url.pathname !== "/" && url.pathname !== "/status.json") return json('{"error":"not found"}', 404, "no-store");
+    if (!origin) return json('{"error":"forbidden"}', 403, "no-store");
 
     // エッジのキャッシュで KV の読み取り回数も抑える（Cron が5分ごとなので60秒で十分新しい）
+    // キャッシュには CORS ヘッダーを付けずに入れ、返すときに相手の Origin を付ける
     const cacheKey = new Request(`${url.origin}/status.json`);
     const cache = caches.default;
     const hit = await cache.match(cacheKey);
-    if (hit) return hit;
+    if (hit) return new Response(hit.body, { status: hit.status, headers: { ...Object.fromEntries(hit.headers), ...cors(origin) } });
 
     const body = await env.DELAY_KV.get(KEY).catch(() => null);
     // 初回デプロイ直後で Cron がまだ一度も動いていないときは 503（ここで事業者へ取りに行くことはしない）
-    if (!body) return json('{"error":"not ready"}', 503, "no-store");
+    if (!body) return json('{"error":"not ready"}', 503, "no-store", cors(origin));
 
-    const res = json(body, 200, "public, max-age=60, stale-while-revalidate=300");
-    ctx.waitUntil(cache.put(cacheKey, res.clone()));
-    return res;
+    const cacheControl = "public, max-age=60, stale-while-revalidate=300";
+    ctx.waitUntil(cache.put(cacheKey, json(body, 200, cacheControl)));
+    return json(body, 200, cacheControl, cors(origin));
   },
 };

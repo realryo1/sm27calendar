@@ -3,7 +3,7 @@
 `website/delay/` に表示する運行情報を集める Cloudflare Worker です。設計の元は `document/tienResearch.md`、実装と進捗のまとめは `document/delayProgress.md`。
 
 - Cron（5分ごと、毎時 :02, :07, …。新千歳空港 FIS の更新 :01, :06, … の直後）で各事業者から取得し、Workers KV に1本の JSON（キー `status`）として保存
-- `GET /status.json` で KV の JSON を `Access-Control-Allow-Origin: *` 付きで返す（エッジで60秒キャッシュ）
+- `GET /status.json` で KV の JSON を返す（エッジで60秒キャッシュ）。読めるのは Origin（なければ Referer）が `https://realryo1.github.io` か localhost のときだけで、それ以外は 403。`wrangler dev`（localhost:8787）では制限しない
 - 閲覧者が増えても、事業者サイトへのアクセスは5分に1回のまま
 
 - `GET /health` は外部の監視サービス向け。異常なら 503（KV を読むだけで、事業者へは取りに行かない）
