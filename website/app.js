@@ -747,15 +747,58 @@
     { passive: false }
   );
   // PC: マウスホイールも同様。overscroll-behavior: none のため、表の下端（と、ページが下がっている間の上向き）はページ側へ渡す
+  // 下向きは表→ページ、上向きはページ→表の順に、渡された量を使い切る
+  const wheelChain = (dy) => {
+    if (dy > 0) {
+      const room = $scroll.scrollHeight - $scroll.clientHeight - $scroll.scrollTop;
+      const inner = Math.min(dy, Math.max(0, room));
+      if (inner) $scroll.scrollTop += inner;
+      if (dy > inner) window.scrollBy(0, dy - inner);
+    } else {
+      const outer = Math.max(dy, -window.scrollY);
+      if (outer) window.scrollBy(0, outer);
+      if (dy < outer) $scroll.scrollTop += dy - outer;
+    }
+  };
+  // マウスのホイール（1目盛りが大きい）は、表とページをまたいで1本のなめらかなスクロールとして動かす。
+  // 表の中はブラウザ標準のなめらかなスクロール、ページ側は一気に動く…という継ぎ目をなくすため
+  let wheelPending = 0;
+  let wheelRaf = 0;
+  let wheelPrev = 0;
+  const wheelStep = (now) => {
+    const dt = Math.min(50, now - wheelPrev);
+    wheelPrev = now;
+    let dy = wheelPending * (1 - Math.exp(-dt / 70)); // 約0.2秒で収まる
+    dy = Math.abs(wheelPending) <= 1 ? wheelPending : dy > 0 ? Math.max(1, Math.round(dy)) : Math.min(-1, Math.round(dy));
+    const beforeIn = $scroll.scrollTop;
+    const beforeOut = window.scrollY;
+    wheelChain(dy);
+    const moved = $scroll.scrollTop !== beforeIn || window.scrollY !== beforeOut;
+    wheelPending = moved ? wheelPending - dy : 0; // 端に着いたら残りは捨てる
+    wheelRaf = Math.abs(wheelPending) >= 0.5 ? requestAnimationFrame(wheelStep) : 0;
+  };
   $scroll.addEventListener(
     "wheel",
     (ev) => {
       if (ev.ctrlKey || ev.shiftKey || !ev.deltaY) return;
-      const atBottom = $scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 1;
-      if (!((ev.deltaY > 0 && atBottom) || (ev.deltaY < 0 && window.scrollY > 0))) return;
-      ev.preventDefault();
       const px = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? window.innerHeight : 1;
-      window.scrollBy(0, ev.deltaY * px);
+      const dy = ev.deltaY * px;
+      const notch = ev.deltaMode !== 0 || Math.abs(ev.deltaY) >= 40;
+      if (notch || wheelRaf) {
+        ev.preventDefault();
+        if (Math.sign(dy) !== Math.sign(wheelPending)) wheelPending = 0; // 逆向きに回したら即座に切り替える
+        wheelPending += dy;
+        if (!wheelRaf) {
+          wheelPrev = performance.now() - 16;
+          wheelRaf = requestAnimationFrame(wheelStep);
+        }
+        return;
+      }
+      // トラックパッドは細かく届くので、表の端を越える分だけその場でページへ渡す
+      const atBottom = $scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 1;
+      if (!((dy > 0 && atBottom) || (dy < 0 && window.scrollY > 0))) return;
+      ev.preventDefault();
+      wheelChain(dy);
     },
     { passive: false }
   );
