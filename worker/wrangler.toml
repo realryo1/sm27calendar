@@ -6,9 +6,7 @@ compatibility_date = "2026-10-01"
 # 新千歳空港の FIS が毎時 :01, :06, … に更新されるので、その直後の :02, :07, … に取りに行く
 # 間隔を変えるときは src/index.js の INTERVAL_MIN も合わせる
 [triggers]
-# 【一時停止中】/health の 503 と Grok Bot の通知を確かめるため。確認したら元に戻す
-# crons = ["2-59/5 * * * *"]
-crons = []
+crons = ["2-59/5 * * * *"]
 
 # ダッシュボードの Observability でログ（Cron の実行結果・エラー）を見られるようにする
 [observability]
