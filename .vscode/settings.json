@@ -1,3 +1,6 @@
 {
-  "liveServer.settings.ignoreFiles": ["tools/**", ".git/**", ".github/**"]
+  "liveServer.settings.ignoreFiles": [
+    "tools/**", ".git/**", "worker/**", ".github/**",
+    "**/tools/**", "**/.git/**", "**/worker/**", "**/.github/**", "**/document/**"
+  ]
 }
