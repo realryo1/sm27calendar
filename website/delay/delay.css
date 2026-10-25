@@ -177,7 +177,7 @@
    行全体を塗りつぶすと状態のバッジが埋もれるため、濃い色は社名の列だけにしている。
    色は便名の先頭3文字（運航会社コード）か、系列の id（ana / jal / other）で決める。
    2色の会社（FDA・スカイマーク・AIRDO）は --line2 に2色目を指定する。境目はぼかさずに分ける
-   （社名の列は右端の約3分の1を斜めに区切ったアクセント。FDA は左端、AIRDO は斜めにせず上下で分け、スカイマークは2色目を★の色に使う。系列の細い帯は下半分）。
+   （社名の列は右端の約3分の1を斜めに区切ったアクセント。FDA は左端の4分の1、AIRDO は斜めにせず上下で分け、スカイマークは2色目を★の色に使う。系列の細い帯は下半分）。
    社名の文字は白。白では読みにくい明るい色の会社は --line-ink で文字色を変える */
 .dl-airrow { --line: var(--air-other); }
 .dl-air--ANA, .dl-air--AKX, .dl-air--ana { --line: var(--air-ana); }
@@ -210,26 +210,21 @@ tr.dl-airrow > td.dl-airname {
   font-weight: 700;
   text-align: center;
 }
-/* 2色の会社は、社名の文字がアクセント部分にかからないよう右に余白を取る */
-/* スカイマークは斜めにせず紺一色にし、右端に黄色の★を背景として置く。
+/* スカイマークは斜めにせず紺一色にし、右端に黄色の★を背景として置く（社名の列は固定幅で、★の分の余白がある）。
    data URI の中では CSS 変数が使えないので、★の色は --air-sky-2 と同じ値（#ffcc00 → %23ffcc00）を直接書く */
-/* 文字が列の真ん中に来るよう左右の余白をそろえ、★は右の余白に収める */
 tr.dl-air--SKY > td.dl-airname {
-  padding-left: 3.1em;
-  padding-right: 3.1em;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffcc00' d='M12 2l2.9 6.9 7.1.6-5.4 4.7 1.7 7-6.3-3.8-6.3 3.8 1.7-7L2 9.5l7.1-.6z'/%3E%3C/svg%3E")
-      right .3em center / 2.6em no-repeat,
+      right .3em center / 2.4em no-repeat,
     var(--line);
 }
 /* AIRDO だけは斜めにせず上下で分ける（文字が紺なので、水色・黄のどちらにかかっても読める） */
 tr.dl-air--ADO > td.dl-airname {
   background: linear-gradient(var(--line) 50%, var(--line2) 50%);
 }
-/* FDA だけはアクセント（黄）を左端の約3分の1に置く */
+/* FDA だけはアクセント（黄）を左端の4分の1に置く */
 tr.dl-air--FDA > td.dl-airname {
-  padding-left: 2.2em;
-  background: linear-gradient(110deg, var(--line2) 33%, var(--line) 33%);
+  background: linear-gradient(110deg, var(--line2) 25%, var(--line) 25%);
 }
 
 /* 遅れ・欠航の便の一覧（便数が多いので折りたたむ） */
@@ -238,8 +233,18 @@ tr.dl-air--FDA > td.dl-airname {
 .dl-check { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: .78rem; cursor: pointer; }
 .dl-check input { margin: 0; accent-color: var(--col-secondary-dark); }
 .dl-flights .dl-table { margin-top: 6px; }
-.dl-table--flights { font-size: .78rem; }
+.dl-flights__title { margin: 14px 0 0; font-size: .85rem; }
+/* 出発・到着の2つの表で列幅がそろうよう、幅を固定する（行先・出発地の列が残りの幅を使う）。
+   社名の列はスカイマークの★も文字に重ならない幅。狭い画面では .dl-flights が横スクロールする */
+.dl-table--flights { font-size: .78rem; table-layout: fixed; min-width: 40em; }
 .dl-table--flights td { width: auto; }
+.dl-table--flights th,
+.dl-table--flights td { overflow: hidden; text-overflow: ellipsis; }
+.dl-col-air { width: 11em; }
+.dl-col-no { width: 6.5em; }
+.dl-col-time { width: 4.5em; }
+.dl-col-est { width: 8em; }
+.dl-col-state { width: 7.5em; }
 .dl-table--flights small { font-size: .7rem; opacity: .8; }
 .dl-table--flights tr.is-done td { opacity: .7; }
 @media (max-width: 640px) {

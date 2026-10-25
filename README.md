@@ -25,6 +25,9 @@ SNOW MIKU 2027（2027.2.5〜2.7）のメインイベント・LIVE・Digital Star
 | `website/train.js` / `train-view.js` | 雪ミク電車の時刻表と在線予測 |
 | `website/pwa.js` / `sw.js` / `manifest.webmanifest` | PWA 関連 |
 | `website/style.css` | スタイル |
+| `website/delay/` | 運行情報の試験ページ（JR北海道・札幌市営地下鉄・新千歳空港。メインページからは未リンク） |
+| `worker/` | 運行情報を5分ごとに集めて配信する Cloudflare Worker（[worker/README.md](worker/README.md)） |
+| `document/` | 運行情報の調査資料（`tienResearch.md`）と実装・進捗のまとめ（`delayProgress.md`） |
 | `tools/` | アイコン・OGP 画像の元になる HTML |
 
 ## ローカルで確認

@@ -132,23 +132,30 @@
     const toggle = doneCount
       ? `<label class="dl-check"><input type="checkbox" data-show-done${ui.showDone ? " checked" : ""}> 出発・到着済を表示（${doneCount}便）</label>`
       : "";
-    const table = flights.length
-      ? `<table class="dl-table dl-table--flights">
-            <thead><tr><th>航空会社</th><th>出/着</th><th>定刻</th><th>変更</th><th>便名</th><th>行先・出発地</th><th>状況</th></tr></thead>
-            <tbody>${flights
+    // 出発と到着で表を分ける。列は 航空会社・便名・行先（到着は出発地）・定刻・変更・状況 の順
+    const flightTable = (dir, title, placeLabel) => {
+      const rows = flights.filter((f) => f.dir === dir);
+      if (!rows.length) return "";
+      return `<h3 class="dl-flights__title">${title}（${rows.length}便）</h3>
+          <table class="dl-table dl-table--flights">
+            <colgroup><col class="dl-col-air"><col class="dl-col-no"><col><col class="dl-col-time"><col class="dl-col-est"><col class="dl-col-state"></colgroup>
+            <thead><tr><th>航空会社</th><th>便名</th><th>${placeLabel}</th><th>定刻</th><th>変更</th><th>状況</th></tr></thead>
+            <tbody>${rows
               .map(
                 (f) => `<tr class="dl-airrow dl-air--${esc(String(f.flight).slice(0, 3))}${f.kind === "done" ? " is-done" : ""}">
                   <td class="dl-airname">${esc(AIRLINE_SHORT[String(f.flight).slice(0, 3)] || f.airline)}</td>
-                  <td>${f.dir === "arrival" ? "着" : "発"}</td>
-                  <td>${esc(f.scheduled)}</td>
-                  <td>${esc(f.estimated || "")}${f.delay_min > 0 ? `<small>（+${f.delay_min}分）</small>` : ""}</td>
                   <td>${esc(f.flight)}</td>
                   <td>${esc(f.place)}</td>
+                  <td>${esc(f.scheduled)}</td>
+                  <td>${esc(f.estimated || "")}${f.delay_min > 0 ? `<small>（+${f.delay_min}分）</small>` : ""}</td>
                   <td>${badge(KIND_STATUS[f.kind] || "unknown", kindLabel(f))}</td>
                 </tr>`
               )
               .join("")}</tbody>
-          </table>`
+          </table>`;
+    };
+    const table = flights.length
+      ? flightTable("departure", "出発", "行先") + flightTable("arrival", "到着", "出発地")
       : `<p class="dl-card__note">これから出発・到着する便に、遅れ・欠航はありません。</p>`;
     const current = all.length - doneCount;
     const list = all.length

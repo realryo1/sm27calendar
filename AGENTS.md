@@ -3,6 +3,14 @@
 プロジェクト名は「SNOWMIKU2027 非公式カレンダー」
 公開リポジトリのため、/official/フォルダ内のデータをコミットに含めない。使用可能なのはカラーパレットや事実のみ。
 
+## 運行情報（website/delay/・worker/）のルール
+
+- 実装と進捗は `document/delayProgress.md` にまとめる。進めたら更新する。
+- 事業者サイトへアクセスするのは Worker の Cron（5分に1回）だけ。ページから事業者サイトへ直接取りに行かない。手元の確認でも連続で取得しない。
+- 事業者の文章は取り込まず、状態・便名・時刻などの事実だけを扱う。企業ロゴは使わない（色は使ってよい）。
+- Cron の間隔を変えたら `worker/src/index.js` の `INTERVAL_MIN` も合わせる。
+- `website/delay/` は Service Worker の対象外（`website/sw.js`）。運行情報はオフライン用にキャッシュしない。
+
 ## PWA・キャッシュまわりのルール
 
 - オフライン保存するファイルの一覧は `website/precache.js`（`self.PRECACHE`）に1か所だけ持つ。`website/sw.js` は `importScripts` で、更新ボタン（`website/app.js` の `hardRefresh`）は `self.PRECACHE` で参照する。
