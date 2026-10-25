@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- 末尾スラッシュを強制する。無いと style.css などの相対パスが1階層上を指して壊れる。ファイル名のあるURL（index.html など）は対象外 -->
+  <script>
+    if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
+  </script>
   <!-- 試験版のため検索結果に出さない。メインページへ組み込むときに外す -->
   <meta name="robots" content="noindex">
   <title>運行情報（試験版） | SNOWMIKU2027 非公式カレンダー</title>

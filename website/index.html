@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- 末尾スラッシュを強制する。無いと style.css などの相対パスが1階層上を指して壊れる。ファイル名のあるURL（index.html など）は対象外 -->
+  <script>
+    if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
+  </script>
   <!-- title / description / OGP は静的に置く必要がある。サイト名・説明を変えるときは data.js の site も合わせて直す -->
   <title>SNOWMIKU2027 非公式カレンダー</title>
   <meta name="description" content="SNOW MIKU 2027（2027.2.5〜2.7）のメインイベント・LIVE・Digital Stars・ファンメイドライブ・雪ミク電車を会場別にまとめた非公式カレンダー。雪ミク電車の在線予測つき。">
