@@ -26,18 +26,24 @@ node worker/scripts/collect-local.mjs out.json   # ファイルへ
 
 事業者サイトへ実際にアクセスするので、連続で実行しないこと。
 
-## Cloudflare への公開手順
+## Cloudflare への公開（GitHub 連携で自動デプロイ）
 
-1. Cloudflare アカウントを作る（無料プランで足りる）
-2. ログイン：`cd worker` → `npm install` → `npx wrangler login`
-3. KV を作る：`npx wrangler kv namespace create DELAY_KV`  
-   表示された `id` を `wrangler.toml` の `REPLACE_WITH_KV_NAMESPACE_ID` に貼る
-4. 手元で動作確認：`npm run dev`  
-   別のターミナルで `curl "http://localhost:8787/__scheduled?cron=*/5+*+*+*+*"` を叩くと収集が1回動き、`http://localhost:8787/status.json` で結果を見られる  
-   ページ側は Live Server などで `website/delay/?api=http://localhost:8787/status.json` を開く（`?api=` は localhost で開いたときだけ有効）
-5. 公開：`npm run deploy`  
-   表示された `https://sm27-delay.<アカウント名>.workers.dev` を `website/delay/delay.js` の `ENDPOINT` に `/status.json` 付きで入れる  
+KV（`DELAY_KV`）はダッシュボードで作成済みで、ID は `wrangler.toml` に入れてある。
+
+1. Cloudflare ダッシュボードの **Compute → Workers & Pages → Create → Import a repository** でこのリポジトリを連携する
+   - Project name：`sm27-delay`（`wrangler.toml` の `name` と同じ）
+   - Root directory：`worker`
+   - Build command：空欄 / Deploy command：`npx wrangler deploy`
+2. 作成後、**Settings → Build → Build watch paths** を `worker/*` にする（`website/` だけの変更ではデプロイしない）
+3. 以降は `main` に push すれば自動でデプロイされる
+4. 表示された `https://sm27-delay.<アカウント名>.workers.dev` を `website/delay/delay.js` の `ENDPOINT` に `/status.json` 付きで入れる  
    Cron が初めて動くまで（最大5分）は 503 を返す
+
+## 手元で Worker ごと動かす
+
+`cd worker` → `npm install` → `npm run dev`（KV は手元の仮のものが使われる）  
+別のターミナルで `curl "http://localhost:8787/__scheduled?cron=*/5+*+*+*+*"` を叩くと収集が1回動き、`http://localhost:8787/status.json` で結果を見られる。  
+ページ側は Live Server などで `website/delay/?api=http://localhost:8787/status.json` を開く（`?api=` は localhost で開いたときだけ有効）。
 
 ## 無料枠の目安
 
