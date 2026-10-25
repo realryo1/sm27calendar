@@ -19,11 +19,12 @@
 | `src/sources/jr.js` | JR北海道（`webunkou/json/area/area_01.json`） |
 | `src/sources/subway.js` | 札幌市営地下鉄（`operationstatus.city.sapporo.jp/unkojoho/top.html`） |
 | `src/sources/airport.js` | 新千歳空港 国内線（`hokkaido-airports.com/api/v1/new-chitose/static/fis/domestic/today.json`） |
-| `src/http.js` | 取得の共通設定（User-Agent、8秒のタイムアウト） |
+| `src/sources/expressway.js` | 高速道路 道央道・札樽道（アイハイウェイ `ihighway.jp/datas/json/traffic.json`） |
+| `src/http.js` | 取得の共通設定（User-Agent、8秒のタイムアウト、`Last-Modified` の読み取り）と日本時間の時刻 |
 | `scripts/collect-local.mjs` | Cloudflare を使わずに収集だけ1回動かす |
 | `wrangler.toml` | Worker 名・Cron・KV・ログの設定 |
 
-対応していない交通機関（市電・バス・高速道路・フェリー）は、ページに公式リンクだけ出している。
+対応していない交通機関（市電・バス・フェリー）は、ページに公式リンクだけ出している。
 
 ## 変更するときの注意
 
@@ -49,6 +50,8 @@ Cloudflare の GitHub 連携（Workers Builds）で、`main` に push すると�
 node worker/scripts/collect-local.mjs            # 標準出力へ
 node worker/scripts/collect-local.mjs out.json   # ファイルへ
 ```
+
+ページで見るときは `node worker/scripts/collect-local.mjs website/delay/_local.json` で書き出し、Live Server などで `website/delay/?api=_local.json` を開く（`_local.json` は `.gitignore` 済み）。
 
 ## 手元で Worker ごと動かす
 

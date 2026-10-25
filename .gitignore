@@ -1,3 +1,6 @@
 official
 worker/node_modules/
 worker/.wrangler/
+
+# 運行情報の手元確認用（worker/scripts/collect-local.mjs の出力）
+website/delay/_local.json

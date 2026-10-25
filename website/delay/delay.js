@@ -26,6 +26,7 @@
     delay: "遅れあり",
     suspended: "運休・見合わせ",
     unknown: "不明",
+    offhours: "サービス時間外",
   };
   const badge = (status, label) => `<span class="dl-badge dl-badge--${esc(status)}">${esc(label || LABEL[status] || LABEL.unknown)}</span>`;
 
@@ -68,7 +69,7 @@
       <thead><tr><th></th><th>本日</th><th>明日</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p class="dl-card__note">JR北海道の情報は「遅れや運休があるかどうか」のみです。詳しくは各線区のリンク先へ。</p>`;
+    <p class="dl-card__note">JR北海道の情報は「運休・30分以上の遅れ・運転見合わせがあるかどうか」のみです。深夜はサービス時間外になります。詳しくは各線区のリンク先へ。</p>`;
     return card("jr", svc, body, svc.source_time);
   }
 
@@ -170,13 +171,40 @@
     return card("airport", svc, body, svc.source_time ? `${hhmm(svc.source_time)} 時点` : "");
   }
 
-  const RENDER = { jr: renderJr, subway: renderSubway, airport: renderAirport };
+  // 高速道路：路線ごとの状態と、重要な規制（通行止・チェーン規制・事故など）の区間。車線規制・除雪作業などは件数だけ出す
+  const ROAD_LABEL = { suspended: "通行止あり", delay: "規制あり", normal: "重要な規制なし" };
+  function renderExpressway(svc) {
+    const rows = (svc.roads || [])
+      .map((r) => {
+        const major = (r.items || []).filter((x) => x.major);
+        const minor = (r.items || []).length - major.length;
+        const items = major
+          .map(
+            (x) => `<li>${badge(x.kind === "closed" ? "suspended" : "delay", x.label)}
+              <span>${esc(x.section)}${x.direction ? `（${esc(x.direction)}）` : ""}${x.reason ? `　原因：${esc(x.reason)}` : ""}</span></li>`
+          )
+          .join("");
+        return `<li class="dl-row">
+          <span class="dl-row__name">${esc(r.name)}</span>
+          ${badge(r.status, ROAD_LABEL[r.status])}
+          ${items ? `<ul class="dl-exp-items">${items}</ul>` : ""}
+          ${minor ? `<span class="dl-row__msg">そのほかの規制（車線規制・除雪作業など） ${minor}件</span>` : ""}
+        </li>`;
+      })
+      .join("");
+    const body = `<ul class="dl-rows">${rows}</ul>
+      <p class="dl-card__note">表示まで10〜15分ほど遅れることがあります。通行止・チェーン規制は急に変わるので、出発前に必ず公式の交通情報を確認してください。</p>`;
+    return card("expressway", svc, body, svc.source_time ? `${hhmm(svc.source_time)} 時点` : "");
+  }
+
+  const RENDER = { jr: renderJr, subway: renderSubway, airport: renderAirport, expressway: renderExpressway };
 
   // Worker に一度もつながらなかったとき（前回の内容もない）に出す公式リンク。名前と URL は worker/src/collect.js の SOURCES と合わせる
   const OFFICIAL = [
     { name: "JR北海道", url: "https://www3.jrhokkaido.co.jp/webunkou/" },
     { name: "札幌市営地下鉄", url: "https://operationstatus.city.sapporo.jp/unkojoho/" },
     { name: "新千歳空港（国内線）", url: "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/" },
+    { name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/" },
   ];
   const officialLinks = () =>
     `<section class="dl-card">

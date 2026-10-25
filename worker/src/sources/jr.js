@@ -1,6 +1,7 @@
 // JR北海道：運行情報サイト（webunkou）が画面描画に使っている JSON
 // area_01.json（札幌近郊エリア）1本に、全エリア・全線区の「本日／明日」の状態が入っている。
-// 状態は 0：遅れの情報なし、1：運休や遅れあり の2値で、遅れと運休の区別はない。
+// 状態は 0：運休・遅延に関する情報なし、1：運休・30分以上の遅延・運転見合わせが発生、2：サービス時間外（深夜）。
+// 遅れと運休の区別はない（値の意味は webunkou の js/common_area_operation.js と同じ）。
 import { get } from "../http.js";
 
 const BASE = "https://www3.jrhokkaido.co.jp/webunkou/";
@@ -14,7 +15,7 @@ const LINES = [
   { id: "shinkansen", name: "北海道新幹線", key: "shin", from: "areaStatus", senku: "24" },
 ];
 
-const toStatus = (v) => (v === 0 ? "normal" : v === 1 ? "delay" : "unknown");
+const toStatus = (v) => ({ 0: "normal", 1: "delay", 2: "offhours" })[v] || "unknown";
 
 export async function fetchJr() {
   const data = await get(`${BASE}json/area/area_01.json`, { type: "json" });

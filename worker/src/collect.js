@@ -5,6 +5,10 @@
 import { fetchJr } from "./sources/jr.js";
 import { fetchSubway } from "./sources/subway.js";
 import { fetchAirport } from "./sources/airport.js";
+import { fetchExpressway } from "./sources/expressway.js";
+import { jstIso } from "./http.js";
+
+export { jstIso };
 
 export const SCHEMA_VERSION = 1;
 
@@ -12,13 +16,8 @@ const SOURCES = [
   { id: "jr", name: "JR北海道", url: "https://www3.jrhokkaido.co.jp/webunkou/", run: fetchJr },
   { id: "subway", name: "札幌市営地下鉄", url: "https://operationstatus.city.sapporo.jp/unkojoho/", run: fetchSubway },
   { id: "airport", name: "新千歳空港（国内線）", url: "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/", run: fetchAirport },
+  { id: "expressway", name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/", run: fetchExpressway },
 ];
-
-// 日本時間の ISO 文字列（例 2027-02-06T10:30:00+09:00）
-export function jstIso(date = new Date()) {
-  const t = new Date(date.getTime() + 9 * 3600 * 1000);
-  return `${t.toISOString().slice(0, 19)}+09:00`;
-}
 
 export async function collect(prev = null) {
   const now = jstIso();
