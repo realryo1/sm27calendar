@@ -25,6 +25,7 @@ SNOWMIKU2027（2027.2.5〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/train.js`/`train-view.js`|雪ミク電車の時刻表と在線予測|
 |`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連|
 |`website/style.css`|スタイル|
+|`website/delay/`|姉妹プロジェクト（運行情報）への転送ページ（旧URL）|
 |`tools/`|アイコン・OGP画像の元になるHTML、デプロイスクリプト（`deploy-pages.mjs`）|
 
 ## PWA
@@ -33,6 +34,7 @@ SNOWMIKU2027（2027.2.5〜2.7）のメインイベント・LIVE・DigitalStars�
 - `sw.js`はstale-while-revalidate。`cache:"no-cache"`/`"reload"`のリクエストはネットワークから取得し、成功したらキャッシュも更新します。
 - デプロイ時に`index.html`から読み込むJS/CSSへ`?v=`（デプロイ時刻）を付けます。更新ボタンで読み込み直したとき、ブラウザが直前のページの古いファイルを使い回さないようにするためです。`sw.js`は`?v=`を外したURLでキャッシュします。
 - 更新ボタンは全ファイルを取得し直し、1つでも失敗したら何も消さずに中断します（オフラインで真っ白にならないため）。成功したらキャッシュ削除・ServiceWorker登録解除・`sm27-install-dismissed`と`sm27-board-w`（2カラムの分割率）を削除してリロードします。
+- `website/delay/`（運行情報の旧URLの転送ページ）はPWAの対象外で、キャッシュしません。キャッシュを通すと、転送されずにカレンダーが表示されるためです。
 
 ## 姉妹プロジェクト
 

@@ -17,3 +17,4 @@ PWA・キャッシュ
 ・オフライン保存するファイルの一覧はwebsite/precache.jsの1か所だけに持つ。
 ・ファイルを追加・削除したら、precache.jsを更新し、website/sw.jsのVERSIONを上げる。
 ・更新ボタンとsw.jsのキャッシュ方針はREADMEの「PWA」の仕様を崩さない。
+・website/delay/（運行情報への転送ページ）はPWAの対象外。キャッシュしない。

@@ -1,7 +1,7 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v13";
+const VERSION = "v14";
 const CACHE = `sm27-${VERSION}`;
 importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）
 const PRECACHE = self.PRECACHE;
@@ -27,6 +27,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
   if (!sameOrigin && !FONT_HOSTS.includes(url.hostname)) return;
+  // delay/ は姉妹プロジェクト（運行情報）への転送ページ。キャッシュを通すとカレンダーが返るので、そのまま取得させる
+  if (sameOrigin && url.pathname.includes("/delay/")) return;
 
   // index.html はデプロイのたびに自サイトのファイルへ ?v=（版）を付けて読み込む（deploy-pages.yml）。キャッシュは版を外した URL で持つ
   const plain = sameOrigin ? url.origin + url.pathname : req;
