@@ -38,27 +38,65 @@
 
     <!-- 1分ごとの描き直しで入力が消えないよう、#sections の外に置く（中身は plan.js） -->
     <section class="dl-card dl-plan" id="dl-plan">
-      <h2 class="dl-card__title">もし飛行機が止まったら？（シルバーフェリー編）</h2>
-
-      <h3 class="dl-plan__hdg">苫小牧西港フェリーターミナルへの行き方</h3>
-      <dl class="dl-plan__routes">
-        <dt>新千歳空港から</dt>
-        <dd>JR 新千歳空港 →（南千歳で乗り継ぎ・約30分）→ 苫小牧駅 → タクシー約15分／道南バス約20分</dd>
-        <dd>苫小牧駅前からは、高速とまこまい号のフェリーターミナル行きにも乗れます（約14分・280円、1日5本）</dd>
-        <dt>札幌駅から</dt>
-        <dd>北海道中央バス 高速とまこまい号（フェリーターミナル行きの便）札幌駅前 → フェリーターミナル 約1時間51分</dd>
-        <dd>JR 札幌駅 → 苫小牧駅 → タクシー約15分／道南バス約20分</dd>
-      </dl>
-
-      <h3 class="dl-plan__hdg">新千歳空港から間に合う便</h3>
+      <h2 class="dl-card__title">もし飛行機が止まったら？</h2>
+      <p class="dl-plan__lead">フェリーで本州へ渡る方法です。今いる場所を押すと開きます。</p>
       <div class="dl-plan__form">
-        <label for="plan-time">新千歳空港を出る時刻</label>
+        <label for="plan-time">出る時刻</label>
         <input type="time" id="plan-time" step="300">
         <button type="button" class="dl-head__reload" id="plan-now">今から</button>
       </div>
-      <div id="plan-result"></div>
-      <p class="dl-card__note">目安の計算：JR 約30分＋列車の待ち時間の余裕30分＋タクシー約15分で、乗船開始（出港の約1時間前）までにターミナルに着けるかを見ています。列車の時刻は見ていないので、JR北海道の時刻表で確かめてください。徒歩で乗る方の手続きの締切は公式に明記がないため、早めに着くようにしてください。時刻表は定期検査・代船の期間に変わることがあります。八戸からの東北新幹線の乗り継ぎは準備中です。</p>
-      <p class="dl-card__note">出典：<a href="https://www.silverferry.jp/route_guide/" target="_blank" rel="noopener">シルバーフェリー「航路・時刻」</a>（時刻表・ターミナルへのアクセス・シャトルバス）、<a href="https://www.silverferry.jp/faq/index2.html" target="_blank" rel="noopener">よくあるご質問</a>（乗船開始）、<a href="https://www.hokkaido-airports.com/ja/new-chitose/access/jr/" target="_blank" rel="noopener">新千歳空港「JR」</a>（苫小牧まで約30分）、<a href="https://www.chuo-bus.co.jp/highway/index.cgi?ope=det&amp;n=20&amp;o=1&amp;t=150" target="_blank" rel="noopener">北海道中央バス「高速とまこまい号」</a>（2026年7月1日更新の夏ダイヤ。冬ダイヤで変わることがあります）。2026-10-26 時点。</p>
+
+      <!-- 場所ごとのチップ（details）。閉じているときは丸いチップ、開くとチップが広がって中身が出る -->
+      <div class="dl-plan__places">
+        <details class="dl-plan__place" data-plan="sapporo" open>
+          <summary>札幌から<span class="dl-plan__via">シルバーフェリー（八戸行き）・新日本海フェリー（新潟・舞鶴行き）</span></summary>
+          <div class="dl-plan__routes">
+            <p class="dl-plan__to">苫小牧西港へ<span class="dl-plan__warn">（東港ではない！）</span></p>
+            <ul>
+              <li>北海道中央バス 高速とまこまい号（フェリーターミナル行きの便）札幌駅前 → フェリーターミナル 約1時間51分</li>
+              <li>JR 札幌駅 → 苫小牧駅 → タクシー約15分／道南バス約20分</li>
+            </ul>
+          </div>
+          <div class="dl-plan__result" id="plan-sapporo-silver"></div>
+          <div class="dl-plan__routes">
+            <p class="dl-plan__to">小樽港へ</p>
+            <ul>
+              <li>JR か高速おたる号で小樽へ → 「小樽・小樽築港・ウイングベイから」の行き方</li>
+            </ul>
+          </div>
+          <div class="dl-plan__result" id="plan-sapporo-snf"></div>
+        </details>
+
+        <details class="dl-plan__place" data-plan="chitose" open>
+          <summary>新千歳空港から<span class="dl-plan__via">シルバーフェリー（八戸行き）</span></summary>
+          <div class="dl-plan__routes">
+            <p class="dl-plan__to">苫小牧西港へ<span class="dl-plan__warn">（東港ではない！）</span></p>
+            <ul>
+              <li>JR 新千歳空港 →（南千歳で乗り継ぎ・約30分）→ 苫小牧駅 → タクシー約15分／道南バス約20分</li>
+              <li>苫小牧駅前からは、高速とまこまい号のフェリーターミナル行きにも乗れます（約14分・280円、1日5本）</li>
+            </ul>
+          </div>
+          <div class="dl-plan__result" id="plan-chitose"></div>
+          <p class="dl-card__note">目安の計算：JR 約30分＋列車の待ち時間の余裕30分＋タクシー約15分で、乗船開始（出港の約1時間前）までにターミナルに着けるかを見ています。列車の時刻は見ていないので、JR北海道の時刻表で確かめてください。徒歩で乗る方の手続きの締切は公式に明記がないため、早めに着くようにしてください。</p>
+        </details>
+
+        <details class="dl-plan__place" data-plan="otaru" open>
+          <summary>小樽・小樽築港・ウイングベイから<span class="dl-plan__via">新日本海フェリー（新潟・舞鶴行き）</span></summary>
+          <div class="dl-plan__routes">
+            <p class="dl-plan__to">小樽港へ</p>
+            <ul>
+              <li><b>JR小樽駅から</b><br>タクシー約10分／連絡バス（中央バス ぱるて築港線、小樽駅前 4番のりば、約30分・240円）</li>
+              <li><b>JR小樽築港駅・ウイングベイから</b><br>徒歩約20分／タクシー約5分／連絡バス（北口、約10分）</li>
+            </ul>
+            <p class="dl-plan__tip">小樽築港周辺にいる場合、徒歩で良いと思います。雪ミク会場側から出て北に歩くだけ。道中はめっちゃ倉庫・工場という感じ。ただ、足元は正直悪いのでキャリーケースでは微妙かも。</p>
+          </div>
+          <div class="dl-plan__result" id="plan-otaru"></div>
+          <p class="dl-card__note">新日本海フェリーは出港の60分前までにターミナルへ（ゴールデンウィーク・夏休み・年末年始は90分前）。連絡バスで行く場合はこの限りではありません。目安はタクシー約10分で計算しています。運航日が変則になることがあるので、配船表で確かめてください（2027年2月分はまだ公開されていません）。</p>
+        </details>
+      </div>
+
+      <p class="dl-card__note">時刻表は定期検査・代船・ダイヤ改正で変わることがあります。八戸からの東北新幹線の乗り継ぎは準備中です。</p>
+      <p class="dl-card__note">出典：<a href="https://www.silverferry.jp/route_guide/" target="_blank" rel="noopener">シルバーフェリー「航路・時刻」</a>（時刻表・ターミナルへのアクセス・シャトルバス）、<a href="https://www.silverferry.jp/faq/index2.html" target="_blank" rel="noopener">よくあるご質問</a>（乗船開始）、<a href="https://www.hokkaido-airports.com/ja/new-chitose/access/jr/" target="_blank" rel="noopener">新千歳空港「JR」</a>（苫小牧まで約30分）、<a href="https://www.chuo-bus.co.jp/highway/index.cgi?ope=det&amp;n=20&amp;o=1&amp;t=150" target="_blank" rel="noopener">北海道中央バス「高速とまこまい号」</a>（2026年7月1日更新の夏ダイヤ）、<a href="https://www.snf.jp/guide/time_schedule/" target="_blank" rel="noopener">新日本海フェリー「時刻表・運航スケジュール」</a>・<a href="https://www.snf.jp/guide/embark/" target="_blank" rel="noopener">「のりば・アクセス」</a>・<a href="https://www.snf.jp/guide/boarding-about/" target="_blank" rel="noopener">「乗船・下船について」</a>。2026-10-26 時点。</p>
     </section>
 
     <div id="sections"></div>

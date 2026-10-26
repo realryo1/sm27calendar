@@ -222,8 +222,18 @@
   }
 
   // 北都交通：空港連絡バスの系統ごとの状態（平常運行・一部区間運休・全便運休）。文言は北都交通の表記のまま
+  // 桑園線・定山渓線は通年「全便運休」のことが多く、来訪者にはほぼ関係ないので、最後に小さく1行にまとめる
+  const HOKTO_MINOR = ["souen-chitose", "chitose-jyozankei"];
   function renderHokto(svc) {
-    const rows = (svc.items || [])
+    const items = svc.items || [];
+    const minor = items.filter((i) => HOKTO_MINOR.includes(i.id));
+    const minorLine = minor.length
+      ? `<p class="dl-minor">${minor
+          .map((i) => `<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)}</a> ${esc(i.label)}`)
+          .join("／")}</p>`
+      : "";
+    const rows = items
+      .filter((i) => !HOKTO_MINOR.includes(i.id))
       .map(
         (i) => `<li class="dl-row">
           <span class="dl-row__name"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)}</a></span>
@@ -232,7 +242,7 @@
         </li>`
       )
       .join("");
-    const body = `<ul class="dl-rows">${rows}</ul>
+    const body = `<ul class="dl-rows">${rows}</ul>${minorLine}
       <p class="dl-card__note">北都交通の情報は運休の有無のみで、道路状況などによる遅れは載りません。</p>`;
     return card("hokto", svc, body, svc.ok ? `${hhmm(svc.fetched_at)} 取得` : "");
   }
@@ -242,6 +252,8 @@
   //   さんふらわあ：自由記述の欄から判定した状態だけ（文章は取り込んでいない）
   //   新日本海フェリー：運航状況のお知らせの件数と日付だけ（題名は取り込んでいない）
   const FERRIES = ["silverferry", "sunflower", "snf"];
+  // シルバーフェリーの便ごとの行の色（delay.css の .dl-ship--*。plan.js の SHIP_CLASS と同じ）。代船などは灰色
+  const SILVER_SHIP = { シルバープリンセス: "princess", シルバーティアラ: "tiara", シルバーブリーズ: "breeze", シルバーエイト: "eight" };
   // "2026-02-07" / "2026-02-28T09:00:00+09:00" → "2/7" / "2/28"
   const md = (iso) => (iso ? `${+iso.slice(5, 7)}/${+iso.slice(8, 10)}` : "");
   function ferryRow(id, svc) {
@@ -259,7 +271,7 @@
           <summary>便ごとの状況（${list.length}便${esc(at)}）</summary>
           <ul class="dl-subitems">${list
             .map(
-              (s) => `<li>${badge(s.status, s.label)}
+              (s) => `<li class="dl-ship dl-ship--${esc(SILVER_SHIP[s.ship] || "other")}">${badge(s.status, s.label)}
                 <span>${esc(md(s.date))} ${esc(s.from)}→${esc(s.to)} ${esc(s.time)}発 ${esc(s.ship)}</span></li>`
             )
             .join("")}</ul>
