@@ -8,13 +8,12 @@
 ・サイト名や説明文を変えたら、website/index.htmlのtitle/metaも直す。
 ・website/image/のPNGを置き換えたら、READMEの手順でPNG-8に減色する。
 
-運行情報（website/delay/・worker/）
-・実装と進捗はdocument/delayProgress.mdに書き、進めたら更新する。
-・手元の確認でも事業者サイトから連続で取得しない。
-・Cronの間隔を変えたらworker/src/index.jsのINTERVAL_MINも合わせる。
+姉妹プロジェクト（hokkaido_delay/）
+・運行情報はhokkaido_delay/の別リポジトリ。作業するときはhokkaido_delay/AGENTS.mdに従う。
+・このリポジトリから運行情報のファイルを参照・読み込みしない（リンクは可）。
+・style.cssの配色・フォント・背景・フッターを変えたら、hokkaido_delay/website/base.cssも合わせる。
 
 PWA・キャッシュ
 ・オフライン保存するファイルの一覧はwebsite/precache.jsの1か所だけに持つ。
 ・ファイルを追加・削除したら、precache.jsを更新し、website/sw.jsのVERSIONを上げる。
 ・更新ボタンとsw.jsのキャッシュ方針はREADMEの「PWA」の仕様を崩さない。
-・website/delay/`はPWAの対象外。現時点ではキャッシュ禁止。

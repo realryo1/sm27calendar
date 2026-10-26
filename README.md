@@ -25,9 +25,6 @@ SNOWMIKU2027（2027.2.5〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/train.js`/`train-view.js`|雪ミク電車の時刻表と在線予測|
 |`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連|
 |`website/style.css`|スタイル|
-|`website/delay/`|運行情報の試験ページ（JR北海道・札幌市営地下鉄・新千歳空港。メインページからは未リンク）|
-|`worker/`|運行情報を5分ごとに集めて配信するCloudflareWorker（[worker/README.md](worker/README.md)）|
-|`document/`|運行情報の調査資料（`tienResearch.md`）と実装・進捗のまとめ（`delayProgress.md`）|
 |`tools/`|アイコン・OGP画像の元になるHTML、デプロイスクリプト（`deploy-pages.mjs`）|
 
 ## PWA
@@ -36,13 +33,13 @@ SNOWMIKU2027（2027.2.5〜2.7）のメインイベント・LIVE・DigitalStars�
 - `sw.js`はstale-while-revalidate。`cache:"no-cache"`/`"reload"`のリクエストはネットワークから取得し、成功したらキャッシュも更新します。
 - デプロイ時に`index.html`から読み込むJS/CSSへ`?v=`（デプロイ時刻）を付けます。更新ボタンで読み込み直したとき、ブラウザが直前のページの古いファイルを使い回さないようにするためです。`sw.js`は`?v=`を外したURLでキャッシュします。
 - 更新ボタンは全ファイルを取得し直し、1つでも失敗したら何も消さずに中断します（オフラインで真っ白にならないため）。成功したらキャッシュ削除・ServiceWorker登録解除・`sm27-install-dismissed`と`sm27-board-w`（2カラムの分割率）を削除してリロードします。
-- `website/delay/`はPWAの対象外で、キャッシュしません。
 
-## 運行情報
+## 姉妹プロジェクト
 
-- 事業者サイトへはWorkerのCron（5分ごと）だけがアクセスし、ページはWorkerから取得します。
-- 事業者の文章は取り込まず、状態・便名・時刻などの事実だけを扱います。企業ロゴは使いません（色のみ使用）。
-- 詳細は[document/delayProgress.md](document/delayProgress.md)。
+[北海道運行情報](https://github.com/realryo1/hokkaido_delay)（https://realryo1.github.io/hokkaido_delay/、試験版）。札幌・新千歳空港・小樽まわりの交通の運行情報をまとめた非公式ページです。もとはこのリポジトリの`website/delay/`と`worker/`で作っていたもので、2026-10-27に別リポジトリに分けました。
+
+- デザインをそろえるため、向こうの`website/base.css`は、このリポジトリの`style.css`の配色・フォント・背景・フッターを写したものです。`style.css`のそれらを変えたら、向こうも直します。
+- 手元では`hokkaido_delay/`に置いて作業しています（`.gitignore`済みの別リポジトリ）。
 
 ## ローカルで確認
 
@@ -71,7 +68,6 @@ Actionsで手動実行するか、VSCodeでF5（「Deploy:push→GitHubPages」�
 ## 注意
 
 - 本プロジェクトはSNOWMIKU公式や初音銀華祭とは無関係です。キャラクターに関する権利は各権利者に帰属します。
-- 運行情報の取得について、権利者からの停止の要望があった際には即時停止いたします。
 
 ## 問い合わせ
 
