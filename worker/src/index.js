@@ -36,7 +36,7 @@ function inJapan(request, url) {
 }
 
 // KV の読み取りを抑えるため、isolate のメモリに60秒持つ（Cron が5分ごとなので十分新しい）
-// workers.dev では Cache API が効かないため、エッジのキャッシュではなくメモリで持つ
+// workers.dev では Cache API が効かなかったためメモリにした（独自ドメインでは効くが、メモリで足りている）
 const MEMO_MS = 60 * 1000;
 let memo = null;
 
@@ -115,12 +115,7 @@ export default {
     }
     if (request.method !== "GET") return json('{"error":"method not allowed"}', 405, "no-store");
 
-    // 連打や機械的な取得だけを弾く（IP ごと・Cloudflare の拠点ごとの大まかな数え方）。携帯回線や会場の Wi-Fi は大勢で IP を共有するのでゆるめにしている
-    // Worker の中で弾いても Workers のリクエスト数は減らない（減るのは KV の読み取りだけ）。バインディングがなければ制限しない
-    if (env.RATE_LIMITER) {
-      const { success } = await env.RATE_LIMITER.limit({ key: request.headers.get("CF-Connecting-IP") || "unknown" });
-      if (!success) return json('{"error":"too many requests"}', 429, "no-store", origin ? cors(origin) : {});
-    }
+    // レート制限は Worker の手前の WAF でかけている（Workers のリクエスト数に入らないため。document/delayProgress.md）
 
     // /health は外部の監視（Origin も Referer もなく、国外からのこともある）から見るので制限しない。CORS ヘッダーも付けない
     if (url.pathname === "/health") {

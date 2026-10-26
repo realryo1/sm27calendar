@@ -127,7 +127,7 @@
   - 1回だけの失敗は一時的なことが多いので、200 のまま `notes` に載せる
 - **`/status.json` は自サイトからしか読めないようにする**：Origin（なければ Referer）が `https://realryo1.github.io` か localhost のときだけ返し、それ以外は 403。他サイトへの埋め込みや流用で、事業者の情報が広がっていくのを防ぐため。ヘッダーは偽れるので完全には防げないが、節度としての制限。`/health` は外部の監視から見るので制限しない
 - **`/status.json` は日本国内からだけ読めるようにする**（2026-10-27）：Cloudflare が判定した国（`request.cf.country`）が JP のときだけ返す。国外と判定されたときは CORS ヘッダー付きの 403（`{"error":"region"}`）にし、ページが位置情報の許可を求めて、約10km単位（小数1桁）に丸めた現在地を `?lat=&lon=` で付けて取り直す。国内かどうかは、朝鮮半島・台湾・中国・ロシアにかからない大まかな矩形（`index.js` の `JAPAN`）で見る。自国の SIM でローミングしている来訪者を弾かないため。VPN や座標は偽れるので、これも節度としての制限。`/health` は国外の監視からも見るので制限しない。位置情報がすでに許可されていれば、ボタンを押さなくても確かめる
-- **IP ごとのレート制限はゆるめ**（2026-10-27、10秒に60回。`wrangler.toml` の `[[ratelimits]]`）：携帯回線や会場の Wi-Fi は CGNAT で大勢が同じ IP を使うので、厳しくすると当日まとめて弾かれる。連打や機械的な取得だけを弾く。数え方は Cloudflare の拠点ごとの大まかなもの。Worker の中で弾いても Workers のリクエスト数（無料枠1日10万回）は減らず、減るのは KV の読み取りだけ。リクエスト数ごと止めるには、独自ドメインに載せて WAF のルールを使う必要がある（未対応）
+- **IP ごとのレート制限はゆるめ**（2026-10-27、10秒に60回で10秒ブロック）：携帯回線や会場の Wi-Fi は CGNAT で大勢が同じ IP を使うので、厳しくすると当日まとめて弾かれる。連打や機械的な取得だけを弾く。Worker の中で弾いても Workers のリクエスト数（無料枠1日10万回）は減らないので、独自ドメイン（`delay.realryo1.com`）に載せ、Worker の手前の WAF の Rate Limiting ルールでかける。無料プランでは Hostname を条件にできないので URI Path（`/`・`/status.json`・`/health`）で絞っている。realryo1.com にほかのサイトを載せるときは、このルールが全ホストに効くことに注意。workers.dev は WAF を通らないので止めた（`workers_dev = false`）。国内限定は WAF の応答に CORS ヘッダーを付けられず、ページが位置情報での確認に進めないので Worker に残す
 - **KV の値は isolate のメモリに60秒持つ**（2026-10-27）：workers.dev では Cache API が効かないため（公式の説明では、効くのは独自ドメインのとき）。前はエッジのキャッシュ（`caches.default`）を使っていたが、実際には毎回 KV を読んでいたとみられる。`/health` も同じものを読む
 - **リンクはページに直書きする**（2026-10-27、`delay.js` の `OFFICIAL`・`JR_SENKU`）：JSON の `url` は取得先の記録として Worker に残すが、ページでは使わない。事業者のページから毎回取ってくるリンク（中央バスの系統ごと・北都交通の系統ごと・シルバーフェリーのお知らせ・新日本海フェリーのお知らせ）だけ、決まった形（https・ホスト・パス。`delay.js` の `LINK`）に合うときに使い、合わなければ決まったページへ。事業者のページが改ざんされたときなどに `javascript:` のリンクが入らないようにするため
 - **配信のキャッシュは短いまま**（`max-age=60, stale-while-revalidate=300`）：資料の案（`swr=86400`）だと古い運行情報が出続けるおそれがある。Worker や KV が止まっても、ページは前に表示した内容を残し、`updated_at` が古ければ「更新が止まっています」と出すので、長いキャッシュは使わない
@@ -183,8 +183,8 @@
 - [x] Worker に `delay.realryo1.com` を付ける（`wrangler.toml` の `routes`。workers.dev は残す）
 - [x] ページの取得先（`delay.js` の `ENDPOINT`）とドキュメントを新しい URL に替える
 - [x] WAF の Rate Limiting ルールを作る（URI Path が `/`・`/status.json`・`/health` のとき、IP ごとに10秒60回で10秒 Block。無料プランでは Hostname を条件にできない）
-- [ ] Grok Bot の Routine の `/health` の URL を替える
-- [ ] workers.dev を止め（`workers_dev = false`）、Worker 内のレート制限（`RATE_LIMITER`）を外す
+- [x] Grok Bot の Routine の `/health` の URL を替える
+- [x] workers.dev を止め（`workers_dev = false`）、Worker 内のレート制限（`RATE_LIMITER`）を外す
 
 フェーズ3（代わりの交通手段）
 - [x] 高速道路（道央道・札樽道。アイハイウェイ）。カードの色は未定（仮に灰色）

@@ -5,7 +5,7 @@
 - Cron（5分ごと、毎時 :02, :07, …。新千歳空港 FIS の更新 :01, :06, … の直後）で各事業者から取得し、Workers KV に1本の JSON（キー `status`）として保存
 - `GET /status.json` で KV の JSON を返す（isolate のメモリに60秒持つ。workers.dev では Cache API が効かないため）。読めるのは Origin（なければ Referer）が `https://realryo1.github.io` か localhost のときだけで、それ以外は 403。`wrangler dev`（localhost:8787）では制限しない
 - `/status.json` は日本国内のネットワーク（`request.cf.country` が JP）にだけ返す。国外なら `{"error":"region"}` の 403 で、ページが位置情報の許可を求め、約10km単位に丸めた現在地を `?lat=&lon=` で付けて取り直す（国内の範囲は `src/index.js` の `JAPAN`）
-- IP ごとに10秒60回までのレート制限（`wrangler.toml` の `[[ratelimits]]`、超えたら 429）。携帯回線などで大勢が IP を共有するのでゆるめ。バインディングがないときは制限しない
+- IP ごとに10秒60回までのレート制限（ダッシュボードの Security rules にある WAF の Rate Limiting ルール。超えたら10秒ブロック）。携帯回線などで大勢が IP を共有するのでゆるめ。workers.dev は止めているので、必ず WAF を通る
 - 閲覧者が増えても、事業者サイトへのアクセスは5分に1回のまま
 
 - `GET /health` は外部の監視サービス向け。異常なら 503（KV を読むだけで、事業者へは取りに行かない）
@@ -84,7 +84,7 @@ node worker/scripts/collect-local.mjs out.json   # ファイルへ
 - Workers リクエスト：1日10万回
 - KV 書き込み：1日1,000回（5分ごとで1日288回）
 - KV 読み取り：1日10万回（isolate のメモリに60秒持つので実際はもっと少ない。`/health` も同じ）
-- Worker の中で 403・429 にしたリクエストも、Workers のリクエスト数には入る。リクエスト数ごと止めるには、独自ドメインに載せて WAF のルールを使う必要がある
+- WAF でブロックしたリクエストは Workers のリクエスト数に入らない。Worker の中で 403 にしたもの（Origin・国外）は入る
 
 ## 障害時の動き
 
