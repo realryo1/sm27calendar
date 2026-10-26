@@ -1,7 +1,7 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v9";
+const VERSION = "v10";
 const CACHE = `sm27-${VERSION}`;
 importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）
 const PRECACHE = self.PRECACHE;
@@ -32,6 +32,16 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {
+      // マニフェストは常にネットワーク優先にする（古い内容を返すと、インストール済みアプリの表示設定などの更新が遅れるため）
+      if (sameOrigin && url.pathname.endsWith(".webmanifest")) {
+        try {
+          const res = await fetch(req);
+          if (res.ok) cache.put(req, res.clone());
+          return res;
+        } catch {
+          return cache.match(req);
+        }
+      }
       // ページからの最新確認（cache: no-cache / reload）はキャッシュを返さず、取得できたらキャッシュも更新する
       if (sameOrigin && (req.cache === "no-cache" || req.cache === "reload")) {
         const res = await fetch(req);
