@@ -40,7 +40,7 @@
     </div>`;
   }
 
-  // id（jr / subway / airport）でカードにコーポレートカラーを付ける（delay.css の .dl-card--{id}）
+  // id（jr / subway / airport など）でカードにコーポレートカラーを付ける（delay.css の .dl-card--{id}）
   function card(id, svc, body, timeText) {
     const time = timeText ? `<span class="dl-card__time">${esc(timeText)}</span>` : "";
     // 情報元へのボタン。取得失敗時は staleNote に目立つ公式ボタンがあるので出さない
@@ -187,7 +187,7 @@
         return `<li class="dl-row">
           <span class="dl-row__name">${esc(r.name)}</span>
           ${badge(r.status, ROAD_LABEL[r.status])}
-          ${items ? `<ul class="dl-exp-items">${items}</ul>` : ""}
+          ${items ? `<ul class="dl-subitems">${items}</ul>` : ""}
           ${minor ? `<span class="dl-row__msg">そのほかの規制（車線規制・除雪作業など） ${minor}件</span>` : ""}
         </li>`;
       })
@@ -197,7 +197,53 @@
     return card("expressway", svc, body, svc.source_time ? `${hhmm(svc.source_time)} 時点` : "");
   }
 
-  const RENDER = { jr: renderJr, subway: renderSubway, airport: renderAirport, expressway: renderExpressway };
+  // 北海道中央バス：運休のある系統・便だけが載る（RSS）。遅れの情報はない
+  function renderChuobus(svc) {
+    const rows = (svc.groups || [])
+      .map((g) => {
+        const items = (g.items || [])
+          .map(
+            (i) => `<li>${badge(i.status, i.label)}
+              <span><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.route || g.name)}</a>
+              ${i.direction ? `（${esc(i.direction)}）` : ""}${i.time ? ` ${esc(i.time)}発` : ""}</span></li>`
+          )
+          .join("");
+        return `<li class="dl-row">
+          <span class="dl-row__name">${esc(g.name)}</span>
+          ${badge(g.status, g.status === "normal" ? "運休情報なし" : "運休あり")}
+          ${items ? `<ul class="dl-subitems">${items}</ul>` : ""}
+        </li>`;
+      })
+      .join("");
+    const body = `<ul class="dl-rows">${rows}</ul>
+      <p class="dl-card__note">中央バスの情報は運休のみで、道路状況などによる遅れは載りません。運休の理由や詳しい便は各系統のリンク先へ。</p>`;
+    return card("chuobus", svc, body, svc.ok ? `${hhmm(svc.fetched_at)} 取得` : "");
+  }
+
+  // 北都交通：空港連絡バスの系統ごとの状態（平常運行・一部区間運休・全便運休）。文言は北都交通の表記のまま
+  function renderHokto(svc) {
+    const rows = (svc.items || [])
+      .map(
+        (i) => `<li class="dl-row">
+          <span class="dl-row__name"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)}</a></span>
+          ${badge(i.status, i.label)}
+          ${i.about ? `<span class="dl-row__msg">${esc(i.about)}</span>` : ""}
+        </li>`
+      )
+      .join("");
+    const body = `<ul class="dl-rows">${rows}</ul>
+      <p class="dl-card__note">北都交通の情報は運休の有無のみで、道路状況などによる遅れは載りません。</p>`;
+    return card("hokto", svc, body, svc.ok ? `${hhmm(svc.fetched_at)} 取得` : "");
+  }
+
+  const RENDER = {
+    jr: renderJr,
+    subway: renderSubway,
+    airport: renderAirport,
+    expressway: renderExpressway,
+    chuobus: renderChuobus,
+    hokto: renderHokto,
+  };
 
   // Worker に一度もつながらなかったとき（前回の内容もない）に出す公式リンク。名前と URL は worker/src/collect.js の SOURCES と合わせる
   const OFFICIAL = [
@@ -205,6 +251,8 @@
     { name: "札幌市営地下鉄", url: "https://operationstatus.city.sapporo.jp/unkojoho/" },
     { name: "新千歳空港（国内線）", url: "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/" },
     { name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/" },
+    { name: "北海道中央バス", url: "https://www.chuo-bus.co.jp/support/stop/" },
+    { name: "北都交通", url: "https://www.hokto.co.jp/" },
   ];
   const officialLinks = () =>
     `<section class="dl-card">

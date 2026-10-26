@@ -6,6 +6,8 @@ import { fetchJr } from "./sources/jr.js";
 import { fetchSubway } from "./sources/subway.js";
 import { fetchAirport } from "./sources/airport.js";
 import { fetchExpressway } from "./sources/expressway.js";
+import { fetchChuobus } from "./sources/chuobus.js";
+import { fetchHokto } from "./sources/hokto.js";
 import { jstIso } from "./http.js";
 
 export { jstIso };
@@ -17,6 +19,8 @@ const SOURCES = [
   { id: "subway", name: "札幌市営地下鉄", url: "https://operationstatus.city.sapporo.jp/unkojoho/", run: fetchSubway },
   { id: "airport", name: "新千歳空港（国内線）", url: "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/", run: fetchAirport },
   { id: "expressway", name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/", run: fetchExpressway },
+  { id: "chuobus", name: "北海道中央バス", url: "https://www.chuo-bus.co.jp/support/stop/", run: fetchChuobus },
+  { id: "hokto", name: "北都交通", url: "https://www.hokto.co.jp/", run: fetchHokto },
 ];
 
 export async function collect(prev = null) {

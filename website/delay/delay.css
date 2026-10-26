@@ -16,6 +16,8 @@
   --brand-subway: #005eaa;   /* 札幌市交通局 */
   --brand-airport: #0e819f;  /* 北海道エアポート */
   --brand-expressway: #777;  /* 高速道路（仮。色は未定） */
+  --brand-chuobus: #d60000;  /* 北海道中央バス */
+  --brand-hokto: #00b555;    /* 北都交通 */
   --line-nanboku: #008000;
   --line-tozai: #e46c0a;
   --line-toho: #1d1dff;
@@ -107,6 +109,8 @@
 .dl-card--subway { --brand: var(--brand-subway); }
 .dl-card--airport { --brand: var(--brand-airport); }
 .dl-card--expressway { --brand: var(--brand-expressway); }
+.dl-card--chuobus { --brand: var(--brand-chuobus); }
+.dl-card--hokto { --brand: var(--brand-hokto); }
 .dl-card[class*="dl-card--"] { border-top: 5px solid var(--brand); }
 
 .dl-card__title {
@@ -161,9 +165,12 @@
 .dl-row__name { flex: 1 1 auto; min-width: 8em; font-weight: 700; }
 .dl-row__msg { flex-basis: 100%; font-size: .75rem; opacity: .8; }
 
-/* 高速道路の重要な規制の区間（路線の行の中に並べる） */
-.dl-exp-items { flex-basis: 100%; margin: 2px 0 0; padding: 0; list-style: none; font-size: .78rem; }
-.dl-exp-items li { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
+.dl-row__name a { color: inherit; }
+
+/* 行の中に並べる明細（高速道路の重要な規制の区間、中央バスの系統） */
+.dl-subitems { flex-basis: 100%; margin: 2px 0 0; padding: 0; list-style: none; font-size: .78rem; }
+.dl-subitems li { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
+.dl-subitems a { color: inherit; }
 
 /* 地下鉄の路線名の前にラインカラーの丸印 */
 .dl-line::before {
