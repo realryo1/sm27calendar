@@ -183,11 +183,32 @@
 .dl-plan__result:has(+ .dl-plan__routes) { padding-bottom: 16px; border-bottom: 1px dashed var(--col-secondary-light); }
 .dl-plan__result + .dl-plan__routes { margin-top: 16px; }
 .dl-plan__routes b { font-weight: 700; }
+/* 別の場所の欄へ移るボタン（カード下の情報元ボタン .dl-source と同じ形） */
+.dl-plan__jump {
+  display: block;
+  margin: 8px 0 0;
+  padding: 5px 14px;
+  border: 1px solid var(--col-secondary-light);
+  border-radius: 999px;
+  background: var(--col-paper);
+  color: var(--col-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 700;
+}
+.dl-plan__jump::after { content: " ↓"; }
+.dl-plan__jump:hover { background: var(--col-secondary-lighter); }
+.dl-plan__place { scroll-margin-top: 12px; }
 /* 作者の経験からの参考情報（公式の案内ではない）。カレンダーの補足（../style.css の .vc-ev__note）と同じ黄色の縦棒 */
 .dl-plan__routes p.dl-plan__tip { margin-top: 8px; padding-left: 10px; font-size: .78rem; border-left: 3px solid var(--col-gold); }
 .dl-plan__form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .85rem; }
 .dl-plan__form input { padding: 4px 8px; border: 1px solid var(--col-secondary-light); border-radius: 8px; font: inherit; }
 .dl-plan__row strong { font-weight: 700; }
+/* 計算の前提・注意・出典は1つにまとめて折りたたむ（初めは閉じる） */
+.dl-plan__notes { margin-top: 14px; font-size: .72rem; opacity: .85; }
+.dl-plan__notes summary { cursor: pointer; font-weight: 700; }
+.dl-plan__notes p { margin: 6px 0 0; }
 /* 便の行：航空会社の行（li.dl-airrow）と同じく、左端に色の帯、背景にごく薄く色を敷く（角丸・すき間なし） */
 .dl-plan__row,
 .dl-ship { --line: var(--air-other); }
@@ -434,3 +455,30 @@ tr.dl-air--FDA > td.dl-airname {
 .dl-links a { color: var(--col-ink); }
 
 .dl-foot { text-align: left; max-width: 720px; margin: 0 auto; }
+
+/* ---------- スマホ表示（カレンダーと同じく 640px 以下） ----------
+   枠が「ページの余白 → カード → 開いたチップ → 行き方の枠・便の行」と重なり、左右の余白が積み重なるので、
+   カレンダーの時間割（../style.css の .board）と同じく画面の幅をいっぱいに使う */
+@media (max-width: 640px) {
+  /* カードは画面の端から端まで。見出し・お知らせの帯は読みやすいよう左右に余白を残す */
+  .dl { padding: 12px 0 0; }
+  .dl-head { padding: 0 16px; }
+  .dl-banner { margin: 0 12px 12px; }
+  .dl-card {
+    margin: 0 0 10px;
+    padding: 14px 12px;
+    border-radius: 0;
+    box-shadow: 0 2px 8px rgb(79 69 143 / .1);
+  }
+
+  /* 開いたチップは枠で囲まず、上の区切り線だけにする（枠を1重減らす） */
+  .dl-plan__place[open] {
+    padding: 0 0 4px;
+    border-width: 1px 0 0;
+    border-radius: 0;
+    background: none;
+  }
+  .dl-plan__routes { padding: 8px 10px; }
+  /* 便の行はカードの端まで広げ、色の帯を画面の左端に付ける */
+  li.dl-plan__row { margin: 0 -12px; padding-left: 17px; padding-right: 12px; }
+}

@@ -260,6 +260,16 @@
     });
   }
 
+  // 別の場所の欄へ移るボタン（札幌の欄の「小樽・小樽築港・ウイングベイからの行き方」）。閉じていれば開いてからスクロールする
+  for (const $b of document.querySelectorAll("[data-open-plan]")) {
+    $b.addEventListener("click", () => {
+      const $p = $places.find((x) => x.dataset.plan === $b.dataset.openPlan);
+      if (!$p) return;
+      $p.open = true;
+      $p.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   $time.addEventListener("input", render);
   $now?.addEventListener("click", () => {
     $time.value = "";
