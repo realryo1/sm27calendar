@@ -124,6 +124,8 @@ button { font: inherit; color: inherit; }
     top: 16px; /* 上の16px（スクロールしていなくても sticky でこの分ずれる） */
     height: calc(100svh - 32px); /* 上下16pxずつ（dvh が使えないブラウザ向け） */
     height: calc(100dvh - 32px); /* スマホの横向きでアドレスバーが消えたときも、下に空白を作らずに伸びる */
+    /* 画面の高さは app.js が innerHeight から入れる（Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、日付ボタンが画面の下にはみ出した） */
+    height: calc(var(--app-h, 100dvh) - 32px);
     margin: 0 0 0 16px; /* 左16px（右の16pxは持ち手の列） */
     overflow: hidden;
     border-radius: 16px;
@@ -143,7 +145,8 @@ button { font: inherit; color: inherit; }
     align-items: center;
     justify-content: center;
     height: calc(100svh - 32px);
-    height: calc(100dvh - 32px); /* .board と同じ */
+    height: calc(100dvh - 32px);
+    height: calc(var(--app-h, 100dvh) - 32px); /* .board と同じ */
     cursor: col-resize;
     touch-action: none;
     outline: none;
@@ -299,7 +302,7 @@ button { font: inherit; color: inherit; }
 }
 /* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中でタイトル・日付ボタンが高さを使い切らないよう詰める */
 @media (min-width: 641px) and (max-height: 500px) {
-  .board, .split { top: 8px; height: calc(100svh - 16px); height: calc(100dvh - 16px); }
+  .board, .split { top: 8px; height: calc(100svh - 16px); height: calc(100dvh - 16px); height: calc(var(--app-h, 100dvh) - 16px); }
   .board .day-nav__title { padding: 8px 12px 0; font-size: .85rem; }
   /* 日付ボタンの基本の指定はこの後ろにあるので、.board を付けて優先させる */
   .board .day-nav { bottom: 8px; padding: 4px; gap: 4px; }

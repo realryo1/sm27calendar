@@ -109,11 +109,15 @@
     $split.addEventListener("pointercancel", end);
     $split.addEventListener("dblclick", () => setW(50, true));
     // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す
+    // 時間割と持ち手の高さは dvh ではなく innerHeight で決める（style.css の --app-h）。
+    // Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、resize の後も直らないことがある（日付ボタンが画面の下にはみ出した）
+    const setAppH = () => {
+      for (const el of [$main.querySelector(".board"), $split]) el.style.setProperty("--app-h", `${innerHeight}px`);
+    };
+    setAppH();
     window.addEventListener("resize", () => {
       setW(parseFloat($main.style.getPropertyValue("--board-w")), false);
-      // Android の Chrome は、画面の高さが変わっても dvh で決めた高さを前の値のまま使い回すことがある（更新ボタンで読み込み直したあと、日付ボタンが画面の下にはみ出した）。
-      // インラインの値を変えると計算し直すので、高さが変わるたびに書き込む（--vp 自体は CSS で使っていない）
-      for (const el of [$main.querySelector(".board"), $split]) el.style.setProperty("--vp", String(innerHeight));
+      setAppH();
     });
     $split.addEventListener("keydown", (ev) => {
       const step = { ArrowLeft: -2, ArrowRight: 2 }[ev.key];
