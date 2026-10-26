@@ -120,10 +120,54 @@
         { "id": "oyachi-chitose", "name": "大谷地線", "about": "地下鉄大谷地駅 ⇔ 新千歳空港", "status": "normal", "label": "平常運行", "url": "https://www.hokto.co.jp/oyachi-chitose/" },
         { "id": "maruyama-chitose", "name": "円山線", "about": "円山方面 ⇔ 新千歳空港", "status": "suspended", "label": "全便運休", "url": "https://www.hokto.co.jp/maruyama-chitose/" }
       ]
+    },
+    "silverferry": {
+      "name": "シルバーフェリー（八戸〜苫小牧）",
+      "url": "https://www.silverferry.jp/",
+      "ok": true,
+      "fetched_at": "2027-02-06T10:30:00+09:00",
+      "last_success_at": "2027-02-06T10:30:00+09:00",
+      "fail_count": 0,
+      "source_time": "2027-02-06T09:30:00+09:00",
+      "status": "delay",
+      "message": "欠航または遅延便があります",
+      "notice_url": "https://www.silverferry.jp/",
+      "sailings": [
+        { "date": "2027-02-06", "from": "八戸", "to": "苫小牧", "time": "08:45", "ship": "シルバープリンセス", "status": "normal", "label": "出港済" },
+        { "date": "2027-02-06", "from": "八戸", "to": "苫小牧", "time": "13:00", "ship": "シルバーティアラ", "status": "delay", "label": "運航予定・遅れ見込み" },
+        { "date": "2027-02-06", "from": "苫小牧", "to": "八戸", "time": "21:15", "ship": "シルバープリンセス", "status": "suspended", "label": "欠航" },
+        { "date": "2027-02-06", "from": "苫小牧", "to": "八戸", "time": "23:59", "ship": "シルバーティアラ", "status": "suspended", "label": "欠航" }
+      ]
+    },
+    "sunflower": {
+      "name": "さんふらわあ（大洗〜苫小牧）",
+      "url": "https://www.sunflower.co.jp/",
+      "ok": true,
+      "fetched_at": "2027-02-06T10:30:00+09:00",
+      "last_success_at": "2027-02-06T10:30:00+09:00",
+      "fail_count": 0,
+      "source_time": "2027-02-06T09:00:00+09:00",
+      "status": "suspended",
+      "label": "欠航あり"
+    },
+    "snf": {
+      "name": "新日本海フェリー（舞鶴・敦賀・新潟・秋田〜小樽・苫小牧東）",
+      "url": "https://www.snf.jp/",
+      "ok": false,
+      "fetched_at": "2027-02-06T10:30:00+09:00",
+      "last_success_at": "2027-02-06T10:20:00+09:00",
+      "fail_count": 2,
+      "source_time": null,
+      "status": "delay",
+      "list_url": "https://www.snf.jp/info-list/?info_group=operation",
+      "notices": [{ "date": "2027-02-06", "url": "https://www.snf.jp/" }]
     }
   },
   "meta": {
-    "source_errors": [{ "id": "airport", "message": "サンプル：取得失敗時の表示例" }],
+    "source_errors": [
+      { "id": "airport", "message": "サンプル：取得失敗時の表示例" },
+      { "id": "snf", "message": "サンプル：取得失敗時の表示例" }
+    ],
     "source_warnings": [],
     "fallback_active": true
   }

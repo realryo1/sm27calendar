@@ -8,6 +8,9 @@ import { fetchAirport } from "./sources/airport.js";
 import { fetchExpressway } from "./sources/expressway.js";
 import { fetchChuobus } from "./sources/chuobus.js";
 import { fetchHokto } from "./sources/hokto.js";
+import { fetchSilverferry } from "./sources/silverferry.js";
+import { fetchSunflower } from "./sources/sunflower.js";
+import { fetchSnf } from "./sources/snf.js";
 import { jstIso } from "./http.js";
 
 export { jstIso };
@@ -21,6 +24,9 @@ const SOURCES = [
   { id: "expressway", name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/", run: fetchExpressway },
   { id: "chuobus", name: "北海道中央バス", url: "https://www.chuo-bus.co.jp/support/stop/", run: fetchChuobus },
   { id: "hokto", name: "北都交通", url: "https://www.hokto.co.jp/", run: fetchHokto },
+  { id: "silverferry", name: "シルバーフェリー（八戸〜苫小牧）", url: "https://www.silverferry.jp/", run: fetchSilverferry },
+  { id: "sunflower", name: "さんふらわあ（大洗〜苫小牧）", url: "https://www.sunflower.co.jp/", run: fetchSunflower },
+  { id: "snf", name: "新日本海フェリー（舞鶴・敦賀・新潟・秋田〜小樽・苫小牧東）", url: "https://www.snf.jp/", run: fetchSnf },
 ];
 
 export async function collect(prev = null) {

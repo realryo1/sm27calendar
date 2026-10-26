@@ -87,7 +87,7 @@
   }
 
   // 1分ごとの描き直しで消えないよう、一覧の開閉とチェックの状態をここに持つ（出発・到着済の便は最初は隠す）
-  const ui = { flightsOpen: false, showDone: false };
+  const ui = { flightsOpen: false, showDone: false, sailingsOpen: true };
 
   const KIND = { cancelled: "欠航", delayed: "遅れ", diverted: "引き返し等" };
   const KIND_STATUS = { cancelled: "suspended", delayed: "delay", diverted: "suspended", done: "done" };
@@ -236,6 +236,62 @@
     return card("hokto", svc, body, svc.ok ? `${hhmm(svc.fetched_at)} 取得` : "");
   }
 
+  // フェリー：3社とも1行ずつなので1枚のカードにまとめる。取得に失敗した会社は、その行に注意と公式リンクを出す
+  //   シルバーフェリー：定型の文言（通常運航しています／欠航または遅延便があります）
+  //   さんふらわあ：自由記述の欄から判定した状態だけ（文章は取り込んでいない）
+  //   新日本海フェリー：運航状況のお知らせの件数と日付だけ（題名は取り込んでいない）
+  const FERRIES = ["silverferry", "sunflower", "snf"];
+  // "2026-02-07" / "2026-02-28T09:00:00+09:00" → "2/7" / "2/28"
+  const md = (iso) => (iso ? `${+iso.slice(5, 7)}/${+iso.slice(8, 10)}` : "");
+  function ferryRow(id, svc) {
+    let label = "";
+    let msg = "";
+    let extra = "";
+    if (id === "silverferry") {
+      label = svc.message;
+      if (svc.notice_url) msg = `<a href="${esc(svc.notice_url)}" target="_blank" rel="noopener">お知らせ</a>`;
+      // 欠航・遅延のお知らせから読んだ便ごとの状況（日付・出発港・時刻・船名）。平常時はない
+      const list = svc.sailings || [];
+      if (list.length) {
+        const at = svc.source_time ? `・${md(svc.source_time)} ${hhmm(svc.source_time)} 現在` : "";
+        extra = `<details class="dl-sailings"${ui.sailingsOpen ? " open" : ""}>
+          <summary>便ごとの状況（${list.length}便${esc(at)}）</summary>
+          <ul class="dl-subitems">${list
+            .map(
+              (s) => `<li>${badge(s.status, s.label)}
+                <span>${esc(md(s.date))} ${esc(s.from)}→${esc(s.to)} ${esc(s.time)}発 ${esc(s.ship)}</span></li>`
+            )
+            .join("")}</ul>
+        </details>`;
+      }
+    } else if (id === "sunflower") {
+      label = svc.label;
+      if (svc.source_time) msg = `${esc(md(svc.source_time))} ${esc(hhmm(svc.source_time))} 現在の案内`;
+    } else {
+      label = svc.notices?.length ? `運航状況のお知らせ ${svc.notices.length}件` : "運航状況のお知らせなし";
+      msg = (svc.notices || [])
+        .map((n) => `<a href="${esc(n.url)}" target="_blank" rel="noopener">お知らせ（${esc(md(n.date))}）</a>`)
+        .join("　");
+    }
+    const shown = svc.ok || svc.last_success_at;
+    return `<li class="dl-row">
+      <span class="dl-row__name dl-line dl-line--${esc(id)}"><a href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)}</a></span>
+      ${shown ? badge(svc.status, label) : ""}
+      ${shown && msg ? `<span class="dl-row__msg">${msg}</span>` : ""}
+      ${shown ? extra : ""}
+      ${staleNote(svc)}
+    </li>`;
+  }
+  function renderFerry(services) {
+    const rows = FERRIES.filter((id) => services[id]).map((id) => ferryRow(id, services[id]));
+    if (!rows.length) return "";
+    return `<section class="dl-card">
+      <h2 class="dl-card__title">フェリー（北海道航路）<span class="dl-card__time">${esc(hhmm(services[FERRIES.find((id) => services[id])].fetched_at))} 取得</span></h2>
+      <ul class="dl-rows">${rows.join("")}</ul>
+      <p class="dl-card__note">各社のトップページの運航情報から状態だけを表示しています（シルバーフェリーは、欠航・遅延のお知らせが出ているときだけ便ごとに分けます）。理由や詳しい案内は各社のリンク先へ。新日本海フェリーは、お知らせが出ているかどうかだけです（欠航とは限りません）。</p>
+    </section>`;
+  }
+
   const RENDER = {
     jr: renderJr,
     subway: renderSubway,
@@ -253,6 +309,9 @@
     { name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/" },
     { name: "北海道中央バス", url: "https://www.chuo-bus.co.jp/support/stop/" },
     { name: "北都交通", url: "https://www.hokto.co.jp/" },
+    { name: "シルバーフェリー（八戸〜苫小牧）", url: "https://www.silverferry.jp/" },
+    { name: "さんふらわあ（大洗〜苫小牧）", url: "https://www.sunflower.co.jp/" },
+    { name: "新日本海フェリー（舞鶴・敦賀・新潟・秋田〜小樽・苫小牧東）", url: "https://www.snf.jp/" },
   ];
   const officialLinks = () =>
     `<section class="dl-card">
@@ -277,10 +336,11 @@
       next = Date.parse(data.next_update_at) > Date.now() ? ` ／ 次は ${hhmm(data.next_update_at)}ごろ` : " ／ まもなく更新";
     }
     $updated.textContent = `${hhmm(data.updated_at)} 更新${next}`;
-    $sections.innerHTML = Object.entries(RENDER)
-      .filter(([id]) => data.services?.[id])
-      .map(([id, fn]) => fn(data.services[id]))
-      .join("");
+    $sections.innerHTML =
+      Object.entries(RENDER)
+        .filter(([id]) => data.services?.[id])
+        .map(([id, fn]) => fn(data.services[id]))
+        .join("") + renderFerry(data.services || {});
   }
 
   let last = null;
@@ -309,6 +369,7 @@
     "toggle",
     (ev) => {
       if (ev.target.matches?.(".dl-flights")) ui.flightsOpen = ev.target.open;
+      if (ev.target.matches?.(".dl-sailings")) ui.sailingsOpen = ev.target.open;
     },
     true
   );

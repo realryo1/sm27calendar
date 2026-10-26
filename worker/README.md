@@ -22,11 +22,14 @@
 | `src/sources/expressway.js` | 高速道路 道央道・札樽道（アイハイウェイ `ihighway.jp/datas/json/traffic.json`） |
 | `src/sources/chuobus.js` | 北海道中央バス 空港連絡バス・高速おたる号（運休情報の RSS `chuo-bus.co.jp/support/stop/?ope=feed&topic=stop_list`） |
 | `src/sources/hokto.js` | 北都交通 空港連絡バス（`hokto.co.jp` のトップ） |
+| `src/sources/silverferry.js` | シルバーフェリー（`silverferry.jp` のトップ。欠航・遅延のときはリンク先のお知らせから便ごとの状況も） |
+| `src/sources/sunflower.js` | さんふらわあ 大洗〜苫小牧（`sunflower.co.jp` のトップ） |
+| `src/sources/snf.js` | 新日本海フェリー（`snf.jp` のトップのヘッダー） |
 | `src/http.js` | 取得の共通設定（User-Agent、8秒のタイムアウト、`Last-Modified` の読み取り）と日本時間の時刻 |
 | `scripts/collect-local.mjs` | Cloudflare を使わずに収集だけ1回動かす |
 | `wrangler.toml` | Worker 名・Cron・KV・ログの設定 |
 
-対応していない交通機関（市電・フェリー）は、ページに公式リンクだけ出している。
+対応していない交通機関（市電）は、ページに公式リンクだけ出している。
 
 ## 変更するときの注意
 

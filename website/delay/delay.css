@@ -18,6 +18,9 @@
   --brand-expressway: #777;  /* 高速道路（仮。色は未定） */
   --brand-chuobus: #d60000;  /* 北海道中央バス */
   --brand-hokto: #00b555;    /* 北都交通 */
+  --brand-silverferry: #005d82; /* シルバーフェリー */
+  --brand-sunflower: #005396;   /* さんふらわあ */
+  --brand-snf: #1a436d;         /* 新日本海フェリー */
   --line-nanboku: #008000;
   --line-tozai: #e46c0a;
   --line-toho: #1d1dff;
@@ -186,6 +189,13 @@
 .dl-line--nanboku { --line: var(--line-nanboku); }
 .dl-line--tozai { --line: var(--line-tozai); }
 .dl-line--toho { --line: var(--line-toho); }
+/* フェリーは3社を1枚のカードにまとめ、会社の色は社名の前の丸印で示す */
+.dl-line--silverferry { --line: var(--brand-silverferry); }
+.dl-line--sunflower { --line: var(--brand-sunflower); }
+.dl-line--snf { --line: var(--brand-snf); }
+.dl-row .dl-warn { flex-basis: 100%; margin: 4px 0 0; }
+.dl-sailings { flex-basis: 100%; }
+.dl-sailings summary { cursor: pointer; font-size: .78rem; font-weight: 700; }
 /* 航空会社の行（便・系列）：背景にごく薄く機体色を敷き、便の一覧は左端の社名の列を機体色で塗る。
    行全体を塗りつぶすと状態のバッジが埋もれるため、濃い色は社名の列だけにしている。
    色は便名の先頭3文字（運航会社コード）か、系列の id（ana / jal / other）で決める。
