@@ -104,7 +104,8 @@
             { "id": "611", "route": "高速おたる号（円山経由）", "direction": "小樽→札幌", "time": null, "status": "delay", "label": "一部便運休中", "url": "https://www.chuo-bus.co.jp/support/stop/?ope=list&rsn=611&ket=0" },
             { "id": "612", "route": "高速おたる号（北大経由）", "direction": "札幌→小樽", "time": "11:00", "status": "delay", "label": "運休", "url": "https://www.chuo-bus.co.jp/support/stop/?ope=list&rsn=612&ket=0" }
           ]
-        }
+        },
+        { "id": "tomakomai", "name": "高速とまこまい号（札幌〜苫小牧）", "status": "normal", "items": [] }
       ]
     },
     "hokto": {

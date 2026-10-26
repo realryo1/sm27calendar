@@ -20,7 +20,7 @@
 | `src/sources/subway.js` | 札幌市営地下鉄（`operationstatus.city.sapporo.jp/unkojoho/top.html`） |
 | `src/sources/airport.js` | 新千歳空港 国内線（`hokkaido-airports.com/api/v1/new-chitose/static/fis/domestic/today.json`） |
 | `src/sources/expressway.js` | 高速道路 道央道・札樽道（アイハイウェイ `ihighway.jp/datas/json/traffic.json`） |
-| `src/sources/chuobus.js` | 北海道中央バス 空港連絡バス・高速おたる号（運休情報の RSS `chuo-bus.co.jp/support/stop/?ope=feed&topic=stop_list`） |
+| `src/sources/chuobus.js` | 北海道中央バス 空港連絡バス・高速おたる号・高速とまこまい号（運休情報の RSS `chuo-bus.co.jp/support/stop/?ope=feed&topic=stop_list`） |
 | `src/sources/hokto.js` | 北都交通 空港連絡バス（`hokto.co.jp` のトップ） |
 | `src/sources/silverferry.js` | シルバーフェリー（`silverferry.jp` のトップ。欠航・遅延のときはリンク先のお知らせから便ごとの状況も） |
 | `src/sources/sunflower.js` | さんふらわあ 大洗〜苫小牧（`sunflower.co.jp` のトップ） |

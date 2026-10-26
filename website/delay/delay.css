@@ -99,6 +99,39 @@
   border-left-color: var(--col-secondary);
 }
 
+/* ---------- 行き先ごとのまとめ ---------- */
+.dl-sum { padding: 10px 0; border-bottom: 1px solid var(--col-paper-muted); }
+.dl-sum:last-child { border-bottom: 0; }
+.dl-sum__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; }
+.dl-sum__name { font-weight: 700; }
+.dl-sum__chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.dl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--col-secondary-light);
+  border-radius: 999px;
+  color: var(--col-ink);
+  font-size: .75rem;
+  text-decoration: none;
+}
+.dl-chip:hover { background: var(--col-secondary-lighter); }
+.dl-chip .dl-badge { font-size: .7rem; padding: 1px 8px; }
+/* まとめからカードへ移ったとき、見出しが画面の上端に隠れないようにする */
+.dl-card[id] { scroll-margin-top: 12px; }
+
+/* ---------- もし飛行機が止まったら？ ---------- */
+.dl-plan__hdg { margin: 14px 0 6px; font-size: .9rem; }
+.dl-plan__routes { margin: 0; font-size: .8rem; }
+.dl-plan__routes dt { margin-top: 6px; font-weight: 700; }
+.dl-plan__routes dd { margin: 2px 0 0 1em; }
+.dl-plan__form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .85rem; }
+.dl-plan__form input { padding: 4px 8px; border: 1px solid var(--col-secondary-light); border-radius: 8px; font: inherit; }
+.dl-plan__row strong { font-weight: 700; }
+.dl-plan__row.is-late { opacity: .6; }
+.dl-plan__night { color: var(--st-delay); opacity: 1; }
+
 /* ---------- 交通機関ごとのカード ---------- */
 .dl-card {
   margin: 0 0 16px;

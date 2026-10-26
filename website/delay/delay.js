@@ -13,6 +13,7 @@
 
   const $updated = document.getElementById("updated");
   const $banners = document.getElementById("banners");
+  const $summary = document.getElementById("summary");
   const $sections = document.getElementById("sections");
   const $reload = document.getElementById("reload");
 
@@ -47,7 +48,7 @@
     const source = svc.ok
       ? `<a class="dl-source" href="${esc(svc.url)}" target="_blank" rel="noopener">情報元：${esc(svc.name)}</a>`
       : "";
-    return `<section class="dl-card dl-card--${esc(id)}">
+    return `<section class="dl-card dl-card--${esc(id)}" id="dl-${esc(id)}">
       <h2 class="dl-card__title"><a href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)}</a>${time}</h2>
       ${staleNote(svc)}
       ${svc.ok || svc.last_success_at ? body : ""}
@@ -285,10 +286,103 @@
   function renderFerry(services) {
     const rows = FERRIES.filter((id) => services[id]).map((id) => ferryRow(id, services[id]));
     if (!rows.length) return "";
-    return `<section class="dl-card">
+    return `<section class="dl-card" id="dl-ferry">
       <h2 class="dl-card__title">フェリー（北海道航路）<span class="dl-card__time">${esc(hhmm(services[FERRIES.find((id) => services[id])].fetched_at))} 取得</span></h2>
       <ul class="dl-rows">${rows.join("")}</ul>
       <p class="dl-card__note">各社のトップページの運航情報から状態だけを表示しています（シルバーフェリーは、欠航・遅延のお知らせが出ているときだけ便ごとに分けます）。理由や詳しい案内は各社のリンク先へ。新日本海フェリーは、お知らせが出ているかどうかだけです（欠航とは限りません）。</p>
+    </section>`;
+  }
+
+  // ---------- まとめ（行き先ごと） ----------
+  // 各カードのデータから、行き先ごとに「使える手段があるか」をまとめる。手段どうしは代わりになるので、
+  // すべて平常／一部に乱れ（平常の手段もある）／すべてに乱れ の3段階にする。集計はページ側だけで行う（Worker は変えていない）
+  const worst = (list) =>
+    ["suspended", "delay", "normal"].find((st) => list.includes(st)) || (list.includes("offhours") ? "offhours" : "unknown");
+  // 手段1つ：id はカードへのリンク先、pick は事業者のデータ → 状態、label は状態 → 表示（なければ共通の表記）
+  const means = (name, id, svcId, pick, label = {}) => ({ name, id, svcId, pick, label });
+  const ROAD = { suspended: "通行止あり", delay: "規制あり" };
+  const JR = { delay: "遅れ・運休" }; // JR北海道の情報は遅れと運休の区別がない
+  const SUMMARY = [
+    {
+      name: "札幌 ⇄ 新千歳空港",
+      means: [
+        means("JR 快速エアポート", "jr", "jr", (s) => s.items?.find((i) => i.id === "airport")?.status, JR),
+        means("中央バス 空港連絡バス", "chuobus", "chuobus", (s) => s.groups?.find((g) => g.id === "airport")?.status, { delay: "運休あり" }),
+        // 桑園線・定山渓線は通年「全便運休」のことがあるので、主要な2系統だけで見る
+        means("北都交通 空港連絡バス", "hokto", "hokto", (s) =>
+          worst((s.items || []).filter((i) => ["sapporo-chitose", "oyachi-chitose"].includes(i.id)).map((i) => i.status)),
+          { delay: "一部運休", suspended: "全便運休" }
+        ),
+        means("道央道", "expressway", "expressway", (s) => s.roads?.find((r) => r.id === "doo")?.status, ROAD),
+      ],
+    },
+    {
+      name: "札幌 ⇄ 小樽",
+      means: [
+        means("JR 函館線", "jr", "jr", (s) => s.items?.find((i) => i.id === "hakochise")?.status, JR),
+        means("高速おたる号", "chuobus", "chuobus", (s) => s.groups?.find((g) => g.id === "otaru")?.status, { delay: "運休あり" }),
+        means("札樽道", "expressway", "expressway", (s) => s.roads?.find((r) => r.id === "sasson")?.status, ROAD),
+      ],
+    },
+    {
+      name: "札幌市内（地下鉄）",
+      means: ["nanboku", "tozai", "toho"].map((line) =>
+        means({ nanboku: "南北線", tozai: "東西線", toho: "東豊線" }[line], "subway", "subway", (s) => s.items?.find((i) => i.id === line)?.status, {
+          delay: "遅れあり",
+          suspended: "見合わせ",
+        })
+      ),
+    },
+    {
+      name: "北海道 ⇄ 本州",
+      means: [
+        means("新千歳空港の便", "airport", "airport", (s) => worst((s.groups || []).map((g) => g.status)), {
+          delay: "遅れ・欠航あり",
+          suspended: "大規模欠航",
+        }),
+        means("JR 特急・新幹線", "jr", "jr", (s) =>
+          worst((s.items || []).filter((i) => ["express", "shinkansen"].includes(i.id)).map((i) => i.status)),
+          JR
+        ),
+        means("シルバーフェリー", "ferry", "silverferry", (s) => s.status, { delay: "欠航・遅延あり" }),
+        means("さんふらわあ", "ferry", "sunflower", (s) => s.status, { delay: "遅れあり", suspended: "欠航あり" }),
+        means("新日本海フェリー", "ferry", "snf", (s) => s.status, { delay: "お知らせあり" }),
+      ],
+    },
+  ];
+  const CHIP_LABEL = { normal: "平常", delay: "乱れあり", suspended: "運休あり", offhours: "時間外", unknown: "取得できず" };
+
+  function renderSummary(services) {
+    const rows = SUMMARY.map((dest) => {
+      const chips = dest.means
+        .filter((m) => services[m.svcId])
+        .map((m) => {
+          const svc = services[m.svcId];
+          // 取得に失敗している事業者は、前回のデータで判定せず「取得できず」にする
+          const st = (svc.ok && m.pick(svc)) || "unknown";
+          return { ...m, st };
+        });
+      if (!chips.length) return "";
+      // 時間外・取得できずは判定に使わない
+      const known = chips.map((c) => c.st).filter((st) => ["normal", "delay", "suspended"].includes(st));
+      let verdict = ["unknown", "判定できません"];
+      if (known.length && known.every((st) => st === "normal")) verdict = ["normal", "平常"];
+      else if (known.includes("normal")) verdict = ["delay", "一部に乱れ（平常の手段あり）"];
+      else if (known.length && known.every((st) => st === "suspended")) verdict = ["suspended", "すべて運休・通行止"];
+      else if (known.length) verdict = ["suspended", "すべての手段に乱れ"];
+      return `<li class="dl-sum">
+        <div class="dl-sum__head"><span class="dl-sum__name">${esc(dest.name)}</span>${badge(verdict[0], verdict[1])}</div>
+        <ul class="dl-sum__chips">${chips
+          .map(
+            (c) => `<li><a class="dl-chip" href="#dl-${esc(c.id)}">${esc(c.name)} ${badge(c.st, c.label[c.st] || CHIP_LABEL[c.st])}</a></li>`
+          )
+          .join("")}</ul>
+      </li>`;
+    }).join("");
+    return `<section class="dl-card dl-summary" id="dl-summary">
+      <h2 class="dl-card__title">行き先ごとのまとめ</h2>
+      <ul class="dl-rows">${rows}</ul>
+      <p class="dl-card__note">各社の情報を行き先ごとに並べたものです。手段を押すと詳しいカードへ移ります。北都交通は都心線・大谷地線、JR は快速エアポート・函館線（札幌近郊）・特急・新幹線で見ています。</p>
     </section>`;
   }
 
@@ -336,6 +430,10 @@
       next = Date.parse(data.next_update_at) > Date.now() ? ` ／ 次は ${hhmm(data.next_update_at)}ごろ` : " ／ まもなく更新";
     }
     $updated.textContent = `${hhmm(data.updated_at)} 更新${next}`;
+    // まとめは「もし飛行機が止まったら？」（plan.js、描き直さない）より上に置くので、別の入れ物に描く
+    $summary.innerHTML = renderSummary(data.services || {});
+    // plan.js にシルバーフェリーの今の状況を渡す
+    document.dispatchEvent(new CustomEvent("dl:data", { detail: data }));
     $sections.innerHTML =
       Object.entries(RENDER)
         .filter(([id]) => data.services?.[id])

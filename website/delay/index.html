@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="delay.css">
   <script src="delay.js" defer></script>
+  <script src="plan.js" defer></script>
 </head>
 <body>
   <main class="dl">
@@ -33,6 +34,33 @@
     </header>
 
     <div id="banners"></div>
+    <div id="summary"></div>
+
+    <!-- 1分ごとの描き直しで入力が消えないよう、#sections の外に置く（中身は plan.js） -->
+    <section class="dl-card dl-plan" id="dl-plan">
+      <h2 class="dl-card__title">もし飛行機が止まったら？（シルバーフェリー編）</h2>
+
+      <h3 class="dl-plan__hdg">苫小牧西港フェリーターミナルへの行き方</h3>
+      <dl class="dl-plan__routes">
+        <dt>新千歳空港から</dt>
+        <dd>JR 新千歳空港 →（南千歳で乗り継ぎ・約30分）→ 苫小牧駅 → タクシー約15分／道南バス約20分</dd>
+        <dd>苫小牧駅前からは、高速とまこまい号のフェリーターミナル行きにも乗れます（約14分・280円、1日5本）</dd>
+        <dt>札幌駅から</dt>
+        <dd>北海道中央バス 高速とまこまい号（フェリーターミナル行きの便）札幌駅前 → フェリーターミナル 約1時間51分</dd>
+        <dd>JR 札幌駅 → 苫小牧駅 → タクシー約15分／道南バス約20分</dd>
+      </dl>
+
+      <h3 class="dl-plan__hdg">新千歳空港から間に合う便</h3>
+      <div class="dl-plan__form">
+        <label for="plan-time">新千歳空港を出る時刻</label>
+        <input type="time" id="plan-time" step="300">
+        <button type="button" class="dl-head__reload" id="plan-now">今から</button>
+      </div>
+      <div id="plan-result"></div>
+      <p class="dl-card__note">目安の計算：JR 約30分＋列車の待ち時間の余裕30分＋タクシー約15分で、乗船開始（出港の約1時間前）までにターミナルに着けるかを見ています。列車の時刻は見ていないので、JR北海道の時刻表で確かめてください。徒歩で乗る方の手続きの締切は公式に明記がないため、早めに着くようにしてください。時刻表は定期検査・代船の期間に変わることがあります。八戸からの東北新幹線の乗り継ぎは準備中です。</p>
+      <p class="dl-card__note">出典：<a href="https://www.silverferry.jp/route_guide/" target="_blank" rel="noopener">シルバーフェリー「航路・時刻」</a>（時刻表・ターミナルへのアクセス・シャトルバス）、<a href="https://www.silverferry.jp/faq/index2.html" target="_blank" rel="noopener">よくあるご質問</a>（乗船開始）、<a href="https://www.hokkaido-airports.com/ja/new-chitose/access/jr/" target="_blank" rel="noopener">新千歳空港「JR」</a>（苫小牧まで約30分）、<a href="https://www.chuo-bus.co.jp/highway/index.cgi?ope=det&amp;n=20&amp;o=1&amp;t=150" target="_blank" rel="noopener">北海道中央バス「高速とまこまい号」</a>（2026年7月1日更新の夏ダイヤ。冬ダイヤで変わることがあります）。2026-10-26 時点。</p>
+    </section>
+
     <div id="sections"></div>
 
     <section class="dl-card">
