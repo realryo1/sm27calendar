@@ -74,6 +74,22 @@ async function api(method, path, body) {
 const runsPath = `/actions/workflows/${WORKFLOW_FILE}/runs`;
 const pagesUrl = `https://${owner}.github.io/${repo}/`;
 
+// 公開中の data.js の版（updatedAt はデプロイのたびにワークフローが書き換える。同じ分に2回デプロイしても区別できるよう Last-Modified も見る）。
+// ワークフローが終わっても CDN（Fastly）が古いファイルを返すことがあり、その間はアプリの更新ボタンを押しても反映されないため、変わるまで待つのに使う
+const CDN_POLL_MS = 5_000;
+const CDN_TIMEOUT_MS = 10 * 60_000;
+async function publishedData() {
+  try {
+    const res = await fetch(`${pagesUrl}data.js`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const updatedAt = (await res.text()).match(/updatedAt:\s*"([^"]+)"/)?.[1] ?? "?";
+    return { updatedAt, key: `${updatedAt}|${res.headers.get("last-modified")}` };
+  } catch {
+    return null;
+  }
+}
+const publishedBefore = await publishedData();
+
 // 4. push（コミットはしない）
 log(`▶ ${owner}/${repo} の ${BRANCH} を push します`);
 if (DRY_RUN) {
@@ -92,6 +108,7 @@ if (DRY_RUN) {
   log(latest
     ? `  [dry-run] 直近の実行: ${latest.html_url}（${latest.status} / ${latest.conclusion ?? "-"}）`
     : "  [dry-run] 直近の実行はまだありません");
+  log(`  [dry-run] 公開中の updatedAt: ${publishedBefore?.updatedAt ?? "取得できませんでした"}`);
   log("  [dry-run] ワークフローの起動はスキップ");
   log("✔ 確認完了（push と起動は行っていません）");
   process.exit(0);
@@ -127,4 +144,17 @@ while (current.status !== "completed") {
 if (current.conclusion !== "success") {
   die(`デプロイが ${current.conclusion} で終わりました: ${current.html_url}`);
 }
+
+// 8. CDN が新しいファイルを返すまで待つ（updatedAt が変わるまで）
+log("▶ 公開URLに反映されるのを待ちます");
+const cdnStart = Date.now();
+let published = await publishedData();
+while (!published || published.key === publishedBefore?.key) {
+  if (Date.now() - cdnStart > CDN_TIMEOUT_MS) {
+    die(`10分待っても公開URLの data.js が新しくなりませんでした（updatedAt: ${published?.updatedAt ?? "取得できず"}）: ${pagesUrl}data.js`);
+  }
+  await sleep(CDN_POLL_MS);
+  published = await publishedData();
+}
+log(`  updatedAt: ${publishedBefore?.updatedAt ?? "-"} → ${published.updatedAt}（ワークフロー完了から ${Math.round((Date.now() - cdnStart) / 1000)} 秒）`);
 log(`✔ デプロイ完了: ${pagesUrl}`);

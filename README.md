@@ -65,7 +65,7 @@ im.quantize(256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE).save("
 
 ## デプロイ
 
-Actionsで手動実行するか、VSCodeでF5（「Deploy:push→GitHubPages」）を実行すると、`main`をpushしてGitHubActionsの[deploy-pages.yml](.github/workflows/deploy-pages.yml)を起動し、`website/`がGitHubPagesに公開されます。未コミットの変更があると中断します。
+Actionsで手動実行するか、VSCodeでF5（「Deploy:push→GitHubPages」）を実行すると、`main`をpushしてGitHubActionsの[deploy-pages.yml](.github/workflows/deploy-pages.yml)を起動し、`website/`がGitHubPagesに公開されます。未コミットの変更があると中断します。F5の場合は、公開URLの`data.js`が新しくなる（CDNに反映される）まで待ってから完了と表示します。
 
 ## 注意
 
