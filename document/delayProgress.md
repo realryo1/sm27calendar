@@ -18,8 +18,8 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配信 URL | `https://sm27-delay.realryo1.workers.dev/status.json` |
-| 監視用 URL | `https://sm27-delay.realryo1.workers.dev/health`（異常なら 503） |
+| 配信 URL | `https://delay.realryo1.com/status.json` |
+| 監視用 URL | `https://delay.realryo1.com/health`（異常なら 503） |
 | Cron | `2-59/5 * * * *`（毎時 :02, :07, …、通年） |
 | KV | `DELAY_KV`（キー `status`） |
 | デプロイ | Cloudflare の GitHub 連携（Workers Builds）。`main` に push すると `worker/` が自動デプロイ |
@@ -180,9 +180,10 @@
   - Cron を戻して確認：Cron の再開 23:42 → Grok Bot の復旧の知らせ 23:46。異常が続く間の知らせは最初の1回だけだった
 
 独自ドメインへの移行（2026-10-27 に realryo1.com を Cloudflare Registrar で取得）
-- [ ] Worker に `delay.realryo1.com` を付ける（`wrangler.toml` の `routes`。workers.dev は残す）
-- [ ] ページの取得先（`delay.js` の `ENDPOINT`）とドキュメントを新しい URL に替える
-- [ ] Grok Bot の Routine の `/health` の URL を替える、WAF の Rate Limiting ルールを作る
+- [x] Worker に `delay.realryo1.com` を付ける（`wrangler.toml` の `routes`。workers.dev は残す）
+- [x] ページの取得先（`delay.js` の `ENDPOINT`）とドキュメントを新しい URL に替える
+- [x] WAF の Rate Limiting ルールを作る（URI Path が `/`・`/status.json`・`/health` のとき、IP ごとに10秒60回で10秒 Block。無料プランでは Hostname を条件にできない）
+- [ ] Grok Bot の Routine の `/health` の URL を替える
 - [ ] workers.dev を止め（`workers_dev = false`）、Worker 内のレート制限（`RATE_LIMITER`）を外す
 
 フェーズ3（代わりの交通手段）

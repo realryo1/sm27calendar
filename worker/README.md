@@ -10,7 +10,7 @@
 
 - `GET /health` は外部の監視サービス向け。異常なら 503（KV を読むだけで、事業者へは取りに行かない）
 
-公開先：`https://sm27-delay.realryo1.workers.dev/status.json`
+公開先：`https://delay.realryo1.com/status.json`
 
 ## ファイル
 
@@ -68,7 +68,7 @@ node worker/scripts/collect-local.mjs out.json   # ファイルへ
 
 ## 監視（/health）
 
-`https://sm27-delay.realryo1.workers.dev/health` を Worker の外から定期的に見る（今は Grok Bot の Routine に頼んでいる）。`ok` が false なら `problems` を確認する。
+`https://delay.realryo1.com/health` を Worker の外から定期的に見る（今は Grok Bot の Routine に頼んでいる）。`ok` が false なら `problems` を確認する。
 
 | 結果 | 条件 |
 | --- | --- |
