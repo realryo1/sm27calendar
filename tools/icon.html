@@ -54,6 +54,8 @@
   .favicon .grid i:nth-child(2) { margin-top: 12vw; margin-bottom: 8vw; }
   .favicon .grid i:nth-child(3) { margin-top: 24vw; }
   .favicon .num { display: none; }
+  /* アプリアイコン（icon.html?favicon&num）：favicon の図柄の右下に 27 を重ねる */
+  .favicon.num27 .num { display: block; right: 9vw; bottom: 8vw; font-size: 20vw; line-height: 1; text-shadow: none; -webkit-text-stroke: 2vw #fff; paint-order: stroke fill; stroke-linejoin: round; }
   .num {
     position: absolute;
     right: 5vw;
@@ -66,7 +68,8 @@
 </style>
 </head>
 <body>
-  <script>if (location.search.includes("favicon")) document.documentElement.classList.add("favicon");</script>
+  <script>if (location.search.includes("favicon")) document.documentElement.classList.add("favicon");
+    if (location.search.includes("num")) document.documentElement.classList.add("num27");</script>
   <div class="mark">
     <div class="bar"><span class="snow">❄</span></div>
     <div class="grid"><i></i><i></i><i></i></div>
