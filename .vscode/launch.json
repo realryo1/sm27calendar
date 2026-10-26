@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Deploy: push → GitHub Pages",
+      "name": "Deploy: カレンダー（sm27calendar）",
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/tools/deploy-pages.mjs",
@@ -35,7 +35,7 @@
   "compounds": [
     {
       "name": "Deploy: 一括（カレンダー＋運行情報）",
-      "configurations": ["Deploy: push → GitHub Pages", "Deploy: 運行情報（hokkaido_delay）"]
+      "configurations": ["Deploy: カレンダー（sm27calendar）", "Deploy: 運行情報（hokkaido_delay）"]
     }
   ]
 }

@@ -1,7 +1,7 @@
 // F5 で実行する: main を push してから GitHub Pages のデプロイ（deploy-pages.yml）を起動し、完了まで待つ。
 // コミットはしない。未コミットの変更がある場合は中断する（デプロイされるのは push 済みの main だけのため）。
 // 認証は git push と同じ Git Credential Manager の認証情報を使う（gh CLI は不要）。
-// 使い方: F5（.vscode/launch.json の「Deploy: push → GitHub Pages」）。
+// 使い方: F5（.vscode/launch.json の「Deploy: カレンダー（sm27calendar）」、運行情報と一緒なら「Deploy: 一括（カレンダー＋運行情報）」）。
 //         --dry-run を付けると push も起動もせず、確認だけ行う。
 
 import { spawnSync } from "node:child_process";
