@@ -66,24 +66,25 @@
       <div class="tt-scroll" id="ttScroll">
         <div class="tt" id="tt"></div>
       </div>
+      <ul class="legend" id="legend"></ul>
       <p class="board__hint" id="boardHint"></p>
     </section>
+    <!-- 2カラム表示のときだけ出る、時間割と会場一覧の比率を変える持ち手（app.js） -->
+    <div class="split" id="split" role="separator" aria-orientation="vertical" aria-label="時間割と会場一覧の幅" tabindex="0"></div>
 
     <div class="main__inner">
-      <ul class="legend" id="legend"></ul>
-
       <section class="venues" id="venues">
         <h2 class="section-title" id="venuesTitle"></h2>
         <div class="venue-list" id="venueList"></div>
       </section>
+
+      <footer class="site-footer">
+        <p class="site-footer__updated" id="updatedAt"></p>
+        <p id="disclaimer"></p>
+        <p class="site-footer__repo"><a id="repoLink" target="_blank" rel="noopener"></a></p>
+      </footer>
     </div>
   </main>
-
-  <footer class="site-footer">
-    <p class="site-footer__updated" id="updatedAt"></p>
-    <p id="disclaimer"></p>
-    <p class="site-footer__repo"><a id="repoLink" target="_blank" rel="noopener"></a></p>
-  </footer>
 
   <button type="button" class="to-board" id="toBoard" hidden></button>
 </body>

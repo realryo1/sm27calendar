@@ -26,8 +26,8 @@
   --hour: 72px;
   --head: 56px;
   --divider: 39px;
-  --axis: 56px;
-  --axis-bleed: 5px; /* 時刻軸・左上の角が右の列の間隔へはみ出す量（両者の右端をそろえる）。.tt の column-gap を超えると列に重なる */
+  --axis: 26px; /* 時刻軸は画面の幅に関係なく、時の数字だけの細い軸（.tt-axis__h） */
+  --axis-bleed: 4px; /* 時刻軸・左上の角が右の列の間隔へはみ出す量（両者の右端をそろえる）。.tt の column-gap を超えると列に重なる */
   --colmin: 96px;
 }
 
@@ -43,8 +43,6 @@
     --hour: 60px;
     --head: 66px;
     --divider: 39px;
-    --axis: 26px;
-    --axis-bleed: 4px;
     --colmin: 112px;
   }
 }
@@ -83,7 +81,7 @@ button { font: inherit; color: inherit; }
 .main__inner {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0 16px 0;
+  padding: 0 16px;
 }
 
 /* ---------- Board ---------- */
@@ -98,23 +96,60 @@ button { font: inherit; color: inherit; }
 @media (max-width: 640px) {
   .board { padding: 0 0 8px; } /* 上左右の余白をなくし、表を画面いっぱいに使う */
 }
-/* 【テスト】PC：左に時間割（画面に固定）、右に凡例・会場一覧（こちらだけスクロール） */
-@media (min-width: 1100px) {
+/* 2カラム：左に時間割（画面に固定）、右に会場一覧（こちらだけスクロール）。
+   スマホ表示（640px以下）でなければ2カラムにする（iPad mini・折りたたみスマホを開いたとき・横向きのスマホも） */
+@media (min-width: 641px) {
+  /* 時間割・持ち手・会場一覧の3列。時間割の幅（--board-w）は持ち手で変えられる（app.js が .main に入れる） */
   .main {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: var(--board-w, 50%) 16px 1fr;
     align-items: start;
   }
   .board {
     position: sticky;
-    top: 0;
+    top: 16px; /* 上の16px（スクロールしていなくても sticky でこの分ずれる） */
+    height: calc(100svh - 32px); /* 上下16pxずつ（dvh が使えないブラウザ向け） */
+    height: calc(100dvh - 32px); /* スマホの横向きでアドレスバーが消えたときも、下に空白を作らずに伸びる */
+    margin: 0 0 0 16px; /* 左16px（右の16pxは持ち手の列） */
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgb(79 69 143 / .08); /* .venue-card と同じ */
   }
   .main__inner {
     max-width: none;
     width: 100%;
     margin: 0;
-    padding: 16px 24px 0;
+    padding: 0 16px 0 0; /* 左は持ち手の列（16px）があるので0、右だけ16px */
   }
+  /* 持ち手：画面の高さいっぱいの縦の帯（時間割と同じく画面に固定）。中央に縦長のつまみを描く */
+  .split {
+    position: sticky;
+    top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(100svh - 32px);
+    height: calc(100dvh - 32px); /* .board と同じ */
+    cursor: col-resize;
+    touch-action: none;
+    outline: none;
+  }
+  .split::before {
+    content: "";
+    width: 6px;
+    height: 48px;
+    border-radius: 999px;
+    background: var(--col-secondary-light);
+    transition: background-color .15s, height .15s;
+  }
+  .split:hover::before,
+  .split:focus-visible::before,
+  .split.is-dragging::before { height: 72px; background: var(--col-primary); }
+  .main.is-resizing { cursor: col-resize; user-select: none; }
+}
+/* スマホ表示（1カラム）のときは持ち手を出さない */
+@media (max-width: 640px) {
+  .split { display: none; }
 }
 .board__hint { display: none; margin: 4px 0 0; font-size: .7rem; text-align: center; opacity: .7; }
 
@@ -205,9 +240,9 @@ button { font: inherit; color: inherit; }
   .day-nav {
     position: absolute; /* .board 基準＝表の右下 */
     right: 28px; /* 表の縦スクロールバーを避ける */
-    bottom: 20px;
+    bottom: calc(var(--legend-h, 0px) + 20px); /* 表の下の凡例の上に浮かせる（--legend-h は app.js が入れる） */
     z-index: 20;
-    width: 360px;
+    width: min(360px, calc(100% - 44px)); /* 2カラムで時間割が狭いときは縮める（ボタンは flex で等分） */
     padding: 8px;
     border: 1px solid var(--col-secondary-light);
     border-radius: 20px;
@@ -215,6 +250,26 @@ button { font: inherit; color: inherit; }
     box-shadow: 0 8px 24px rgb(79 69 143 / .25);
   }
   .to-board { display: none; } /* 表は常に左に見えているので不要 */
+}
+/* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中でタイトル・凡例・日付ボタンが高さを使い切らないよう詰める */
+@media (min-width: 641px) and (max-height: 500px) {
+  .board, .split { top: 8px; height: calc(100svh - 16px); height: calc(100dvh - 16px); }
+  .board .day-nav__title { padding: 8px 12px 0; font-size: .85rem; }
+  /* 凡例・日付ボタンの基本の指定はこの後ろにあるので、.board を付けて優先させる。凡例は1行にまとめ、はみ出す分は横にスクロール */
+  .board .legend {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 4px 12px;
+    overflow-x: auto;
+    font-size: .7rem;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .board .legend li { flex: none; }
+  .board .day-nav { bottom: calc(var(--legend-h, 0px) + 8px); padding: 4px; gap: 4px; }
+  .board .day-chip { min-height: 34px; }
+  .board .day-chip__date { font-size: .9rem; }
 }
 @media (max-width: 640px) {
   .board { padding-bottom: 0; }
@@ -256,6 +311,26 @@ button { font: inherit; color: inherit; }
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
+/* 2カラム表示のときだけ、時間割のスクロールバーをピンクにする。
+   Chrome・Edge・Safari は ::-webkit-scrollbar で形まで作る。scrollbar-color や scrollbar-width を指定するとこちらが無視されるので、
+   .tt-scroll の scrollbar-width: thin はここでは外し、scrollbar-color は Firefox だけに分ける */
+@media (min-width: 641px) {
+  @supports selector(::-webkit-scrollbar) {
+    .tt-scroll { scrollbar-width: auto; }
+  }
+  .tt-scroll::-webkit-scrollbar { width: 13px; height: 13px; }
+  .tt-scroll::-webkit-scrollbar-track { background: var(--col-paper); }
+  .tt-scroll::-webkit-scrollbar-thumb {
+    border: 3px solid var(--col-paper); /* 通り道の色で縁取って、つまみを細く見せる */
+    border-radius: 999px;
+    background: var(--col-primary);
+  }
+  .tt-scroll::-webkit-scrollbar-thumb:hover { background: var(--col-ink-primary); }
+  .tt-scroll::-webkit-scrollbar-corner { background: var(--col-paper); }
+  @supports not selector(::-webkit-scrollbar) {
+    .tt-scroll { scrollbar-color: var(--col-primary) var(--col-paper); }
+  }
+}
 .tt {
   position: relative;
   display: grid;
@@ -273,7 +348,6 @@ button { font: inherit; color: inherit; }
   left: 0;
   z-index: 5;
   margin-right: calc(-1 * var(--axis-bleed));
-  background: var(--col-paper); /* 会場見出しの左で、前の日の最後の時刻（22時など）が透けて見えないように */
 }
 
 .tt-head-cell {
@@ -509,31 +583,34 @@ button { font: inherit; color: inherit; }
   padding-right: var(--axis-bleed);
   /* 塗りつぶしはなし：横にスクロールすると列が下をくぐり、時刻だけが白い丸で浮かぶ */
 }
+/* 時刻軸は画面の幅に関係なく細く：時の数字だけを小さく出し、「00」と30分の表示は省く。
+   時刻は「画面端〜予定の列」の間の中央に置き、左右の余白を均等にする（8px は .tt の column-gap） */
 .tt-axis__hour,
 .tt-axis__half {
   position: absolute;
-  right: 4px;
+  left: 0;
   display: flex;
   align-items: baseline;
-  gap: 2px;
+  justify-content: center;
+  width: calc(var(--axis) + 8px);
   transform: translateY(-50%);
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--col-paper); /* 各時刻を白い丸（カプセル）に */
   line-height: 1;
 }
+.tt-axis__half,
+.tt-axis__m { display: none; }
 /* 開始時刻と終了時刻は出さない（日付帯と重なって間隔も不揃いになるため） */
 .tt-axis__hour:first-child,
 .tt-axis__hour:last-child { display: none; }
-.tt-axis__h { font-family: var(--font-display); font-size: 1.1rem; }
-.tt-axis__m { font-size: .62rem; opacity: .6; }
-@media (max-width: 640px) {
-  /* スマホは時刻軸を細く：時の数字だけを小さく出し、30分の表示は省く */
-  /* 時刻は「画面端〜予定の列」の間の中央に置き、左右の余白を均等にする（8px は .tt の column-gap） */
-  .tt-axis__hour, .tt-axis__half { left: 0; right: auto; width: calc(var(--axis) + 8px); justify-content: center; padding: 0; background: none; }
-  .tt-axis__h { min-width: 1.9em; padding: 3px 0; border-radius: 999px; background: var(--col-paper); text-align: center; font-size: .88rem; letter-spacing: -.04em; }
-  .tt-axis__hour .tt-axis__m,
-  .tt-axis__half { display: none; }
+/* 各時刻を白い丸（カプセル）に */
+.tt-axis__h {
+  min-width: 1.9em;
+  padding: 3px 0;
+  border-radius: 999px;
+  background: var(--col-paper);
+  font-family: var(--font-display);
+  font-size: .88rem;
+  letter-spacing: -.04em;
+  text-align: center;
 }
 
 .tt-col {
@@ -734,10 +811,9 @@ button { font: inherit; color: inherit; }
   .ev .badge { padding: 1px 6px; } /* 文字サイズは画面幅ではなく列幅（cqw）だけで決める */
 }
 
-/* 縮小時の簡略表示（app.js の updateDensity で切り替え） */
+/* 縮小時の簡略表示：app.js の updateDensity が .tt に data-density を付けるが、いまは CSS で使っていない
+   （時刻軸の「00」・30分は、縮小に関係なくいつも出さないため） */
 /* 予定カードの中身は縦の縮小率で見た目を変えない（余白・行間もそのまま）。高さが足りない予定だけ app.js の fitEvents が隠す */
-.tt[data-density="tight"] .tt-axis__half,
-.tt[data-density="tight"] .tt-axis__m { display: none; }
 
 /* 早朝待機：日の出から開場まで、徐々に濃くなるグラデーション */
 .ev-wait {
@@ -874,9 +950,10 @@ button { font: inherit; color: inherit; }
   justify-content: center;
   gap: 8px 18px;
   margin: 0;
-  padding: 16px 0 0;
+  padding: 8px 12px;
   list-style: none;
   font-size: .78rem;
+  border-top: 1px solid var(--col-secondary-lighter); /* 時間割（.tt-scroll）のすぐ下に置くので、表との境目に線を引く */
 }
 .legend li { display: flex; align-items: center; gap: 6px; }
 .legend__open {
@@ -897,6 +974,7 @@ button { font: inherit; color: inherit; }
 
 /* ---------- 市電いまどこ？ ---------- */
 .train-live {
+  container: train-live / inline-size; /* 路線図を横に並べるか縦に並べるかを、画面ではなくこの欄の幅で決める（下の @container train-live） */
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px dashed var(--c-light);
@@ -1031,8 +1109,8 @@ button { font: inherit; color: inherit; }
   grid-template-columns: 3fr 4fr;
   align-items: start;
 }
-/* PC：左に「操作（いま・日付・時刻）＋今の駅」、右に地図の2カラム。左はスクロール中も貼り付く。
-   スマホは1列に縦積み（操作・今の駅・地図の順。今の駅のカードは貼り付けない＝スクロールで地図に重ならない） */
+/* 欄が広いとき：左に「操作（いま・日付・時刻）＋今の駅」、右に地図の2カラム。左はスクロール中も貼り付く。
+   欄が狭いとき（560px以下）は1列に縦積み（操作・今の駅・地図の順。今の駅のカードは貼り付けない＝スクロールで地図に重ならない） */
 .tl-side {
   display: flex;
   flex-direction: column;
@@ -1065,9 +1143,12 @@ button { font: inherit; color: inherit; }
   .tl-step { grid-row: 2; justify-self: center; }
   .tl-date { font-size: .8rem; } /* 日付の文字が欠けないように */
 }
-@media (max-width: 767px) {
+/* 欄が狭いとき（スマホ、2カラムで右カラムが狭いとき）は、操作・今の駅・路線図を1列に縦積み */
+@container train-live (max-width: 560px) {
   .tl-grid { grid-template-columns: 1fr; gap: 8px; }
   .tl-side { position: static; }
+}
+@media (max-width: 767px) {
   .tl-date { font-size: .85rem; } /* 日付の文字が欠けないように */
 }
 

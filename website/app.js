@@ -17,6 +17,76 @@
   const $venueList = document.getElementById("venueList");
   const $toBoard = document.getElementById("toBoard");
 
+  // 凡例は時間割（.tt-scroll）の下にある。641px 以上では日付ボタンの帯が .board の下端に浮くので、
+  // 凡例の高さ（幅で折り返して変わる）を --legend-h に入れ、帯をその分だけ上へずらす（style.css の .day-nav）
+  // 2カラム表示の持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）で時間割の幅を変え、この端末に覚える
+  const $split = document.getElementById("split");
+  if ($split) {
+    const $main = $split.parentElement;
+    const KEY = "sm27-board-w";
+    // 幅の下限は px で決める（2カラムは幅641px〜。横向きのスマホやiPad miniでも、時間割・会場一覧とも読める幅を残す）
+    const MIN_BOARD = 300;
+    const MIN_SIDE = 260;
+    const setW = (pct, save) => {
+      const total = $main.clientWidth || window.innerWidth;
+      const lo = (MIN_BOARD / total) * 100;
+      const hi = 100 - ((MIN_SIDE + 16) / total) * 100;
+      const w = Math.round(Math.min(hi, Math.max(lo, pct)) * 10) / 10;
+      $main.style.setProperty("--board-w", `${w}%`);
+      $split.setAttribute("aria-valuenow", String(Math.round(w)));
+      if (!save) return;
+      try {
+        localStorage.setItem(KEY, String(w));
+      } catch {
+        // 保存できなくても、幅は変えられる
+      }
+    };
+    let saved = NaN;
+    try {
+      saved = parseFloat(localStorage.getItem(KEY));
+    } catch {
+      saved = NaN;
+    }
+    setW(Number.isFinite(saved) ? saved : 50, false);
+    // 持ち手の列（16px）の中央を指の位置に合わせる
+    const pctAt = (x) => {
+      const r = $main.getBoundingClientRect();
+      return ((x - r.left - 8) / r.width) * 100;
+    };
+    $split.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      $split.setPointerCapture(ev.pointerId);
+      $split.classList.add("is-dragging");
+      $main.classList.add("is-resizing");
+    });
+    $split.addEventListener("pointermove", (ev) => {
+      if ($split.hasPointerCapture(ev.pointerId)) setW(pctAt(ev.clientX), false);
+    });
+    const end = (ev) => {
+      if (!$split.hasPointerCapture(ev.pointerId)) return;
+      $split.releasePointerCapture(ev.pointerId);
+      $split.classList.remove("is-dragging");
+      $main.classList.remove("is-resizing");
+      setW(pctAt(ev.clientX), true);
+    };
+    $split.addEventListener("pointerup", end);
+    $split.addEventListener("pointercancel", end);
+    $split.addEventListener("dblclick", () => setW(50, true));
+    // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す
+    window.addEventListener("resize", () => setW(parseFloat($main.style.getPropertyValue("--board-w")), false));
+    $split.addEventListener("keydown", (ev) => {
+      const step = { ArrowLeft: -2, ArrowRight: 2 }[ev.key];
+      if (!step) return;
+      ev.preventDefault();
+      setW(parseFloat($main.style.getPropertyValue("--board-w")) + step, true);
+    });
+  }
+
+  const $legend = document.getElementById("legend");
+  if ($legend && "ResizeObserver" in window) {
+    new ResizeObserver(() => $legend.parentElement.style.setProperty("--legend-h", `${$legend.offsetHeight}px`)).observe($legend);
+  }
+
   const toHour = (hhmm) => {
     const [h, m] = hhmm.split(":").map(Number);
     return h + m / 60;
@@ -213,8 +283,10 @@
       if (res.some((r) => !r.ok)) throw new Error("fetch failed");
       if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
       if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
+      // サイトのリセット：インストール案内を再び出し、2カラムの分割率（持ち手）を 1:1 に戻す
       try {
         localStorage.removeItem("sm27-install-dismissed");
+        localStorage.removeItem("sm27-board-w");
       } catch {}
       location.reload();
     } catch {
@@ -733,7 +805,7 @@
       const dy = y - lastY; // 負＝指を上へ（内容は下へ進む）
       lastY = y;
       const atBottom = $scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 1;
-      if ((dy < 0 && atBottom) || (dy > 0 && window.scrollY > 0)) {
+      if (!twoCol.matches && ((dy < 0 && atBottom) || (dy > 0 && window.scrollY > 0))) {
         ev.preventDefault();
         window.scrollBy(0, -dy);
         const dt = ev.timeStamp - lastT;
@@ -748,7 +820,13 @@
   );
   // PC: マウスホイールも同様。overscroll-behavior: none のため、表の下端（と、ページが下がっている間の上向き）はページ側へ渡す
   // 下向きは表→ページ、上向きはページ→表の順に、渡された量を使い切る
+  // PC の2カラム表示では右カラムが別のスクロールなので、表の端でつながない
+  const twoCol = window.matchMedia("(min-width: 641px)");
   const wheelChain = (dy) => {
+    if (twoCol.matches) {
+      $scroll.scrollTop += dy;
+      return;
+    }
     if (dy > 0) {
       const room = $scroll.scrollHeight - $scroll.clientHeight - $scroll.scrollTop;
       const inner = Math.min(dy, Math.max(0, room));
@@ -795,6 +873,7 @@
         return;
       }
       // トラックパッドは細かく届くので、表の端を越える分だけその場でページへ渡す
+      if (twoCol.matches) return;
       const atBottom = $scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 1;
       if (!((dy > 0 && atBottom) || (dy < 0 && window.scrollY > 0))) return;
       ev.preventDefault();
