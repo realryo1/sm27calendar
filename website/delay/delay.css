@@ -101,6 +101,7 @@
   border-left: 4px solid var(--col-link);
   font-size: .85rem;
 }
+.dl-banner__btn { display: block; margin-top: 8px; }
 .dl-banner--sample {
   background: var(--col-secondary-lighter);
   border-left-color: var(--col-secondary);

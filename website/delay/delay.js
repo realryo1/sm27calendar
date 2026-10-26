@@ -31,13 +31,41 @@
   };
   const badge = (status, label) => `<span class="dl-badge dl-badge--${esc(status)}">${esc(label || LABEL[status] || LABEL.unknown)}</span>`;
 
+  // 各社の公式ページ。名前と URL は worker/src/collect.js の SOURCES と合わせる
+  // リンクはここに直書きしたものを使い、JSON の url（取得先の記録として Worker が残している）は使わない。
+  // 事業者のページから毎回取ってくるお知らせなどのリンクだけ、決まった形（https・ホスト・パス）のときに使う（javascript: などを入れないため）
+  const OFFICIAL = {
+    jr: { name: "JR北海道", url: "https://www3.jrhokkaido.co.jp/webunkou/" },
+    subway: { name: "札幌市営地下鉄", url: "https://operationstatus.city.sapporo.jp/unkojoho/" },
+    airport: { name: "新千歳空港（国内線）", url: "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/" },
+    expressway: { name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/" },
+    chuobus: { name: "北海道中央バス", url: "https://www.chuo-bus.co.jp/support/stop/" },
+    hokto: { name: "北都交通", url: "https://www.hokto.co.jp/" },
+    silverferry: { name: "シルバーフェリー（八戸〜苫小牧）", url: "https://www.silverferry.jp/" },
+    sunflower: { name: "さんふらわあ（大洗〜苫小牧）", url: "https://www.sunflower.co.jp/" },
+    snf: { name: "新日本海フェリー（舞鶴・敦賀・新潟・秋田〜小樽・苫小牧東）", url: "https://www.snf.jp/" },
+  };
+  const officialUrl = (id) => OFFICIAL[id]?.url || "";
+  // JR北海道の線区ごとのページ（worker/src/sources/jr.js の LINES の senku と合わせる）
+  const JR_SENKU = { airport: "02", hakochise: "03", gakuen: "04", express: "01", shinkansen: "24" };
+  const jrUrl = (id) => (JR_SENKU[id] ? `${OFFICIAL.jr.url}senku.html?id=${JR_SENKU[id]}` : OFFICIAL.jr.url);
+  // 毎回取ってくるリンク：形が合えばそのまま、合わなければ決まったページ
+  const LINK = {
+    chuobus: /^https:\/\/www\.chuo-bus\.co\.jp\/support\/stop\/\?ope=list&rsn=\d+&ket=\d+$/,
+    hokto: /^https:\/\/www\.hokto\.co\.jp\/[a-z0-9-]+\/$/,
+    silverferry: /^https:\/\/www\.silverferry\.jp\/[\w./-]+$/,
+    snf: /^https:\/\/www\.snf\.jp\/[\w./-]+$/,
+  };
+  const SNF_LIST = "https://www.snf.jp/info-list/?info_group=operation";
+  const linkOr = (id, url, fallback) => (typeof url === "string" && LINK[id].test(url) ? url : fallback);
+
   // 取得に失敗した事業者：前回のデータに注意書きと公式リンクを添える
-  function staleNote(svc) {
+  function staleNote(id, svc) {
     if (svc.ok) return "";
     const last = svc.last_success_at ? `（最終取得 ${hhmm(svc.last_success_at)}）` : "";
     return `<div class="dl-warn">
       <p>情報元との通信が一時的に途切れています${esc(last)}。最新の状況は公式案内を確認してください。</p>
-      <a class="dl-warn__btn" href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)} 公式の運行情報</a>
+      <a class="dl-warn__btn" href="${esc(officialUrl(id))}" target="_blank" rel="noopener">${esc(svc.name)} 公式の運行情報</a>
     </div>`;
   }
 
@@ -46,11 +74,11 @@
     const time = timeText ? `<span class="dl-card__time">${esc(timeText)}</span>` : "";
     // 情報元へのボタン。取得失敗時は staleNote に目立つ公式ボタンがあるので出さない
     const source = svc.ok
-      ? `<a class="dl-source" href="${esc(svc.url)}" target="_blank" rel="noopener">情報元：${esc(svc.name)}</a>`
+      ? `<a class="dl-source" href="${esc(officialUrl(id))}" target="_blank" rel="noopener">情報元：${esc(svc.name)}</a>`
       : "";
     return `<section class="dl-card dl-card--${esc(id)}" id="dl-${esc(id)}">
-      <h2 class="dl-card__title"><a href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)}</a>${time}</h2>
-      ${staleNote(svc)}
+      <h2 class="dl-card__title"><a href="${esc(officialUrl(id))}" target="_blank" rel="noopener">${esc(svc.name)}</a>${time}</h2>
+      ${staleNote(id, svc)}
       ${svc.ok || svc.last_success_at ? body : ""}
       ${source}
     </section>`;
@@ -60,7 +88,7 @@
     const rows = (svc.items || [])
       .map(
         (i) => `<tr>
-          <th scope="row"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)}</a></th>
+          <th scope="row"><a href="${esc(jrUrl(i.id))}" target="_blank" rel="noopener">${esc(i.name)}</a></th>
           <td>${badge(i.status, i.status === "delay" ? "遅れ・運休" : "")}</td>
           <td>${badge(i.tomorrow, i.tomorrow === "delay" ? "運休など" : "")}</td>
         </tr>`
@@ -205,7 +233,7 @@
         const items = (g.items || [])
           .map(
             (i) => `<li>${badge(i.status, i.label)}
-              <span><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.route || g.name)}</a>
+              <span><a href="${esc(linkOr("chuobus", i.url, OFFICIAL.chuobus.url))}" target="_blank" rel="noopener">${esc(i.route || g.name)}</a>
               ${i.direction ? `（${esc(i.direction)}）` : ""}${i.time ? ` ${esc(i.time)}発` : ""}</span></li>`
           )
           .join("");
@@ -229,14 +257,14 @@
     const minor = items.filter((i) => HOKTO_MINOR.includes(i.id));
     const minorLine = minor.length
       ? `<p class="dl-minor">${minor
-          .map((i) => `<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)}</a> ${esc(i.label)}`)
+          .map((i) => `<a href="${esc(linkOr("hokto", i.url, OFFICIAL.hokto.url))}" target="_blank" rel="noopener">${esc(i.name)}</a> ${esc(i.label)}`)
           .join("／")}</p>`
       : "";
     const rows = items
       .filter((i) => !HOKTO_MINOR.includes(i.id))
       .map(
         (i) => `<li class="dl-row">
-          <span class="dl-row__name"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)}</a></span>
+          <span class="dl-row__name"><a href="${esc(linkOr("hokto", i.url, OFFICIAL.hokto.url))}" target="_blank" rel="noopener">${esc(i.name)}</a></span>
           ${badge(i.status, i.label)}
           ${i.about ? `<span class="dl-row__msg">${esc(i.about)}</span>` : ""}
         </li>`
@@ -262,7 +290,7 @@
     let extra = "";
     if (id === "silverferry") {
       label = svc.message;
-      if (svc.notice_url) msg = `<a href="${esc(svc.notice_url)}" target="_blank" rel="noopener">お知らせ</a>`;
+      if (svc.notice_url) msg = `<a href="${esc(linkOr("silverferry", svc.notice_url, OFFICIAL.silverferry.url))}" target="_blank" rel="noopener">お知らせ</a>`;
       // 欠航・遅延のお知らせから読んだ便ごとの状況（日付・出発港・時刻・船名）。平常時はない
       const list = svc.sailings || [];
       if (list.length) {
@@ -283,16 +311,16 @@
     } else {
       label = svc.notices?.length ? `運航状況のお知らせ ${svc.notices.length}件` : "運航状況のお知らせなし";
       msg = (svc.notices || [])
-        .map((n) => `<a href="${esc(n.url)}" target="_blank" rel="noopener">お知らせ（${esc(md(n.date))}）</a>`)
+        .map((n) => `<a href="${esc(linkOr("snf", n.url, SNF_LIST))}" target="_blank" rel="noopener">お知らせ（${esc(md(n.date))}）</a>`)
         .join("　");
     }
     const shown = svc.ok || svc.last_success_at;
     return `<li class="dl-row">
-      <span class="dl-row__name dl-line dl-line--${esc(id)}"><a href="${esc(svc.url)}" target="_blank" rel="noopener">${esc(svc.name)}</a></span>
+      <span class="dl-row__name dl-line dl-line--${esc(id)}"><a href="${esc(officialUrl(id))}" target="_blank" rel="noopener">${esc(svc.name)}</a></span>
       ${shown ? badge(svc.status, label) : ""}
       ${shown && msg ? `<span class="dl-row__msg">${msg}</span>` : ""}
       ${shown ? extra : ""}
-      ${staleNote(svc)}
+      ${staleNote(id, svc)}
     </li>`;
   }
   function renderFerry(services) {
@@ -407,22 +435,13 @@
     hokto: renderHokto,
   };
 
-  // Worker に一度もつながらなかったとき（前回の内容もない）に出す公式リンク。名前と URL は worker/src/collect.js の SOURCES と合わせる
-  const OFFICIAL = [
-    { name: "JR北海道", url: "https://www3.jrhokkaido.co.jp/webunkou/" },
-    { name: "札幌市営地下鉄", url: "https://operationstatus.city.sapporo.jp/unkojoho/" },
-    { name: "新千歳空港（国内線）", url: "https://www.hokkaido-airports.com/ja/new-chitose/airport/fis/" },
-    { name: "高速道路（アイハイウェイ）", url: "https://ihighway.jp/" },
-    { name: "北海道中央バス", url: "https://www.chuo-bus.co.jp/support/stop/" },
-    { name: "北都交通", url: "https://www.hokto.co.jp/" },
-    { name: "シルバーフェリー（八戸〜苫小牧）", url: "https://www.silverferry.jp/" },
-    { name: "さんふらわあ（大洗〜苫小牧）", url: "https://www.sunflower.co.jp/" },
-    { name: "新日本海フェリー（舞鶴・敦賀・新潟・秋田〜小樽・苫小牧東）", url: "https://www.snf.jp/" },
-  ];
+  // Worker に一度もつながらなかったとき（前回の内容もない）に出す公式リンク
   const officialLinks = () =>
     `<section class="dl-card">
       <h2 class="dl-card__title">各社の公式の運行情報</h2>
-      <ul class="dl-links">${OFFICIAL.map((o) => `<li><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.name)}</a></li>`).join("")}</ul>
+      <ul class="dl-links">${Object.values(OFFICIAL)
+        .map((o) => `<li><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.name)}</a></li>`)
+        .join("")}</ul>
     </section>`;
 
   function render(data) {
@@ -453,11 +472,48 @@
         .join("") + renderFerry(data.services || {});
   }
 
+  // Worker は日本国内のネットワークにだけ返し、国外と判定すると 403（error: "region"）を返す（自国の SIM でローミング中・VPN など）
+  // そのときは位置情報の許可をもらい、約10km単位に丸めた現在地を付けて取り直す
+  let coords = null;
+  const endpoint = () => (coords ? `${source}${source.includes("?") ? "&" : "?"}lat=${coords.lat}&lon=${coords.lon}` : source);
+  const locateFailed = () => {
+    $banners.innerHTML = `<p class="dl-banner">位置情報を使えなかったため、運行情報を表示できません。各社の公式情報を確認してください。</p>`;
+  };
+  function locate() {
+    if (!navigator.geolocation) return locateFailed();
+    const round = (v) => Math.round(v * 10) / 10;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        coords = { lat: round(pos.coords.latitude), lon: round(pos.coords.longitude) };
+        load();
+      },
+      locateFailed,
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * 60 * 1000 }
+    );
+  }
+  async function region() {
+    if (coords) {
+      $banners.innerHTML = `<p class="dl-banner">現在地が日本国外と判定されたため、運行情報を表示できません。各社の公式情報を確認してください。</p>`;
+    } else {
+      $banners.innerHTML = `<p class="dl-banner">日本国外のネットワーク（海外の SIM のローミング・VPN など）からの接続と判定されたため、運行情報を表示できません。日本国内にいる場合は、おおよその現在地（約10km単位）で確かめられます。
+        <button type="button" class="dl-head__reload dl-banner__btn" data-locate>現在地で確かめる</button></p>`;
+      // すでに許可されていれば、ボタンを押さなくても確かめる
+      const state = await navigator.permissions?.query({ name: "geolocation" }).then((p) => p.state, () => "");
+      if (state === "granted") locate();
+    }
+    if (!last) {
+      $updated.textContent = "表示できません";
+      $sections.innerHTML = officialLinks();
+    }
+  }
+  $banners.addEventListener("click", (ev) => ev.target.closest?.("[data-locate]") && locate());
+
   let last = null;
   async function load() {
     $reload.disabled = true;
     try {
-      const res = await fetch(source, { cache: "no-cache" });
+      const res = await fetch(endpoint(), { cache: "no-cache" });
+      if (res.status === 403 && (await res.json().catch(() => null))?.error === "region") return await region();
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       last = await res.json();
       render(last);

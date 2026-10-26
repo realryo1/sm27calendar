@@ -16,6 +16,37 @@ const HEALTH_FAIL_COUNT = 3;
 const SITE_ORIGIN = "https://realryo1.github.io";
 const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
+// /status.json は日本国内のネットワーク（Cloudflare の判定した国が JP）にだけ返す
+// 国外と判定された人（自国の SIM でローミング中など）には、ページが位置情報の許可を求め、約10km単位に丸めた現在地を ?lat=&lon= で付けてくる
+// 座標も偽れるので、これも節度としての制限。範囲は朝鮮半島・台湾・中国・ロシアにかからない大まかな矩形を重ねたもの [南, 北, 西, 東]
+const JAPAN = [
+  [41.3, 45.7, 139.3, 149], // 北海道
+  [26, 41.6, 132, 154], // 本州（広島・島根東部より東）・四国・小笠原
+  [33.8, 35.8, 130.8, 132], // 山口・島根西部
+  [30, 34, 128.5, 132], // 九州・五島・壱岐
+  [34, 34.75, 129.1, 129.6], // 対馬
+  [24, 30, 122.9, 131.5], // 沖縄・奄美・先島・大東
+];
+
+function inJapan(request, url) {
+  if (request.cf?.country === "JP") return true;
+  const lat = Number(url.searchParams.get("lat"));
+  const lon = Number(url.searchParams.get("lon"));
+  return JAPAN.some(([s, n, w, e]) => lat >= s && lat <= n && lon >= w && lon <= e);
+}
+
+// KV の読み取りを抑えるため、isolate のメモリに60秒持つ（Cron が5分ごとなので十分新しい）
+// workers.dev では Cache API が効かないため、エッジのキャッシュではなくメモリで持つ
+const MEMO_MS = 60 * 1000;
+let memo = null;
+
+async function readStatus(env) {
+  if (memo && Date.now() - memo.at < MEMO_MS) return memo.body;
+  const body = await env.DELAY_KV.get(KEY).catch(() => null);
+  if (body) memo = { body, at: Date.now() };
+  return body || memo?.body || null;
+}
+
 function allowedOrigin(request) {
   const origin = request.headers.get("Origin");
   if (origin) return origin === SITE_ORIGIN || LOCAL_ORIGIN.test(origin) ? origin : null;
@@ -76,36 +107,36 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     // wrangler dev（localhost:8787）では curl などでそのまま見られるようにする
-    const origin = LOCAL_ORIGIN.test(url.origin) ? request.headers.get("Origin") || "*" : allowedOrigin(request);
+    const local = LOCAL_ORIGIN.test(url.origin);
+    const origin = local ? request.headers.get("Origin") || "*" : allowedOrigin(request);
 
     if (request.method === "OPTIONS") {
       return origin ? new Response(null, { status: 204, headers: cors(origin) }) : new Response(null, { status: 403 });
     }
     if (request.method !== "GET") return json('{"error":"method not allowed"}', 405, "no-store");
 
-    // /health は外部の監視（Origin も Referer もない）から見るので制限しない。CORS ヘッダーも付けない
+    // 連打や機械的な取得だけを弾く（IP ごと・Cloudflare の拠点ごとの大まかな数え方）。携帯回線や会場の Wi-Fi は大勢で IP を共有するのでゆるめにしている
+    // Worker の中で弾いても Workers のリクエスト数は減らない（減るのは KV の読み取りだけ）。バインディングがなければ制限しない
+    if (env.RATE_LIMITER) {
+      const { success } = await env.RATE_LIMITER.limit({ key: request.headers.get("CF-Connecting-IP") || "unknown" });
+      if (!success) return json('{"error":"too many requests"}', 429, "no-store", origin ? cors(origin) : {});
+    }
+
+    // /health は外部の監視（Origin も Referer もなく、国外からのこともある）から見るので制限しない。CORS ヘッダーも付けない
     if (url.pathname === "/health") {
-      const data = await env.DELAY_KV.get(KEY, "json").catch(() => null);
-      if (!data) return json('{"ok":false,"problems":["KV にデータがない"]}', 503, "no-store");
-      const h = health(data);
+      const body = await readStatus(env);
+      if (!body) return json('{"ok":false,"problems":["KV にデータがない"]}', 503, "no-store");
+      const h = health(JSON.parse(body));
       return json(JSON.stringify(h), h.ok ? 200 : 503, "no-store");
     }
     if (url.pathname !== "/" && url.pathname !== "/status.json") return json('{"error":"not found"}', 404, "no-store");
     if (!origin) return json('{"error":"forbidden"}', 403, "no-store");
+    // ページが位置情報の確認に進めるよう、CORS ヘッダーを付けて理由（region）を返す
+    if (!local && !inJapan(request, url)) return json('{"error":"region"}', 403, "no-store", cors(origin));
 
-    // エッジのキャッシュで KV の読み取り回数も抑える（Cron が5分ごとなので60秒で十分新しい）
-    // キャッシュには CORS ヘッダーを付けずに入れ、返すときに相手の Origin を付ける
-    const cacheKey = new Request(`${url.origin}/status.json`);
-    const cache = caches.default;
-    const hit = await cache.match(cacheKey);
-    if (hit) return new Response(hit.body, { status: hit.status, headers: { ...Object.fromEntries(hit.headers), ...cors(origin) } });
-
-    const body = await env.DELAY_KV.get(KEY).catch(() => null);
+    const body = await readStatus(env);
     // 初回デプロイ直後で Cron がまだ一度も動いていないときは 503（ここで事業者へ取りに行くことはしない）
     if (!body) return json('{"error":"not ready"}', 503, "no-store", cors(origin));
-
-    const cacheControl = "public, max-age=60, stale-while-revalidate=300";
-    ctx.waitUntil(cache.put(cacheKey, json(body, 200, cacheControl)));
-    return json(body, 200, cacheControl, cors(origin));
+    return json(body, 200, "public, max-age=60, stale-while-revalidate=300", cors(origin));
   },
 };

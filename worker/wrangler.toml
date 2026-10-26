@@ -2,6 +2,11 @@ name = "sm27-delay"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
+# 独自ドメイン（Cloudflare Registrar で取得した realryo1.com）。WAF のレート制限を Worker の手前で効かせるため
+# workers.dev は移行が済むまで残す（ページと /health の監視を新しい URL に替えたら false にする。残すと WAF を通らずに叩けるため）
+routes = [{ pattern = "delay.realryo1.com", custom_domain = true }]
+workers_dev = true
+
 # 5分ごとに収集（無料枠の KV 書き込みは1日1,000回まで。5分ごとなら1日288回）
 # 新千歳空港の FIS が毎時 :01, :06, … に更新されるので、その直後の :02, :07, … に取りに行く
 # 間隔を変えるときは src/index.js の INTERVAL_MIN も合わせる
@@ -16,3 +21,14 @@ enabled = true
 [[kv_namespaces]]
 binding = "DELAY_KV"
 id = "637a26b40a414273ab5e6b8711f70bc8"
+
+# IP ごとのレート制限（src/index.js の RATE_LIMITER）。10秒に60回まで（period は 10 か 60 だけ）
+# 携帯回線や会場の Wi-Fi は大勢で IP を共有するので、連打や機械的な取得だけを弾く値にしている
+# namespace_id はアカウント内で重ならない正の整数
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 60
+  period = 10
