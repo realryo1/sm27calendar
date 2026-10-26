@@ -13,7 +13,7 @@
   "theme_color": "#ffffff",
   "categories": ["entertainment", "travel", "music"],
   "icons": [
-    { "src": "image/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "image/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "image/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [

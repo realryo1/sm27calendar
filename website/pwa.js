@@ -28,7 +28,7 @@
 
   function show(html) {
     $card.innerHTML = `
-      <img class="install__icon" src="image/icon-512.png" alt="" width="48" height="48">
+      <img class="install__icon" src="image/icon-maskable-512.png" alt="" width="48" height="48">
       <div class="install__body">${html}</div>
       <button type="button" class="install__close" aria-label="閉じる">×</button>`;
     $card.hidden = false;
