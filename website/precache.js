@@ -14,5 +14,6 @@ self.PRECACHE = [
   "favicon.ico",
   "image/favicon-32.png",
   "image/icon-512.png",
+  "image/icon-maskable-512.png",
   "image/souchou.png",
 ];
