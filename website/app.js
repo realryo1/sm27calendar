@@ -25,16 +25,21 @@
     // 幅の下限は px で決める（2カラムは幅641px〜。横向きのスマホやiPad miniでも、時間割・会場一覧とも読める幅を残す）
     const MIN_BOARD = 300;
     const MIN_SIDE = 260;
+    // .main の位置と幅はドラッグ中は変わらないので押した時に1回だけ測る（動かすたびに測ると、直前の幅の変更をその場でレイアウトさせて重い）
+    let rect = null;
     const setW = (pct, save) => {
-      const total = $main.clientWidth || window.innerWidth;
+      const total = rect?.width || $main.clientWidth || window.innerWidth;
       const lo = (MIN_BOARD / total) * 100;
       const hi = 100 - ((MIN_SIDE + 16) / total) * 100;
-      const w = Math.round(Math.min(hi, Math.max(lo, pct)) * 10) / 10;
+      // 表示は丸めない（0.1% 刻みだと、ゆっくり動かしたとき 1〜2px ずつ段になって動く）。覚えるときだけ丸める
+      const w = Math.min(hi, Math.max(lo, pct));
       $main.style.setProperty("--board-w", `${w}%`);
       $split.setAttribute("aria-valuenow", String(Math.round(w)));
       if (!save) return;
+      // 幅が決まったら、予定カードの収まりを測り直す（ドラッグ中は重いので測らない。下の fitEvents）
+      $split.dispatchEvent(new Event("resized"));
       try {
-        localStorage.setItem(KEY, String(w));
+        localStorage.setItem(KEY, String(Math.round(w * 10) / 10));
       } catch {
         // 保存できなくても、幅は変えられる
       }
@@ -48,24 +53,57 @@
     setW(Number.isFinite(saved) ? saved : 50, false);
     // 持ち手の列（16px）の中央を指の位置に合わせる
     const pctAt = (x) => {
-      const r = $main.getBoundingClientRect();
+      const r = rect ?? $main.getBoundingClientRect();
       return ((x - r.left - 8) / r.width) * 100;
     };
+    // ドラッグ中は会場カードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（時間割だけを毎フレーム組み直す。style.css の .is-frozen）。
+    // 動かす手を止めたら（SETTLE ms）、その幅で中身も組み直す
+    const $side = $main.querySelector(".main__inner");
+    const SETTLE = 200;
+    let settle = 0;
+    const freeze = () => {
+      if ($side.classList.contains("is-frozen")) return;
+      $side.querySelectorAll(".venue-card").forEach((card) => {
+        const cs = getComputedStyle(card);
+        card.style.setProperty("--cw", `${card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)}px`);
+      });
+      $side.classList.add("is-frozen");
+    };
+    const thaw = () => $side.classList.remove("is-frozen");
+    // 幅の変更は1フレームに1回だけにまとめる
+    let moveX = 0;
+    let moveRaf = 0;
     $split.addEventListener("pointerdown", (ev) => {
       ev.preventDefault();
+      rect = $main.getBoundingClientRect();
+      freeze();
       $split.setPointerCapture(ev.pointerId);
       $split.classList.add("is-dragging");
-      $main.classList.add("is-resizing");
+      document.documentElement.classList.add("is-resizing");
     });
     $split.addEventListener("pointermove", (ev) => {
-      if ($split.hasPointerCapture(ev.pointerId)) setW(pctAt(ev.clientX), false);
+      if (!$split.hasPointerCapture(ev.pointerId)) return;
+      moveX = ev.clientX;
+      if (!moveRaf)
+        moveRaf = requestAnimationFrame(() => {
+          moveRaf = 0;
+          freeze();
+          setW(pctAt(moveX), false);
+          clearTimeout(settle);
+          settle = setTimeout(thaw, SETTLE);
+        });
     });
     const end = (ev) => {
       if (!$split.hasPointerCapture(ev.pointerId)) return;
+      cancelAnimationFrame(moveRaf);
+      moveRaf = 0;
+      clearTimeout(settle);
+      thaw();
       $split.releasePointerCapture(ev.pointerId);
       $split.classList.remove("is-dragging");
-      $main.classList.remove("is-resizing");
+      document.documentElement.classList.remove("is-resizing");
       setW(pctAt(ev.clientX), true);
+      rect = null;
     };
     $split.addEventListener("pointerup", end);
     $split.addEventListener("pointercancel", end);
@@ -919,6 +957,7 @@
     fitEvents();
     fitTail();
   });
+  document.getElementById("split")?.addEventListener("resized", fitEvents);
   // Webフォント読み込みで文字の大きさが変わるため（フォントの CSS は後から非同期で読み込むので、読み込み完了のたびに測り直す）
   document.fonts?.ready.then(fitEvents);
   document.fonts?.addEventListener?.("loadingdone", fitEvents);

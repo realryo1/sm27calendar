@@ -68,12 +68,20 @@ body {
   letter-spacing: .04em;
   font-feature-settings: "palt";
   color: var(--col-ink);
+  background: var(--col-secondary-lighter);
+  min-height: 100vh;
+}
+/* 背景のぼかしは画面に固定した別のレイヤーに描く（background-attachment: fixed だと、スクロールや持ち手のドラッグのたびに画面全体を描き直すため） */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background:
     radial-gradient(circle at 10% 0%, var(--col-primary-light) 0, transparent 40%),
-    radial-gradient(circle at 100% 20%, var(--col-secondary-light) 0, transparent 35%),
-    var(--col-secondary-lighter);
-  background-attachment: fixed;
-  min-height: 100vh;
+    radial-gradient(circle at 100% 20%, var(--col-secondary-light) 0, transparent 35%);
+  will-change: transform;
+  pointer-events: none;
 }
 
 button { font: inherit; color: inherit; }
@@ -95,6 +103,12 @@ button { font: inherit; color: inherit; }
 }
 @media (max-width: 640px) {
   .board { padding: 0 0 8px; } /* 上左右の余白をなくし、表を画面いっぱいに使う */
+}
+/* 時間割の幅（持ち手で変える）。継承しないプロパティとして登録し、ドラッグ中に変えても .main 以外のスタイルを計算し直さないようにする */
+@property --board-w {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 50%;
 }
 /* 2カラム：左に時間割（画面に固定）、右に会場一覧（こちらだけスクロール）。
    スマホ表示（640px以下）でなければ2カラムにする（iPad mini・折りたたみスマホを開いたとき・横向きのスマホも） */
@@ -145,7 +159,39 @@ button { font: inherit; color: inherit; }
   .split:hover::before,
   .split:focus-visible::before,
   .split.is-dragging::before { height: 72px; background: var(--col-primary); }
-  .main.is-resizing { cursor: col-resize; user-select: none; }
+  /* ドラッグ中（app.js が html に .is-resizing を付ける）は、毎フレームの描き直しが重い装飾を止め、離したら戻す */
+  /* 止めるのは動いている要素だけに絞る（* にすると、クラスの付け外しのたびに全要素のスタイルを計算し直して重い） */
+  .is-resizing .tl-sign__num,
+  .is-resizing .tl-map__heading path,
+  .is-resizing .tl-map__pulse { animation-play-state: paused; }
+  .is-resizing .venue-card--fan { -webkit-text-stroke: 0; }
+  /* 会場カードは枠だけ幅に合わせ、中身は押した時の幅（--cw、app.js の freeze）のまま組み直さない。縮めたら見切れ、広げたら右が空く。
+     手を止めたら（.is-frozen が外れたら）中身も組み直す */
+  .is-frozen .venue-card { overflow: clip; } /* hidden だとスクロール領域になり、中の貼り付き（.tl-side）が効かなくなる */
+  .is-frozen,
+  .is-frozen .venue-card { min-width: 0; } /* 中身の幅で列が縮まなくならないように（グリッドの最小幅は中身の幅になるため） */
+  .is-frozen .venue-card > * { width: var(--cw); }
+  .is-frozen .venue-card--live > .train-live { width: calc(var(--cw) + 2 * var(--pad)); } /* 左右の余白まで広げている分 */
+  /* 市電の欄の破線と白地は枠の一部として、カードの幅いっぱいに描き直す（欄そのものの幅を変えると、中のコンテナクエリで路線図まで組み直して重い）。
+     疑似要素をカード基準で左右いっぱいに置き、欄の上端（枠線1px＋上の余白14px）まで引き上げる。下にはみ出した分はカードの overflow: clip で切れる */
+  .is-frozen .venue-card--live { position: relative; z-index: 0; }
+  .is-frozen .venue-card--live > .train-live { border-top-color: transparent; background: none; }
+  .is-frozen .venue-card--live > .train-live::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    height: 100%;
+    margin-top: -15px;
+    border-top: 1px dashed var(--c-light);
+    background: var(--col-paper);
+  }
+  /* 会場一覧は独立したレイヤーにして、横に動いても中身を描き直さない。
+     レイヤーを作った最初のフレームは描画が重いので、持ち手にマウスが乗った時点で先に作っておく */
+  .main:has(> .split:hover) .main__inner,
+  .is-resizing .main__inner { will-change: transform; }
+  .is-resizing .tt-fan { background-repeat: repeat; } /* 市松のマスを列幅に合わせて伸縮させない */
 }
 /* スマホ表示（1カラム）のときは持ち手を出さない */
 @media (max-width: 640px) {
@@ -424,7 +470,7 @@ button { font: inherit; color: inherit; }
   .tt-head__letter { font-size: 1rem; }
   /* 会場名は改行せず1行で、見出しの幅に収まる大きさに自動で縮める（--nl は app.js が出す名前の幅の目安） */
   .tt-head__name {
-    font-size: clamp(.5rem, calc((100cqw - 44px) / var(--nl)), .85rem);
+    font-size: round(down, clamp(.5rem, calc((100cqw - 44px) / var(--nl)), .85rem), 1px);
     line-height: 1.3;
   }
   /* 下段は見出しの左右いっぱいに広げた帯。グラデーションは使わない */
@@ -440,7 +486,7 @@ button { font: inherit; color: inherit; }
     border-radius: 0;
     /* 帯の文字は改行させず、幅に応じて小さくする */
     white-space: nowrap;
-    font-size: clamp(.6rem, 6cqw, .8rem);
+    font-size: round(clamp(.6rem, 6cqw, .8rem), 1px);
     line-height: 1.3;
   }
   .tt-head .tt-head__kind--official { font-weight: 700; background: var(--c-light); }
@@ -604,10 +650,10 @@ button { font: inherit; color: inherit; }
 
 .tt-col {
   position: relative;
-  /* 30分ごとの白線＋1時間ごとの濃い線 */
+  /* 30分ごとの白線＋1時間ごとの濃い線。1時間分の模様を小さなタイルにして敷き詰める
+     （タイルの幅を列幅に合わせたり repeating-linear-gradient を使ったりすると、持ち手のドラッグ中に毎フレーム模様を作り直して重い。幅 8px は模様に関係しない） */
   background:
-    repeating-linear-gradient(to bottom, var(--c-light) 0 1px, transparent 1px var(--hour)),
-    repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) / 2 - 1px), var(--col-paper) calc(var(--hour) / 2 - 1px) calc(var(--hour) / 2)),
+    linear-gradient(to bottom, var(--c-light) 0 1px, transparent 1px calc(50% - 1px), var(--col-paper) 0 50%, transparent 0) 0 0 / 8px var(--hour),
     var(--c-tint);
   border-radius: 0 0 10px 10px;
 }
@@ -617,15 +663,15 @@ button { font: inherit; color: inherit; }
 /* 非公式の会場の列：背景を市松模様にして、チェックの片側を白く色抜きする */
 .tt-fan {
   background:
-    repeating-linear-gradient(to bottom, var(--c-light) 0 1px, transparent 1px var(--hour)),
-    repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) / 2 - 1px), var(--col-paper) calc(var(--hour) / 2 - 1px) calc(var(--hour) / 2)),
+    linear-gradient(to bottom, var(--c-light) 0 1px, transparent 1px calc(50% - 1px), var(--col-paper) 0 50%, transparent 0) 0 0 / 8px var(--hour),
     conic-gradient(var(--c-tint) 25%, var(--col-paper) 0 50%, var(--c-tint) 0 75%, var(--col-paper) 0) 0 0 / 24px 24px round; /* round でマスの数が整数になり、列幅の端がぴったり揃う */
 }
 
 /* ---------- Event block ---------- */
 .ev {
   position: absolute;
-  container-type: size; /* 文字は予定の幅（cqw）に比例し、高さ（cqh）にも収まるよう min() で抑える。上限は各 clamp の第3引数 */
+  container-type: size; /* 文字は予定の幅（cqw）に比例し、高さ（cqh）にも収まるよう min() で抑える。上限は各 clamp の第3引数。
+                           cqw の文字サイズは round(…, 1px) で1px刻みにする（持ち手のドラッグ中、毎フレーム半端な大きさで文字を組み直すと重いため。駅名標・会場見出しも同じ） */
   left: 6px;
   right: 6px;
   display: flex;
@@ -675,7 +721,7 @@ button { font: inherit; color: inherit; }
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: clamp(.55rem, min(5cqw, 7cqh), .95rem);
+  font-size: round(clamp(.55rem, min(5cqw, 7cqh), .95rem), 1px);
   color: var(--c-dark);
   background: repeating-linear-gradient(-45deg, var(--c-tint) 0 6px, var(--col-paper) 6px 12px);
   border-bottom: 1px dashed var(--c);
@@ -700,7 +746,7 @@ button { font: inherit; color: inherit; }
   text-align: center;
   word-break: keep-all; /* 「時間<wbr>未発表」など、<wbr> の位置でだけ折る */
   font-family: var(--font-display);
-  font-size: clamp(.58rem, min(5.2cqw, 8cqh), 1rem);
+  font-size: round(clamp(.58rem, min(5.2cqw, 8cqh), 1rem), 1px);
   letter-spacing: .02em;
   color: var(--col-paper);
   background: var(--c);
@@ -709,12 +755,12 @@ button { font: inherit; color: inherit; }
 .ev .badge {
   padding: 1px 8px;
   border-radius: 999px;
-  font-size: clamp(.58rem, min(5.2cqw, 8cqh), 1rem);
+  font-size: round(clamp(.58rem, min(5.2cqw, 8cqh), 1rem), 1px);
   letter-spacing: .02em;
   line-height: inherit;
 }
-.ev__title { font-weight: 900; font-size: clamp(.83rem, min(7.5cqw, 10.5cqh), 1.43rem); line-height: 1.3; color: var(--c-dark); word-break: keep-all; overflow-wrap: anywhere; } /* 日本語を文字の途中で折らず、スペースの位置で折る（収まらない時だけ強制折り返し） */
-.ev__sub { font-size: clamp(.6rem, min(5.6cqw, 9cqh), 1.05rem); font-weight: 700; }
+.ev__title { font-weight: 900; font-size: round(clamp(.83rem, min(7.5cqw, 10.5cqh), 1.43rem), 1px); line-height: 1.3; color: var(--c-dark); word-break: keep-all; overflow-wrap: anywhere; } /* 日本語を文字の途中で折らず、スペースの位置で折る（収まらない時だけ強制折り返し） */
+.ev__sub { font-size: round(clamp(.6rem, min(5.6cqw, 9cqh), 1.05rem), 1px); font-weight: 700; }
 /* 時間・サブタイトル（昼公演など）・バッジ（公式など）は横並び。収まらない幅では折り返す */
 .ev__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5px 6px; margin-bottom: 2px; } /* チップが縦に重なったときも、チップ同士とタイトルとの間隔が近くなるよう行間を広めに */
 .ev__badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
@@ -741,7 +787,7 @@ button { font: inherit; color: inherit; }
   padding: 2px 4px; /* 細い列では左右の余白を詰めて、折り返さず横に収める */
   white-space: nowrap;
   border-radius: 999px;
-  font-size: clamp(.7rem, min(6.5cqw, 10cqh), 1.2rem);
+  font-size: round(clamp(.7rem, min(6.5cqw, 10cqh), 1.2rem), 1px);
   letter-spacing: min(.08em, .5cqw);
   color: var(--col-paper);
   background: var(--col-fan);
@@ -864,7 +910,7 @@ button { font: inherit; color: inherit; }
   left: 0;
   right: 0;
   height: 0;
-  font-size: clamp(.55rem, min(5cqw, 7cqh), .95rem);
+  font-size: round(clamp(.55rem, min(5cqw, 7cqh), .95rem), 1px);
   font-weight: 700;
   line-height: 1;
   color: #fff;
@@ -1180,8 +1226,8 @@ button { font: inherit; color: inherit; }
   padding: 0 8cqw;
   background: var(--line);
 }
-.tl-sign__name { margin: 0; text-align: center; font-size: 7cqw; font-weight: 900; line-height: 1.1; letter-spacing: .1em; }
-.tl-sign__roma { margin: .6cqw 0 0; text-align: center; font-size: min(3cqw, calc(80cqw / var(--rlen, 20))); font-weight: 700; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
+.tl-sign__name { margin: 0; text-align: center; font-size: round(7cqw, 1px); font-weight: 900; line-height: 1.1; letter-spacing: .1em; }
+.tl-sign__roma { margin: .6cqw 0 0; text-align: center; font-size: round(down, min(3cqw, calc(80cqw / var(--rlen, 20))), 1px); font-weight: 700; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
 
 /* 各駅の真上の時刻（前駅・当駅・次駅）。当駅は大きな丸の分だけ上に出る */
 .tl-sign__times {
@@ -1194,15 +1240,15 @@ button { font: inherit; color: inherit; }
   height: 7cqw;
   padding: 2cqw var(--mid-pad) 0;
   text-align: center;
-  font-size: 5cqw;
+  font-size: round(5cqw, 1px);
   font-weight: 900;
   line-height: 1.2;
 }
 .tl-sign__times span { margin-top: 2.6cqw; }
 .tl-sign__times span:last-child { transform: translateX(-4cqw); }
-.tl-sign__times small { margin-left: .8cqw; font-size: 2.3cqw; font-weight: 700; opacity: .75; }
-.tl-sign__times .is-cur { margin-top: 0; font-size: 6cqw; color: #c8322c; }
-.tl-sign__times .is-cur small { font-size: 2.6cqw; opacity: 1; }
+.tl-sign__times small { margin-left: .8cqw; font-size: round(2.3cqw, 1px); font-weight: 700; opacity: .75; }
+.tl-sign__times .is-cur { margin-top: 0; font-size: round(6cqw, 1px); color: #c8322c; }
+.tl-sign__times .is-cur small { font-size: round(2.6cqw, 1px); opacity: 1; }
 
 .tl-sign__mid {
   --mid-pad: 3cqw;
@@ -1257,7 +1303,7 @@ button { font: inherit; color: inherit; }
   margin-top: 2.3cqw;
   border: .9cqw solid var(--line);
   border-radius: 50%;
-  font-size: 1.9cqw;
+  font-size: round(1.9cqw, 1px);
   font-weight: 900;
   line-height: 1.05;
   background: #fff;
@@ -1267,12 +1313,12 @@ button { font: inherit; color: inherit; }
   height: 11cqw;
   margin-top: 0;
   border: 1.1cqw solid #e2403a;
-  font-size: 4cqw;
+  font-size: round(4cqw, 1px);
 }
 .tl-sign.is-here .tl-sign__st--cur .tl-sign__num { animation: tl-here 1.6s ease-in-out infinite; }
 @keyframes tl-here { 50% { box-shadow: 0 0 0 2cqw rgb(226 64 58 / .25); } }
-.tl-sign__st b { margin-top: .8cqw; font-size: min(3.4cqw, calc(26cqw / var(--len, 4))); font-weight: 900; white-space: nowrap; }
-.tl-sign__st small { margin-top: .3cqw; font-size: 2.3cqw; font-weight: 500; white-space: nowrap; }
+.tl-sign__st b { margin-top: .8cqw; font-size: round(down, min(3.4cqw, calc(26cqw / var(--len, 4))), 1px); font-weight: 900; white-space: nowrap; }
+.tl-sign__st small { margin-top: .3cqw; font-size: round(2.3cqw, 1px); font-weight: 500; white-space: nowrap; }
 /* 次駅は少し左へ寄せる（見本どおり、右端の矢印との間をあける） */
 .tl-sign__st--next { transform: translateX(-4cqw); }
 /* 1行に収まらないほど長い名前だけ折り返す */
@@ -1294,7 +1340,7 @@ button { font: inherit; color: inherit; }
   margin: 0 2.7cqw 2.2cqw;
   padding: .7cqw;
   border-radius: 999px;
-  font-size: 3.4cqw;
+  font-size: round(3.4cqw, 1px);
   font-weight: 900;
   line-height: 1.2;
   text-align: center;
@@ -1310,7 +1356,8 @@ button { font: inherit; color: inherit; }
 .tl-map-wrap { min-width: 0; padding: 0 5px; }
 /* スマホ用の横幅をつめた配置（画面幅に収めたうえで文字を少し大きく） */
 /* PC・スマホ共通。PCでも大きく引き伸ばさない */
-.tl-map { display: block; max-height: 750px; margin: 0 auto; overflow: visible; font-family: var(--font-base); }
+/* text-rendering: geometricPrecision：地図の拡大率が変わるたびに文字を組み直さない（持ち手のドラッグ中に重くなるため） */
+.tl-map { display: block; max-height: 750px; margin: 0 auto; overflow: visible; font-family: var(--font-base); text-rendering: geometricPrecision; }
 /* 目安の地下鉄と Zepp Sapporo（市電より控えめに） */
 .tl-sub__line line,
 .tl-sub__line polyline { fill: none; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
