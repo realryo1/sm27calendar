@@ -17,8 +17,6 @@
   const $venueList = document.getElementById("venueList");
   const $toBoard = document.getElementById("toBoard");
 
-  // 凡例は時間割（.tt-scroll）の下にある。641px 以上では日付ボタンの帯が .board の下端に浮くので、
-  // 凡例の高さ（幅で折り返して変わる）を --legend-h に入れ、帯をその分だけ上へずらす（style.css の .day-nav）
   // 2カラム表示の持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）で時間割の幅を変え、この端末に覚える
   const $split = document.getElementById("split");
   if ($split) {
@@ -80,11 +78,6 @@
       ev.preventDefault();
       setW(parseFloat($main.style.getPropertyValue("--board-w")) + step, true);
     });
-  }
-
-  const $legend = document.getElementById("legend");
-  if ($legend && "ResizeObserver" in window) {
-    new ResizeObserver(() => $legend.parentElement.style.setProperty("--legend-h", `${$legend.offsetHeight}px`)).observe($legend);
   }
 
   const toHour = (hhmm) => {

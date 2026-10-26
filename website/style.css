@@ -240,7 +240,7 @@ button { font: inherit; color: inherit; }
   .day-nav {
     position: absolute; /* .board 基準＝表の右下 */
     right: 28px; /* 表の縦スクロールバーを避ける */
-    bottom: calc(var(--legend-h, 0px) + 20px); /* 表の下の凡例の上に浮かせる（--legend-h は app.js が入れる） */
+    bottom: 20px;
     z-index: 20;
     width: min(360px, calc(100% - 44px)); /* 2カラムで時間割が狭いときは縮める（ボタンは flex で等分） */
     padding: 8px;
@@ -251,23 +251,12 @@ button { font: inherit; color: inherit; }
   }
   .to-board { display: none; } /* 表は常に左に見えているので不要 */
 }
-/* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中でタイトル・凡例・日付ボタンが高さを使い切らないよう詰める */
+/* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中でタイトル・日付ボタンが高さを使い切らないよう詰める */
 @media (min-width: 641px) and (max-height: 500px) {
   .board, .split { top: 8px; height: calc(100svh - 16px); height: calc(100dvh - 16px); }
   .board .day-nav__title { padding: 8px 12px 0; font-size: .85rem; }
-  /* 凡例・日付ボタンの基本の指定はこの後ろにあるので、.board を付けて優先させる。凡例は1行にまとめ、はみ出す分は横にスクロール */
-  .board .legend {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 14px;
-    padding: 4px 12px;
-    overflow-x: auto;
-    font-size: .7rem;
-    white-space: nowrap;
-    scrollbar-width: none;
-  }
-  .board .legend li { flex: none; }
-  .board .day-nav { bottom: calc(var(--legend-h, 0px) + 8px); padding: 4px; gap: 4px; }
+  /* 日付ボタンの基本の指定はこの後ろにあるので、.board を付けて優先させる */
+  .board .day-nav { bottom: 8px; padding: 4px; gap: 4px; }
   .board .day-chip { min-height: 34px; }
   .board .day-chip__date { font-size: .9rem; }
 }
@@ -950,10 +939,9 @@ button { font: inherit; color: inherit; }
   justify-content: center;
   gap: 8px 18px;
   margin: 0;
-  padding: 8px 12px;
+  padding: 0 0 12px; /* フッターの先頭に置く */
   list-style: none;
   font-size: .78rem;
-  border-top: 1px solid var(--col-secondary-lighter); /* 時間割（.tt-scroll）のすぐ下に置くので、表との境目に線を引く */
 }
 .legend li { display: flex; align-items: center; gap: 6px; }
 .legend__open {
