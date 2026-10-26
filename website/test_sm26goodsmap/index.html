@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- 末尾スラッシュを強制する（カレンダーの index.html と同じ）。無いと相対パスが1階層上を指して壊れる -->
+  <script>
+    if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
+  </script>
+  <!-- 試験ページ：検索に載せない。カレンダーからはリンクしない。PWA の対象外（sw.js は test_ で始まるフォルダをキャッシュしない） -->
+  <meta name="robots" content="noindex">
+  <title>ウイングベイ出展ブースマップ（試験版）</title>
+  <meta name="description" content="ウイングベイ小樽の出展ブースで売っているものを、会場マップと出展企業ごとにまとめた非公式ページの試験版。">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="../favicon.ico" sizes="48x48">
+  <link rel="icon" href="../image/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- フォントの CSS は表示を止めないよう非同期で読み込む（カレンダーと同じ） -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
+  <!-- 配色・フォント・背景・フッターはカレンダーの style.css をそのまま使う（変えたときに、このページも一緒に変わるように） -->
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="goodsmap.css">
+  <!-- 年ごとのデータ。27年の情報が出たら data-2027.js を作って差し替える -->
+  <script src="data-2026.js" defer></script>
+  <script src="goodsmap.js" defer></script>
+</head>
+<body>
+  <div class="gm">
+    <header class="gm-hero">
+      <p class="gm-notice" id="gmNotice" hidden></p>
+      <p class="gm-hero__brand" id="gmBrand"></p>
+      <h1 class="gm-hero__title" id="gmTitle"></h1>
+      <ul class="gm-hero__meta" id="gmMeta"></ul>
+      <nav class="gm-hero__nav" id="gmNav" aria-label="ページ内の移動"></nav>
+      <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2026/location_wingbay.html#wingbay_sponsor">出展ブース</a>もご覧ください。</p></noscript>
+    </header>
+
+    <main class="gm-main">
+      <section class="gm-sec gm-sec--map" id="map" aria-labelledby="gmMapTitle">
+        <h2 class="gm-ttl" id="gmMapTitle"></h2>
+        <div class="gm-floors" id="gmFloors" hidden></div>
+        <div class="gm-mapbox" id="gmMapbox">
+          <div class="gm-maptools">
+            <p class="gm-maptools__floor" id="gmFloorLabel"></p>
+            <div class="gm-zoom" id="gmZoom"></div>
+          </div>
+          <!-- 会場マップ（goodsmap.js が SVG で描く） -->
+          <div class="gm-map" id="gmMap"></div>
+          <p class="gm-maphint" id="gmMapHint"></p>
+          <ul class="gm-legend" id="gmLegend"></ul>
+        </div>
+        <div class="gm-pick" id="gmPick" aria-live="polite"></div>
+        <p class="gm-mapnote" id="gmMapNote"></p>
+      </section>
+
+      <section class="gm-sec gm-sec--list" id="booths" aria-labelledby="gmListTitle">
+        <h2 class="gm-ttl" id="gmListTitle"></h2>
+        <div class="gm-tools">
+          <label class="gm-search">
+            <span class="gm-search__icon" aria-hidden="true"></span>
+            <input type="search" id="gmQuery" autocomplete="off" enterkeyhint="search">
+          </label>
+          <div class="gm-chips" id="gmChips" role="group"></div>
+          <p class="gm-count" id="gmCount" aria-live="polite"></p>
+        </div>
+        <p class="gm-lead" id="gmLead"></p>
+        <div class="gm-list" id="gmList"></div>
+        <p class="gm-empty" id="gmEmpty" hidden></p>
+      </section>
+    </main>
+
+    <footer class="site-footer gm-footer" id="gmFooter"></footer>
+  </div>
+
+  <button type="button" class="gm-to-map" id="gmToMap" hidden></button>
+</body>
+</html>

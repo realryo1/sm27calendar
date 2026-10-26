@@ -18,3 +18,7 @@ PWA・キャッシュ
 ・ファイルを追加・削除したら、precache.jsを更新し、website/sw.jsのVERSIONを上げる。
 ・更新ボタンとsw.jsのキャッシュ方針はREADMEの「PWA」の仕様を崩さない。
 ・website/delay/（運行情報への転送ページ）はPWAの対象外。キャッシュしない。
+・website/test_で始まるフォルダ（試験ページ）もPWAの対象外。キャッシュしない。
+
+グッズ・出展ブースマップ（website/test_sm26goodsmap/）
+・実装と進捗はdocument/goodsmapProgress.mdに書き、進めたら更新する（現在位置と次にやることも）。
