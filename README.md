@@ -65,6 +65,8 @@ im.quantize(256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE).save("
 
 Actionsで手動実行するか、VSCodeでF5（「Deploy:push→GitHubPages」）を実行すると、`main`をpushしてGitHubActionsの[deploy-pages.yml](.github/workflows/deploy-pages.yml)を起動し、`website/`がGitHubPagesに公開されます。未コミットの変更があると中断します。F5の場合は、公開URLの`data.js`が新しくなる（CDNに反映される）まで待ってから完了と表示します。
 
+F5で「Deploy:一括（カレンダー＋運行情報）」を選ぶと、このリポジトリと姉妹プロジェクト（`hokkaido_delay/`）のデプロイを同時に実行します（それぞれのリポジトリの`tools/deploy-pages.mjs`。ターミナルは別々に開きます）。未コミットの変更があるリポジトリは、そちらだけ中断します。
+
 ## 注意
 
 - 本プロジェクトはSNOWMIKU公式や初音銀華祭とは無関係です。キャラクターに関する権利は各権利者に帰属します。

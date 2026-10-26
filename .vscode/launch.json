@@ -1,5 +1,6 @@
 {
-  // F5 で「Deploy: push → GitHub Pages」を実行する（tools/deploy-pages.mjs）
+  // F5 で「Deploy: 一括（カレンダー＋運行情報）」を実行する。カレンダー（tools/deploy-pages.mjs）と、
+  // 姉妹プロジェクト（hokkaido_delay/tools/deploy-pages.mjs）をそれぞれのリポジトリで同時に push・デプロイする
   "version": "0.2.0",
   "configurations": [
     {
@@ -12,6 +13,15 @@
       "skipFiles": ["<node_internals>/**"]
     },
     {
+      "name": "Deploy: 運行情報（hokkaido_delay）",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/hokkaido_delay/tools/deploy-pages.mjs",
+      "cwd": "${workspaceFolder}/hokkaido_delay",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
       "name": "Deploy: 確認のみ（push・起動なし）",
       "type": "node",
       "request": "launch",
@@ -20,6 +30,12 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Deploy: 一括（カレンダー＋運行情報）",
+      "configurations": ["Deploy: push → GitHub Pages", "Deploy: 運行情報（hokkaido_delay）"]
     }
   ]
 }
