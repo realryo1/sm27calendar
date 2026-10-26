@@ -33,6 +33,14 @@ jobs:
           grep -q "updatedAt: \"${now}\"" website/data.js
           echo "updatedAt: ${now}"
 
+      # index.html から読み込む自サイトの JS / CSS に ?v=（デプロイ時刻）を付ける。
+      # 更新ボタンで読み込み直したとき、ブラウザが直前のページで読み込んだ古いファイル（max-age=600 の間はメモリ上に残る）を使い回さないようにする
+      - name: Version asset URLs
+        run: |
+          v="$(date -u '+%Y%m%d%H%M%S')"
+          sed -i -E "s/(src|href)=\"(style\.css|[a-z-]+\.js)\"/\1=\"\2?v=${v}\"/g" website/index.html
+          grep -o -E "(src|href)=\"[a-z.-]+\?v=[0-9]+\"" website/index.html
+
       # 公開するファイルだけ JS / CSS を圧縮する（リポジトリのソースは読みやすいまま）。updatedAt の書き換えより後に行う
       - name: Minify JS / CSS
         run: npx -y esbuild@0.25.10 website/*.js website/style.css --minify --charset=utf8 --outdir=website --allow-overwrite --log-level=warning

@@ -30,6 +30,8 @@ self.addEventListener("fetch", (event) => {
   // 運行情報（試験版 delay/）は常に最新を見るページなので、キャッシュを通さない
   if (sameOrigin && url.pathname.includes("/delay/")) return;
 
+  // index.html はデプロイのたびに自サイトのファイルへ ?v=（版）を付けて読み込む（deploy-pages.yml）。キャッシュは版を外した URL で持つ
+  const plain = sameOrigin ? url.origin + url.pathname : req;
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {
       // マニフェストは常にネットワーク優先にする（古い内容を返すと、インストール済みアプリの表示設定などの更新が遅れるため）
@@ -45,12 +47,12 @@ self.addEventListener("fetch", (event) => {
       // ページからの最新確認（cache: no-cache / reload）はキャッシュを返さず、取得できたらキャッシュも更新する
       if (sameOrigin && (req.cache === "no-cache" || req.cache === "reload")) {
         const res = await fetch(req);
-        if (res.ok) cache.put(req, res.clone());
+        if (res.ok) cache.put(plain, res.clone());
         return res;
       }
       // ?at= などのクエリ付きでもページ本体はキャッシュを使う
-      const key = sameOrigin && req.mode === "navigate" ? "index.html" : req;
-      const cached = await cache.match(key, { ignoreSearch: req.mode === "navigate" });
+      const key = sameOrigin && req.mode === "navigate" ? "index.html" : plain;
+      const cached = await cache.match(key, { ignoreSearch: sameOrigin });
       const network = fetch(req)
         .then((res) => {
           if (res && (res.ok || res.type === "opaque")) cache.put(key, res.clone());
