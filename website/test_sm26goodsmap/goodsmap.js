@@ -11,7 +11,8 @@
     mapNote: "公式の会場マップをもとに描いた略図です。",
     mapHint: "二本指で拡大するとブースの中身が出ます",
     officialMap: "公式の会場マップ（画像）",
-    pipBack: "マップに戻る",
+    fullOn: "全画面で表示",
+    fullOff: "全画面を閉じる",
     search: "商品名・会社名でさがす",
     filter: "種類でしぼる",
     all: "すべて",
@@ -86,7 +87,7 @@
         (gs.some((g) => !onSale(g)) || b.shows?.length) && "exhibit",
         b.gifts?.length && "gift",
       ].filter(Boolean);
-      const words = [b.name, b.org, b.label, ...gs.flatMap((g) => [g.name, g.maker]), ...(b.more ?? []), ...(b.shows ?? []), ...(b.gifts ?? []), ...(b.notes ?? [])];
+      const words = [b.name, b.short, b.org, b.label, ...gs.flatMap((g) => [g.name, g.maker]), ...(b.more ?? []), ...(b.shows ?? []), ...(b.gifts ?? []), ...(b.notes ?? [])];
       return [b.no, { kinds, theme: THEME[kinds[0] ?? "sale"], text: norm(words.filter(Boolean).join("|")) }];
     })
   );
@@ -205,12 +206,12 @@
   const $map = $("gmMap");
   const $mapbox = $("gmMapbox");
   let floor = D.floors[0];
-  const TILE = [57, 35]; // ブースの大きさ（公式の会場マップのブースと同じ）
+  const tileOf = (f) => f.tile ?? [57, 35]; // ブースの大きさ（フロアごとのデータ。無ければ公式の会場マップのブースと同じ）
   const INSET = 2.5; // 売り場・設備の四角を少し縮めて、となりとの間を空ける
 
   function mapSvg(f) {
-    const [, , vw, vh] = f.view;
-    const [tw, th] = TILE;
+    const [vx, vy, vw, vh] = f.view;
+    const [tw, th] = tileOf(f);
     const area = (a) => {
       const x = a.x + INSET;
       const y = a.y + INSET;
@@ -218,7 +219,8 @@
       const h = a.h - INSET * 2;
       const lines = a.label ?? [];
       const size = a.size ?? 15;
-      const top = y + h / 2 - ((lines.length - 1) * size * 1.2) / 2;
+      // labelY：文字の中心の高さ（区画が表示範囲の外まで続くとき、見えている部分に文字を置く）
+      const top = (a.labelY ?? y + h / 2) - ((lines.length - 1) * size * 1.2) / 2;
       const spot = a.spot && D.spots[a.spot];
       // 名前のない帯やパネルも押せるが、Tab では止まらない（同じ説明に何度も止まらないように）
       const attrs = spot
@@ -233,7 +235,7 @@
       const b = boothBy.get(no);
       return `<g class="gm-tile theme-${info.get(no)?.theme ?? "pink"}" data-pick="${esc(no)}" tabindex="0" role="button" aria-label="${esc(TEXT.boothName(no) + (b ? `：${b.name}` : ""))}">
         <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="8"/>
-        <text x="${r1(x + tw / 2)}" y="${r1(y + th / 2)}" dy=".36em">${esc(no)}</text>
+        <text x="${r1(x + tw / 2)}" y="${r1(y + th / 2)}" dy=".36em" font-size="${r1(Math.min(th * 0.55, tw * 0.48))}">${esc(no)}</text>
       </g>`;
     };
     // 大きさは sizeMap が枠に合わせて入れる（width・height を書くと、その大きさが列の最小幅になって画面からはみ出す）
@@ -243,8 +245,7 @@
         <pattern id="gmHatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="10" height="10" class="gm-svg__hatch-bg"/><rect width="2" height="10" class="gm-svg__hatch"/></pattern>
         <linearGradient id="gmPicked" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="gm-svg__picked-a"/><stop offset="1" class="gm-svg__picked-b"/></linearGradient>
       </defs>
-      <rect class="gm-svg__base" x="4" y="4" width="${vw - 8}" height="${vh - 8}" rx="24"/>
-      <path class="gm-svg__floor" d="${esc(f.outline)}"/>
+      <rect class="gm-svg__base" x="${vx}" y="${vy}" width="${vw}" height="${vh}"/>
       ${f.areas.map(area).join("")}
       ${Object.entries(f.booths).map(tile).join("")}
     </svg>`;
@@ -252,25 +253,49 @@
 
   // 拡大したときにブースの上に出す中身（一覧のカードを縮めたもの）。位置と大きさはマップに対する割合で置くので、拡大縮小に合わせて動く。
   // ガチャコーナーのように中にブースがある売り場は、売り場を縦に等分して並べる
+  // 中身の見出しのブース名は「株式会社」などを省き、四角の幅にできるだけ収まる文字の大きさにする（--hk はマップの1単位あたりの文字の px）
+  const miniName = (name) => name.replace(/株式会社|有限会社|[（(]株[)）]/g, "").trim();
+  const headK = (no, name, w) => r1(Math.min(7.5, (w - 6) / ([...name].length + [...no].length * 0.7 + 0.5)));
+  // 中くらいの拡大で、ブースの上に出す番号とブース名（押せるのは下のブースの絵。名前は2行まで、長い名前は文字を小さくして収める）
+  function labelsHtml(f) {
+    const [vx, vy, vw, vh] = f.view;
+    const [tw, th] = tileOf(f);
+    const pct = (v, all) => `${r1((v / all) * 1000) / 10}%`;
+    return Object.entries(f.booths)
+      .map(([no, [x, y]]) => {
+        const b = boothBy.get(no);
+        if (!b) return "";
+        const name = miniName(b.short ?? b.name);
+        // 名前の文字の大きさ（マップの単位）：2行に収まる大きさ。小さくしすぎると読めないので下限を置き、それでも入らない分は見切れる
+        const k = r1(Math.max(9, Math.min(th * 0.2, (2 * (tw - 8)) / [...name].length)));
+        return `<div class="gm-label theme-${info.get(no).theme}" data-pick="${esc(no)}" style="left:${pct(x - vx, vw)};top:${pct(y - vy, vh)};width:${pct(tw, vw)};height:${pct(th, vh)};--nk:${k};--th:${th}">
+          <b class="gm-label__no">${esc(no)}</b><span class="gm-label__name">${esc(name)}</span>
+        </div>`;
+      })
+      .join("");
+  }
+
   function minisHtml(f) {
     const [vx, vy, vw, vh] = f.view;
     const box = (no, x, y, w, h) => {
       const b = boothBy.get(no);
       if (!b) return "";
       const gs = goodsAt.get(b.no) ?? [];
+      // 四角に入るのは4品まで。品名は改行せず、はみ出した分は見切れる。価格は次の行に出す
+      const li = (name, price = "", cls = "") => `<li${cls ? ` class="${cls}"` : ""}><span>${esc(name)}</span>${price}</li>`;
       const rows = [
-        ...gs.filter(onSale).map((g) => `<li><span>${esc(short(g.name))}</span>${g.price == null ? "" : `<b>${esc(g.unit ?? "")}${yen(g.price)}</b>`}</li>`),
-        ...(b.more ?? []).map((t) => `<li><span>${esc(t)}</span></li>`),
-        ...[...gs.filter((g) => !onSale(g)).map((g) => short(g.name)), ...(b.shows ?? [])].map((t) => `<li class="theme-violet"><span>${esc(t)}</span></li>`),
-        ...(b.gifts ?? []).map((t) => `<li class="theme-orange"><span>${esc(t)}</span></li>`),
-      ];
+        ...gs.filter(onSale).map((g) => li(short(g.name), g.price == null ? "" : `<b>${esc(g.unit ?? "")}${yen(g.price)}</b>`)),
+        ...(b.more ?? []).map((t) => li(t)),
+        ...[...gs.filter((g) => !onSale(g)).map((g) => short(g.name)), ...(b.shows ?? [])].map((t) => li(t, "", "theme-violet")),
+        ...(b.gifts ?? []).map((t) => li(t, "", "theme-orange")),
+      ].slice(0, 4);
       const pct = (v, o, all) => `${r1(((v - o) / all) * 1000) / 10}%`;
       return `<div class="gm-mini theme-${info.get(no).theme}" data-pick="${esc(no)}" style="left:${pct(x, vx, vw)};top:${pct(y, vy, vh)};width:${pct(w + vx, vx, vw)};height:${pct(h + vy, vy, vh)}">
-        <p class="gm-mini__head"><span class="gm-mini__no">${esc(boothLabel(b))}</span>${esc(b.name)}</p>
+        <p class="gm-mini__head" style="--hk:${headK(boothLabel(b), miniName(b.short ?? b.name), w)}"><span class="gm-mini__no">${esc(boothLabel(b))}</span><span class="gm-mini__name">${esc(miniName(b.short ?? b.name))}</span></p>
         <ul class="gm-mini__items">${rows.join("")}</ul>
       </div>`;
     };
-    const tiles = Object.entries(f.booths).map(([no, [x, y]]) => box(no, x, y, TILE[0], TILE[1]));
+    const tiles = Object.entries(f.booths).map(([no, [x, y]]) => box(no, x, y, ...tileOf(f)));
     const inAreas = f.areas
       .filter((a) => a.label && D.spots[a.spot]?.booths)
       .flatMap((a) => {
@@ -289,7 +314,7 @@
       .map((f) => `<button type="button" class="gm-chip" data-floor="${esc(f.id)}" aria-pressed="${f === floor}">${esc(f.label)}</button>`)
       .join("");
     // マップの絵（SVG）と、拡大したときにブースの上に出す中身（HTML）を、同じ大きさの台に重ねる
-    $map.innerHTML = `<div class="gm-canvas">${mapSvg(floor)}<div class="gm-minis" aria-hidden="true">${minisHtml(floor)}</div></div>`;
+    $map.innerHTML = `<div class="gm-canvas">${mapSvg(floor)}<div class="gm-minis" aria-hidden="true">${labelsHtml(floor)}${minisHtml(floor)}</div></div>`;
     sizeMap();
     // 凡例は、このフロアにあるものだけ
     const kinds = new Set(Object.keys(floor.booths).map((no) => info.get(no)?.kinds[0] ?? "sale"));
@@ -308,7 +333,9 @@
   // 拡大したら枠の中を縦横にスクロールして見る（列やページは動かない）
   // めいっぱい拡大すると、ブースの上にそのブースの中身（カード）が出る（DETAIL）。そこまで拡大できるよう上限を大きくとる
   const ZOOM = { min: 1, max: 10, step: 1.5 };
-  const DETAIL = 2.4; // マップの1単位が画面でこの px 以上になったら中身を出す（ブースの幅が約140px）
+  // ブースの表示は3段階：小さいうちは番号だけ、幅が NAMED px 以上で番号とブース名、DETAIL px 以上で中身（品名・価格）
+  const NAMED = 44;
+  const DETAIL = 140;
   let zoom = 1;
   const clampZoom = (z) => Math.min(ZOOM.max, Math.max(ZOOM.min, z));
   function sizeMap() {
@@ -320,13 +347,13 @@
     $canvas.style.width = `${vw * u}px`;
     $canvas.style.height = `${vh * u}px`;
     $map.style.setProperty("--u", u);
-    $map.classList.toggle("is-detail", u >= DETAIL);
+    const tilePx = u * tileOf(floor)[0];
+    $map.classList.toggle("is-detail", tilePx >= DETAIL);
+    $map.classList.toggle("is-named", tilePx >= NAMED && tilePx < DETAIL);
   }
   // (ax, ay)（枠の左上からの位置）の下にある内容が動かないように、スクロールを直す。
   // マップが枠より小さいあいだは枠のまん中に置いているので、その余白（マップの左上の位置）も含めて合わせる
   function setZoom(z, ax, ay) {
-    // スマホは、拡大したときだけフルスクリーンにする（枠が変わるので、枠の大きさはそのあとで測る）
-    if (!twoCol.matches) setFull(clampZoom(z) > 1);
     ax ??= $map.clientWidth / 2;
     ay ??= $map.clientHeight / 2;
     const k = clampZoom(z) / zoom;
@@ -376,7 +403,6 @@
     (ev) => {
       if (ev.touches.length !== 2 || preview) return; // プレビューでは拡大縮小しない
       drag = null; // 1本指の移動から、ピンチに切り替える
-      setFull(true); // スマホは、二本指で拡大し始めたらフルスクリーンにする（枠が変わるので、基準はそのあとで測る）
       const s = spread(ev.touches);
       const m = $map.getBoundingClientRect();
       pinch = { s, zoom, left: $map.scrollLeft, top: $map.scrollTop, ax: s.x - m.left, ay: s.y - m.top, raf: 0 };
@@ -547,7 +573,7 @@
     }
     const pos = floor.booths[key];
     const a = floor.areas.find((x) => x.spot === key && x.label);
-    if (pos) centerOn([pos[0] + TILE[0] / 2, pos[1] + TILE[1] / 2], true);
+    if (pos) centerOn([pos[0] + tileOf(floor)[0] / 2, pos[1] + tileOf(floor)[1] / 2], true);
     else if (a) centerOn([a.x + a.w / 2, a.y + a.h / 2], true);
   }
 
@@ -616,9 +642,10 @@
       $("gmNotice").textContent = D.notice;
       $("gmNotice").hidden = false;
     }
-    $("gmZoom").innerHTML = Object.entries(TEXT.zoom)
-      .map(([z, [label, aria]]) => `<button type="button" data-zoom="${z}" aria-label="${esc(aria)}">${esc(label)}</button>`)
-      .join("");
+    $("gmZoom").innerHTML =
+      Object.entries(TEXT.zoom)
+        .map(([z, [label, aria]]) => `<button type="button" data-zoom="${z}" aria-label="${esc(aria)}">${esc(label)}</button>`)
+        .join("") + `<button type="button" class="gm-full" id="gmFull" aria-pressed="false" aria-label="${esc(TEXT.fullOn)}"></button>`;
     $("gmMapHint").textContent = TEXT.mapHint;
     $query.placeholder = TEXT.search;
     $query.setAttribute("aria-label", TEXT.search);
@@ -628,7 +655,6 @@
       .join("");
     $("gmLead").textContent = D.priceNote;
     $("gmEmpty").textContent = TEXT.empty;
-    $("gmPipBack").setAttribute("aria-label", TEXT.pipBack);
     const [y, mo, d] = D.updated.split("-").map(Number);
     $("gmFooter").innerHTML = `
       <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
@@ -647,6 +673,8 @@
     pick(el.dataset.pick, { toCard: true });
   };
   $map.addEventListener("click", (ev) => {
+    // プレビューは、どこを押してもマップだけを大きくする（一覧はスクロールさせない。ブースを選ぶのは大きくしてから）
+    if (preview) return expand();
     const el = ev.target.closest("[data-pick]");
     if (el) activate(el);
   });
@@ -673,6 +701,8 @@
     applyFilter();
   });
   $("gmZoom").addEventListener("click", (ev) => {
+    // 全画面のボタン（＋の右）。押したときだけ切り替える（拡大しても自動では全画面にしない）
+    if (ev.target.closest("#gmFull")) return setFull(!full);
     const el = ev.target.closest("[data-zoom]");
     if (!el) return;
     const z = el.dataset.zoom;
@@ -745,17 +775,17 @@
     window.addEventListener("resize", () => setW(parseFloat($main.style.getPropertyValue("--gm-map-w")), false));
   }
 
-  // スマホ（1カラム）のマップ：開いたときは、画面の幅にマップ全体がちょうど収まる高さで出す（1倍）。
+  // スマホ（1カラム）のマップ：開いたときは、画面の上半分に出す（1倍。マップと一覧が上下1:1）。
   // マップは画面の上に貼り付き、ページを下へスクロールするほど低くなり（下端は一覧と一緒に上がる）、最後は検索欄の上の細いプレビュー（PREVIEW px）で残る。
-  // 拡大（＋ボタン・二本指）したときだけ、画面いっぱい（フルスクリーン）にして、その中で動かす。「全体」か右上の×で元に戻る。
-  // プレビューのブースを押せば一覧のカードへ、カードの番号を押せばプレビューの中で光る。プレビューの右上のボタンでいちばん上へ戻る。
+  // 全画面は、＋の右のボタンを押したときだけにする（拡大しても自動では切り替えない）。もう一度押すと元に戻る。
+  // プレビューはどこを押しても、一覧はそのままでマップだけが大きくなる（一覧をスクロールすると、またプレビューに戻る）。カードの番号を押せばプレビューの中で光る。
   // 2カラムではマップが常に見えているので、どれも使わない
   const $sec = $("map");
   const PREVIEW = 160; // goodsmap.css の --gm-preview と合わせる
   const rootStyle = document.documentElement.style;
   let preview = false; // プレビューのあいだは拡大縮小しない（小さすぎて操作しにくい）
+  let expanded = null; // プレビューを押して大きくしたときの、ページのスクロール位置（一覧をスクロールしたら、プレビューに戻す）
   let full = false;
-  let chrome = 0; // マップの枠の上のボタンの行などの高さ（プレビューでは隠れるので、隠れていないときに測っておく）
   let shrinkRaf = 0;
   function shrink() {
     shrinkRaf = 0;
@@ -766,14 +796,13 @@
       return sizeMap();
     }
     if (full) return sizeMap();
-    // 開いたときの高さ：マップ全体が画面の幅にちょうど収まる高さ＋上のボタンの行（これがマップの列の高さになる）
-    const [, , vw, vh] = floor.view;
-    if (!$mapbox.classList.contains("is-preview")) chrome = $mapbox.offsetHeight - $map.offsetHeight;
-    const H = Math.round(($map.clientWidth * vh) / vw + chrome);
-    rootStyle.setProperty("--gm-sec-h", `${H}px`);
+    // 開いたときの高さ：画面の上半分（マップと一覧が上下1:1。これがマップの列の高さになる）。マップはその中に収まる大きさで描く
     const top0 = $sec.offsetTop; // ページの中での、マップの列の上端
+    const H = Math.round(window.innerHeight / 2 - top0);
+    rootStyle.setProperty("--gm-sec-h", `${H}px`);
     const y = window.scrollY;
-    const h = Math.max(PREVIEW, H - Math.max(0, y - top0));
+    if (expanded != null && Math.abs(y - expanded) > 4) expanded = null;
+    const h = expanded != null ? H : Math.max(PREVIEW, H - Math.max(0, y - top0));
     rootStyle.setProperty("--gm-map-top", `${Math.max(0, top0 - y)}px`);
     rootStyle.setProperty("--gm-map-h", `${h}px`);
     rootStyle.setProperty("--gm-pv", `${h}px`); // 検索欄は、この高さの下に貼り付く
@@ -782,18 +811,30 @@
     $mapbox.classList.toggle("is-preview", preview);
     sizeMap();
   }
-  // フルスクリーンにする・戻す。戻すときは1倍に戻す。フルスクリーンのあいだ、うしろのページはスクロールさせない
+  // 全画面にする・戻す。拡大率はそのまま。全画面のあいだ、うしろのページはスクロールさせない
   function setFull(on) {
     on = on && !twoCol.matches;
     if (on === full) return;
     full = on;
     $mapbox.classList.toggle("is-full", on);
     document.documentElement.classList.toggle("gm-noscroll", on);
-    if (!on) {
-      zoom = 1;
-      $map.scrollTo(0, 0);
-    }
+    $("gmFull").setAttribute("aria-pressed", String(on));
+    $("gmFull").setAttribute("aria-label", on ? TEXT.fullOff : TEXT.fullOn);
+    // 枠の大きさが変わるので、まん中に見えていたところをまん中に保つ
+    const r = $map.firstElementChild.getBoundingClientRect();
+    const m = $map.getBoundingClientRect();
+    const cx = (m.left + m.width / 2 - r.left) / r.width;
+    const cy = (m.top + m.height / 2 - r.top) / r.height;
     shrink();
+    const [vx, vy, vw, vh] = floor.view;
+    centerOn([vx + cx * vw, vy + cy * vh]);
+  }
+  // プレビューを押したとき：一覧はそのまま、マップだけを開いたときの高さに戻す（大きさの変わり目だけ、なめらかに動かす）
+  function expand() {
+    expanded = window.scrollY;
+    $mapbox.classList.add("is-animating");
+    shrink();
+    setTimeout(() => $mapbox.classList.remove("is-animating"), 300);
   }
   const requestShrink = () => {
     if (!shrinkRaf) shrinkRaf = requestAnimationFrame(shrink);
@@ -804,8 +845,7 @@
     setFull(false);
     requestShrink();
   });
-  // 右上のボタン：フルスクリーンなら閉じる、プレビューならいちばん上へ戻る
-  $("gmPipBack").addEventListener("click", () => (full ? setFull(false) : window.scrollTo({ top: 0, behavior })));
+
 
   // #booth-○○ なら、そのブースを選んで一覧のカードへ（共有したリンクから開いたとき・開いたままハッシュが変わったとき）
   function openHash({ instant = false } = {}) {

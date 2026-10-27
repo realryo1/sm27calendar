@@ -9,9 +9,10 @@
 //   floor: ウイングベイでの売り場（公式の一覧の表記のまま）。「公式物販」は booth を入れず、公式物販のカードにまとめる。
 //   price: 税込の円。unit は「1回」など値段の前に付ける語、note は値段の横に出す補足。
 // booths: 出展ブース（公式の「出展ブース」の一覧の順）。no はマップの番号（ガチャコーナーの2社は g1・g2）。
+//   short: マップの上に出す短い名前（長い名前だけ。無ければ name から「株式会社」などを省いたもの）。
 //   more: 公式のグッズ一覧に無いが、ブースの紹介で販売すると書かれているもの（値段は未掲載）。shows: 展示・体験。gifts: 配布・特典。notes: 補足。
 //   文章は書き写さず、品名などの事実を短くまとめる。links のラベルも自分で付ける。
-// floors: 会場のフロア。1フロアなら切り替えは出ない。座標は公式の会場マップ（1000×840）に合わせている。
+// floors: 会場のフロア。1フロアなら切り替えは出ない。座標は公式の会場マップをもとに、位置関係だけを保ってブースを大きくした配置。
 window.GM_DATA = {
   year: 2026,
   // データを書き写した日（公式サイトを保存した日）
@@ -50,58 +51,42 @@ window.GM_DATA = {
       id: "6-4f",
       label: "6番街4F",
       sub: "イベント会場",
-      view: [0, 0, 1000, 840],
-      // 狭い画面で拡大して開くときに、まん中に来る位置（ブースの並びの中ほど）
-      focus: [660, 600],
-      // 通れる床の外形（右の出っ張りが出入口）
-      outline: "M50 136H779V313L801 335H950V370H993V543H950V757H905V826H168V757H50Z",
+      // 公式の会場マップ（1000×840）をもとに、位置関係だけを保ってデフォルメした配置。ブースを大きく見せるため、上の展示や設備の区画は詰めている
+      // 公式の会場マップをもとに、位置関係だけを保ってデフォルメした配置（作者が描いた配置図のとおり）。4:3 で、上は主催展示の途中で切って上へ続いているように見せる
+      view: [0, 0, 1200, 900],
+      // ブースの大きさ（すべて同じ）
+      tile: [91, 80],
+      // 主な区画（展示2つ・クリエイターズマーケット・ワークショップ・ガチャコーナー・公式物販）は140の正方形、更衣室・ねんどろいど引換所・クローク受付は140×66にそろえる
       // 売り場・設備。spot は下の spots の名前（押すと説明が出る）。label が無いものは押せるが、Tab では選ばない
       areas: [
-        { kind: "exhibit", spot: "exhibit", x: 136, y: 15, w: 219, h: 103, label: ["展示"], size: 18 },
-        { kind: "exhibit", spot: "exhibit", x: 136, y: 118, w: 664, h: 18 },
-        { kind: "exhibit", spot: "exhibit", x: 678, y: 57, w: 120, h: 38, label: ["展示"], size: 15 },
-        { kind: "exhibit", spot: "exhibit", x: 779, y: 95, w: 21, h: 225 },
-        { kind: "exhibit", spot: "exhibit", x: 800, y: 317, w: 150, h: 18 },
-        { kind: "exhibit", spot: "exhibit", x: 52, y: 408, w: 83, h: 72, label: ["展示"], size: 16 },
-        { kind: "exhibit", spot: "exhibit", x: 206, y: 446, w: 107, h: 19 },
-        { kind: "exhibit", spot: "exhibit", x: 206, y: 465, w: 19, h: 88 },
-        // 中ほどの展示パネル
-        { kind: "panel", spot: "exhibit", x: 396, y: 187, w: 35, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 462, y: 187, w: 35, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 528, y: 187, w: 35, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 594, y: 187, w: 35, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 659, y: 187, w: 24, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 704, y: 187, w: 24, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 603, y: 240, w: 17, h: 36 },
-        { kind: "panel", spot: "exhibit", x: 659, y: 249, w: 24, h: 18 },
-        { kind: "panel", spot: "exhibit", x: 704, y: 249, w: 24, h: 18 },
-        { kind: "panel", spot: "exhibit", x: 603, y: 312, w: 17, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 659, y: 312, w: 24, h: 17 },
-        { kind: "panel", spot: "exhibit", x: 704, y: 312, w: 24, h: 17 },
-        // 吹き抜けなどの通れないところ
-        { kind: "void", x: 225, y: 465, w: 88, h: 88 },
-        { kind: "market", spot: "market", x: 15, y: 167, w: 120, h: 153, label: ["クリエイターズ", "マーケット"], size: 14 },
-        { kind: "facility", x: 15, y: 321, w: 37, h: 87, label: ["EV"], size: 14 },
-        { kind: "workshop", spot: "workshop", x: 224, y: 278, w: 89, h: 53, label: ["ワーク", "ショップ"], size: 14 },
-        { kind: "facility", x: 391, y: 278, w: 144, h: 54, label: ["エスカレーター"], size: 15 },
-        { kind: "facility", x: 15, y: 515, w: 121, h: 86, label: ["更衣室"], size: 16 },
-        { kind: "facility", spot: "nendo", x: 15, y: 601, w: 121, h: 41, label: ["ねんどろいど", "引換所"], size: 13 },
-        { kind: "facility", spot: "cloak", x: 15, y: 642, w: 121, h: 44, label: ["クローク受付"], size: 15 },
-        { kind: "gacha", spot: "gacha", x: 15, y: 686, w: 121, h: 71, label: ["ガチャ", "コーナー"], size: 16 },
-        { kind: "official", spot: "official", x: 168, y: 758, w: 214, h: 67, label: ["公式物販"], size: 22 },
-        { kind: "shop", x: 400, y: 758, w: 107, h: 67, label: ["雪ミク", "スカイタウン"], size: 15 },
-        { kind: "entrance", spot: "entrance", x: 950, y: 370, w: 43, h: 173, label: ["←", "出", "入", "口", "→"], size: 15 },
+        // 主催展示。公式の会場マップでは上の壁ぞいや中ほどのパネルに散らばっているが、1つの区画にまとめた（右上は下へ張り出す）。区画は表示範囲の外（上）まで伸ばしてある
+        { kind: "exhibit", spot: "exhibit", x: 220, y: -100, w: 990, h: 185, label: ["主催展示"], size: 30, labelY: 45 },
+        { kind: "exhibit", spot: "exhibit", x: 860, y: -100, w: 350, h: 290 },
+        { kind: "exhibit", spot: "exhibit", x: 14, y: 318, w: 140, h: 140, label: ["展示"], size: 20 },
+        { kind: "exhibit", spot: "exhibit", x: 220, y: 318, w: 140, h: 140, label: ["展示"], size: 20 },
+        { kind: "market", spot: "market", x: 14, y: 25, w: 140, h: 140, label: ["クリエイターズ", "マーケット"], size: 17 },
+        { kind: "facility", x: 14, y: 180, w: 78, h: 118, label: ["EV"], size: 18 },
+        { kind: "workshop", spot: "workshop", x: 220, y: 110, w: 140, h: 140, label: ["ワーク", "ショップ"], size: 24 },
+        // エスカレーターとスカイタウンは、21・17（24・20）の列の左右の端にそろえる（区画は描くときに各辺が2.5ずつ内側に縮むので、その分広げてある）
+        { kind: "facility", x: 415.5, y: 176, w: 193, h: 68, label: ["エスカレーター"], size: 20 },
+        { kind: "facility", x: 14, y: 472, w: 140, h: 66, label: ["更衣室"], size: 18 },
+        { kind: "facility", spot: "nendo", x: 14, y: 548, w: 140, h: 66, label: ["ねんどろいど", "引換所"], size: 17 },
+        { kind: "facility", spot: "cloak", x: 14, y: 624, w: 140, h: 66, label: ["クローク受付"], size: 18 },
+        { kind: "gacha", spot: "gacha", x: 14, y: 700, w: 140, h: 140, label: ["ガチャ", "コーナー"], size: 20 },
+        { kind: "official", spot: "official", x: 220, y: 700, w: 140, h: 140, label: ["公式物販"], size: 26 },
+        { kind: "shop", x: 415.5, y: 770, w: 193, h: 106, label: ["雪ミク", "スカイタウン"], size: 18 },
+        { kind: "entrance", spot: "entrance", x: 1135, y: 227, w: 60, h: 187, label: ["←", "出", "入", "口", "→"], size: 17 },
       ],
-      // ブースの位置（左上の座標）。大きさはすべて同じ（goodsmap.js の TILE）
+      // ブースの位置（左上の座標）。並びと向きは公式の会場マップと同じ（右の列から1〜4、左へ5〜8…）
       booths: {
-        1: [745, 464], 2: [745, 507], 3: [745, 607], 4: [745, 649],
-        5: [681, 464], 6: [681, 507], 7: [681, 607], 8: [681, 649],
-        9: [604, 464], 10: [604, 507], 11: [604, 607], 12: [604, 649],
-        13: [540, 464], 14: [540, 507], 15: [540, 607], 16: [540, 649],
-        17: [464, 464], 18: [464, 507], 19: [464, 607], 20: [464, 649],
-        21: [400, 464], 22: [400, 507], 23: [400, 607], 24: [400, 649],
-        25: [847, 679], 26: [847, 722],
-        27: [745, 758], 28: [681, 758], 29: [616, 758], 30: [552, 758],
+        1: [975, 328], 2: [975, 420], 3: [975, 547], 4: [975, 638],
+        5: [877, 328], 6: [877, 420], 7: [877, 547], 8: [877, 638],
+        9: [744, 328], 10: [744, 420], 11: [744, 547], 12: [744, 638],
+        13: [647, 328], 14: [647, 420], 15: [647, 547], 16: [647, 638],
+        17: [515, 328], 18: [515, 420], 19: [515, 547], 20: [515, 638],
+        21: [418, 328], 22: [418, 420], 23: [418, 547], 24: [418, 638],
+        25: [1097, 704], 26: [1097, 798],
+        27: [975, 791], 28: [877, 791], 29: [744, 791], 30: [647, 791],
       },
     },
   ],
@@ -140,6 +125,7 @@ window.GM_DATA = {
     {
       no: "1",
       name: "COCOLLABO（ココラボ）",
+      short: "ココラボ",
       org: "株式会社キャラバン",
       more: ["「しろたん×雪ミク」コラボグッズなどの新作"],
       shows: ["「39Culture 2026」のアイテム"],
@@ -148,6 +134,7 @@ window.GM_DATA = {
     {
       no: "2",
       name: "チュロス製造所",
+      short: "チュロス",
       org: "合同会社Bright",
       notes: ["チュロはユキネや音符などの形から選べて、ステッカー付き"],
       links: [{ label: "公式サイト", url: "https://churros-seizousyo.jp/" }],
@@ -161,6 +148,7 @@ window.GM_DATA = {
     {
       no: "4",
       name: "初音ミク エムアイカード",
+      short: "エムアイカード",
       gifts: ["ブースの二次元コードを読み込むと、オリジナルグッズ", "申し込むと、その場で木製スタンド（メインビジュアル）とオリジナルアクリルキーホルダー"],
       notes: ["カードの入会受付"],
       links: [{ label: "特設ページ", url: "https://www2.micard.co.jp/card/miku.html?cpn_cd=miku_cfm" }],
@@ -193,6 +181,7 @@ window.GM_DATA = {
     {
       no: "9",
       name: "ぬいぐるみメーカーGift",
+      short: "Giftぬい",
       links: [{ label: "公式サイト", url: "https://www.gift-gift.jp/" }],
     },
     {
@@ -209,6 +198,7 @@ window.GM_DATA = {
     {
       no: "12",
       name: "初音ミクシンフォニー2026",
+      short: "シンフォニー",
       more: ["2025年公演のグッズ（一部）", "CD・Blu-ray"],
       links: [{ label: "公式X", url: "https://x.com/mikusymphony" }],
     },
@@ -221,6 +211,7 @@ window.GM_DATA = {
     {
       no: "14",
       name: "アウリン（AURYN）",
+      short: "アウリン",
       more: ["ポンチョ", "缶バッジ・クリアファイル・タペストリー（新商品）"],
       links: [
         { label: "オンラインショップ", url: "https://auryn.theshop.jp/" },
@@ -257,12 +248,14 @@ window.GM_DATA = {
     {
       no: "19",
       name: "クリプトン・フューチャー・メディア株式会社 デジタルコンテンツチーム",
+      short: "ミクナビ",
       gifts: ["公式X（@cfm_mobile）をフォローすると、会場限定「初音ミク ロジックペイントS+」特製ステッカー", "ミクナビでチェックインすると、会場限定ミクナビステッカー"],
       links: [{ label: "ゲームのポータルサイト", url: "https://www.crypton.co.jp/cfm/cfmgames" }],
     },
     {
       no: "20",
       name: "（一社）北海道三笠観光協会",
+      short: "三笠市",
       more: ["描きおろしの雪ミク（テーマ「三笠のまちを食べ歩き」）の特産品・オリジナルグッズ"],
       links: [{ label: "三笠市の観光サイト", url: "https://www.mikasa-kanko.jp/" }],
     },
@@ -275,6 +268,7 @@ window.GM_DATA = {
     {
       no: "22",
       name: "ホロモデル(株式会社Gugenka)",
+      short: "ホロモデル",
       more: ["デジタルフィギュア「ホロモデル」", "オリジナルスマートフォンアクリルスタンド", "ディスプレイ「ホロモデリンク」"],
       gifts: ["ホロモデリンクを買った人に限定特典"],
       links: [{ label: "ホロモデル", url: "https://xr-marketplace.com/holomodels" }],
@@ -282,6 +276,7 @@ window.GM_DATA = {
     {
       no: "23",
       name: "クリプトン・フューチャー・メディア株式会社 SONICWIRE チーム",
+      short: "SONICWIRE",
       more: ["『初音ミク NT』『鏡音リン・レン NT』などバーチャル・シンガー製品（会場特別販売）"],
       gifts: ["『鏡音リン・レン NT』特製ステッカー（1人1枚まで）"],
       links: [{ label: "SONICWIRE", url: "https://sonicwire.com/" }],
@@ -289,22 +284,26 @@ window.GM_DATA = {
     {
       no: "24",
       name: "クリプトン・フューチャー・メディア株式会社 ローカルチーム",
+      short: "クリプトン ローカル",
       more: ["北海道 雪ミクショコラクッキー", "書籍『創作のミライ「初音ミク」が北海道から生まれたわけ』特装版", "書籍の発売記念エコバッグ"],
       links: [{ label: "商品情報", url: "https://domingo.ne.jp/article/54853" }],
     },
     {
       no: "25",
       name: "bilibiliGoods",
+      short: "ビリビリ",
       links: [{ label: "公式X", url: "https://x.com/bilibiliGoods" }],
     },
     {
       no: "26",
       name: "株式会社セガ フェイブ",
+      short: "セガ",
       links: [{ label: "セガプラザ", url: "https://segaplaza.jp/lp/hatsunemiku/" }],
     },
     {
       no: "27",
       name: "一番くじ（BANDAI SPIRITS）",
+      short: "一番くじ",
       shows: ["フィギュアと、歴代の雪ミクの描きおろしグッズ（イラストレーター8名）", "記念撮影"],
       notes: ["展示だけで、販売はしていない"],
       links: [{ label: "一番くじ 雪ミク", url: "https://1kuji.com/products/snowmiku4" }],
@@ -312,11 +311,13 @@ window.GM_DATA = {
     {
       no: "28",
       name: "株式会社バンダイ キャンディ事業部",
+      short: "バンダイ",
       links: [{ label: "商品ページ", url: "https://www.bandai.co.jp/candy/products/2026/4570117927263000.html" }],
     },
     {
       no: "29",
       name: "株式会社ダイハツビジネスサポートセンター",
+      short: "DBC",
       more: ["新商品"],
       shows: ["新コラボカー「ミクキャンバス2」のウェルカムパーティー（歴代のコラボカーも）"],
       links: [{ label: "公式X", url: "https://x.com/DBC_3939" }],
@@ -324,6 +325,7 @@ window.GM_DATA = {
     {
       no: "30",
       name: "HMV&BOOKS",
+      short: "HMV",
       more: ["初音ミク関連のCD・映像作品・レコード・グッズ"],
       links: [{ label: "公式サイト", url: "https://www.hmv.co.jp/" }],
     },
@@ -331,6 +333,7 @@ window.GM_DATA = {
       no: "g1",
       label: "ガチャ",
       name: "（株）バンダイ（ガシャポン）",
+      short: "ガシャポン",
       notes: ["2商品とも会場で先行販売"],
       links: [{ label: "ガシャポン公式サイト", url: "https://gashapon.jp/" }],
     },
@@ -338,6 +341,7 @@ window.GM_DATA = {
       no: "g2",
       label: "ガチャ",
       name: "（株）トーシン カプセルトイ専門店＃C-pla（シープラ）",
+      short: "＃C-pla",
       notes: ["ラバーキーチェーンは全6種で、＃C-pla限定"],
       links: [{ label: "特設サイト", url: "https://toshin.jpn.com/cplaold/snowmiku2026/" }],
     },
