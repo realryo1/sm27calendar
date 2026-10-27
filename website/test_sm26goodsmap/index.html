@@ -28,18 +28,11 @@
 </head>
 <body>
   <div class="gm">
-    <header class="gm-hero">
-      <p class="gm-notice" id="gmNotice" hidden></p>
-      <p class="gm-hero__brand" id="gmBrand"></p>
-      <h1 class="gm-hero__title" id="gmTitle"></h1>
-      <ul class="gm-hero__meta" id="gmMeta"></ul>
-      <nav class="gm-hero__nav" id="gmNav" aria-label="ページ内の移動"></nav>
-      <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2026/location_wingbay.html#wingbay_sponsor">出展ブース</a>もご覧ください。</p></noscript>
-    </header>
-
-    <main class="gm-main">
-      <section class="gm-sec gm-sec--map" id="map" aria-labelledby="gmMapTitle">
-        <h2 class="gm-ttl" id="gmMapTitle"></h2>
+    <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2026/location_wingbay.html#wingbay_sponsor">出展ブース</a>もご覧ください。</p></noscript>
+    <!-- 2カラム（960px〜）では、左のマップと右の一覧がそれぞれスクロールし、ページ全体はスクロールしない。間の持ち手で幅を変える -->
+    <main class="gm-main" id="gmMain">
+      <h1 class="gm-visually-hidden">ウイングベイ出展ブースマップ</h1>
+      <section class="gm-sec gm-sec--map" id="map" aria-label="会場マップ">
         <div class="gm-floors" id="gmFloors" hidden></div>
         <div class="gm-mapbox" id="gmMapbox">
           <div class="gm-maptools">
@@ -48,15 +41,16 @@
           </div>
           <!-- 会場マップ（goodsmap.js が SVG で描く） -->
           <div class="gm-map" id="gmMap"></div>
+          <!-- スマホでマップが小窓になっているときだけ出る、マップへ戻るボタン -->
+          <button type="button" class="gm-pip__back" id="gmPipBack"></button>
           <p class="gm-maphint" id="gmMapHint"></p>
           <ul class="gm-legend" id="gmLegend"></ul>
         </div>
-        <div class="gm-pick" id="gmPick" aria-live="polite"></div>
-        <p class="gm-mapnote" id="gmMapNote"></p>
       </section>
+      <!-- 2カラムのときだけ出る、マップと一覧の幅を変える持ち手（goodsmap.js） -->
+      <div class="gm-split" id="gmSplit" role="separator" aria-orientation="vertical" aria-label="マップと一覧の幅" tabindex="0"></div>
 
-      <section class="gm-sec gm-sec--list" id="booths" aria-labelledby="gmListTitle">
-        <h2 class="gm-ttl" id="gmListTitle"></h2>
+      <section class="gm-sec gm-sec--list" id="booths" aria-label="出展ブース">
         <div class="gm-tools">
           <label class="gm-search">
             <span class="gm-search__icon" aria-hidden="true"></span>
@@ -65,15 +59,14 @@
           <div class="gm-chips" id="gmChips" role="group"></div>
           <p class="gm-count" id="gmCount" aria-live="polite"></p>
         </div>
+        <p class="gm-notice" id="gmNotice" hidden></p>
         <p class="gm-lead" id="gmLead"></p>
         <div class="gm-list" id="gmList"></div>
         <p class="gm-empty" id="gmEmpty" hidden></p>
+        <footer class="site-footer gm-footer" id="gmFooter"></footer>
       </section>
     </main>
-
-    <footer class="site-footer gm-footer" id="gmFooter"></footer>
   </div>
 
-  <button type="button" class="gm-to-map" id="gmToMap" hidden></button>
 </body>
 </html>

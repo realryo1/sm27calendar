@@ -1,25 +1,29 @@
 /* グッズ・出展ブースマップ（試験ページ）
    配色・フォント・背景・フッターはカレンダーの ../style.css を使い、ここではこのページの部品だけを足す（クラス名は gm- で始め、カレンダーと混ざらないようにする）。
    色は style.css の .theme-pink（販売）・.theme-violet（展示・体験）・.theme-orange（配布・特典）・.theme-gold（公式物販）の --c 系をそのまま使う。
-   見た目は SNOW MIKU 2027 公式サイトの下層ページに寄せる：左右の端の金の帯、雪の結晶ではさんだ見出し、キラ星の箇条書き、ハートの区切り、内側に影のある丸ボタン。
-   飾りの雪の結晶・キラ星・ハートは自前の SVG（公式の画像は使わない） */
+   見た目は SNOW MIKU 2027 公式サイトの下層ページに寄せる：左右の端の金の帯、キラ星の箇条書き、公式物販の見出しのグラデーション。
+   飾りのキラ星などは自前の SVG（公式の画像は使わない） */
 :root {
-  --gm-line: #E9C45C; /* 公式2027の下層ページの見出しの下線の色 */
   --gm-shadow: 0 4px 16px rgb(79 69 143 / .08); /* カレンダーの .venue-card と同じ */
-  --gm-snow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 12V2M12 6L14.3 3.2M12 6L9.7 3.2M12 12L3.3 7M6.8 9L5.6 5.6M6.8 9L3.3 9.6M12 12L3.3 17M6.8 15L3.3 14.4M6.8 15L5.6 18.4M12 12V22M12 18L9.7 20.8M12 18L14.3 20.8M12 12L20.7 17M17.2 15L18.4 18.4M17.2 15L20.7 14.4M12 12L20.7 7M17.2 9L20.7 9.6M17.2 9L18.4 5.6' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='12' r='2.2'/%3E%3C/svg%3E");
   --gm-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1Q13.6 10.4 23 12Q13.6 13.6 12 23Q10.4 13.6 1 12Q10.4 10.4 12 1Z'/%3E%3C/svg%3E");
-  --gm-heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 24'%3E%3Cpath d='M13 22C6.6 17.6 1.5 13.6 1.5 8.1 1.5 4.7 4.1 2 7.4 2c2.3 0 4.2 1.2 5.6 3.1C14.4 3.2 16.3 2 18.6 2c3.3 0 5.9 2.7 5.9 6.1 0 5.5-5.1 9.5-11.5 13.9Z' fill='%23DD67E2' stroke='%23fff' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --gm-expand: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3h7v7M21 3l-7 7M10 21H3v-7M3 21l7-7'/%3E%3C/svg%3E");
+  --gm-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
   --gm-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5' fill='none' stroke='%23000' stroke-width='2.6'/%3E%3Cpath d='M15.5 15.5 21 21' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-.gm {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
+.gm { padding: 16px 16px 0; }
 .gm-notice[hidden],
 .gm-floors[hidden],
 .gm-empty[hidden] { display: none; }
+/* 見た目には出さない見出し（読み上げ用） */
+.gm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 
 /* 左右の端の金の帯（公式2027の下層ページと同じ配色）。スマホは画面が狭いので出さない */
 @media (min-width: 641px) {
@@ -38,182 +42,83 @@
   .gm::after { right: 0; }
 }
 
-/* ---------- ページの頭 ---------- */
-.gm-hero {
-  position: relative;
-  margin-bottom: 30px;
-  padding: 26px 0 36px;
-  text-align: center;
-}
-/* 下の金の線と、まん中のハート（公式2027の下層ページの見出しの形） */
-.gm-hero::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--gm-line);
-}
-.gm-hero::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 30px;
-  height: 28px;
-  transform: translate(-50%, 50%);
-  background: var(--gm-heart) no-repeat center / contain;
-}
 /* 試験版の注意。カレンダーの「時間仮」と同じく破線の枠で、確定情報ではないことを示す */
 .gm-notice {
-  display: inline-block;
-  max-width: 34em;
-  margin: 0 0 16px;
-  padding: 5px 14px;
+  margin: 0 0 10px;
+  padding: 5px 12px;
   border: 1.5px dashed var(--col-link);
-  border-radius: 14px;
-  font-size: .76rem;
+  border-radius: 12px;
+  font-size: .74rem;
   font-weight: 700;
   line-height: 1.5;
   color: #8f5900;
   background: rgb(255 255 255 / .85);
 }
-.gm-hero__brand {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.1rem, 5.4vw, 2.3rem); /* 両側のキラ星まで1行に収まる大きさ（幅320pxの画面でも） */
-  line-height: 1.2;
-  white-space: nowrap;
-  letter-spacing: .08em;
-  color: var(--col-ink-primary);
-  -webkit-text-stroke: 7px var(--col-paper); /* 白いふち取り（塗りの外側だけに描く） */
-  paint-order: stroke fill;
-}
-/* 名前の両側のキラ星 */
-.gm-hero__brand::before,
-.gm-hero__brand::after {
-  content: "";
-  display: inline-block;
-  width: .6em;
-  height: .6em;
-  margin: 0 .35em;
-  vertical-align: .3em;
-  background: var(--col-gold);
-  -webkit-mask: var(--gm-star) no-repeat center / contain;
-  mask: var(--gm-star) no-repeat center / contain;
-}
-.gm-hero__title {
-  margin: 4px 0 0;
-  font-size: clamp(1.5rem, 6vw, 2.3rem);
-  font-weight: 900;
-  line-height: 1.35;
-  letter-spacing: .06em;
-}
-.gm-hero__title small {
-  display: block;
-  font-size: .52em;
-  font-weight: 700;
-  letter-spacing: .14em;
-  color: var(--col-secondary-dark);
-}
-.gm-hero__meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 8px;
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.gm-hero__meta li {
-  padding: 3px 14px;
-  border-radius: 999px;
-  font-size: .8rem;
-  font-weight: 700;
-  background: var(--col-paper);
-  box-shadow: var(--gm-shadow);
-}
-.gm-hero__meta small { font-size: .85em; opacity: .8; }
-.gm-hero__meta .gm-hero__days { font-family: var(--font-display); font-weight: 400; color: var(--col-primary-dark); }
-.gm-hero__meta .gm-hero__days small { margin-left: .2em; font-size: .68em; color: var(--col-ink-primary); opacity: 1; }
-.gm-hero__nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-/* 公式2027の主ボタンの形：淡いピンクの縁の内側に白い中身。縁は内側の影で立体に見せる */
-.gm-btn {
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 999px;
-  font-size: .86rem;
-  font-weight: 900;
-  color: var(--col-ink);
-  text-decoration: none;
-  background: var(--col-primary-light);
-  box-shadow: inset 0 -3px 3px rgb(71 43 75 / .25), inset 0 3px 3px rgb(255 255 255 / .35);
-  transition: background-color .2s;
-}
-.gm-btn span {
-  min-width: 7.5em;
-  padding: 7px 18px;
-  border-radius: 999px;
-  background: var(--col-paper);
-  transition: background-color .2s;
-}
-.gm-btn:hover { background: var(--col-link-light); }
-.gm-btn:hover span { background: var(--col-link-lighter); }
 
 /* ---------- 並べ方 ---------- */
 .gm-main {
   display: grid;
-  gap: 32px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
 }
-.gm-sec { scroll-margin-top: 12px; }
-/* 広い画面は2カラム：左にマップを固定し、右の一覧だけをスクロールする（カレンダーの2カラムと同じ考え方）。
-   マップのブースの番号が読める幅が要るので、カレンダー（641px〜）より広い 960px からにする（goodsmap.js の twoCol と合わせる） */
+.gm-split { display: none; }
+/* 広い画面は2カラム：画面いっぱいに、左にマップ・右に一覧を並べ、それぞれの列の中だけをスクロールする（ページ全体はスクロールしない）。
+   間の持ち手で幅を変える（カレンダーの2カラムと同じ）。マップのブースの番号が読める幅が要るので、カレンダー（641px〜）より広い 960px からにする（goodsmap.js の twoCol と合わせる） */
 @media (min-width: 960px) {
+  html,
+  body { height: 100%; overflow: hidden; }
+  .gm { height: 100%; padding: 16px 0 0 16px; }
   .gm-main {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    gap: 28px;
-    align-items: start;
+    grid-template-columns: var(--gm-map-w, 55%) 16px minmax(0, 1fr);
+    gap: 0;
+    height: calc(100vh - 16px);
+    height: calc(100dvh - 16px);
   }
-  .gm-sec--map {
-    position: sticky;
-    top: 16px;
-    max-height: calc(100vh - 32px);
-    max-height: calc(100dvh - 32px);
+  .gm-sec { min-height: 0; }
+  /* マップの列はスクロールしない（高さは画面で決まり、マップはその中に収まる）。一覧の列だけがスクロールする */
+  .gm-sec--map { height: 100%; padding-bottom: 16px; }
+  /* スクロールはできるが、スクロールバーは出さない */
+  .gm-sec--list {
+    padding-right: 16px;
     overflow-y: auto;
-    scrollbar-width: thin;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
   }
-}
-
-/* 見出し：両側に雪の結晶（公式2027の下層ページの見出しの形） */
-.gm-ttl {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin: 0 0 14px;
-  font-size: 1.25rem;
-  font-weight: 900;
-  line-height: 1.3;
-}
-.gm-ttl::before,
-.gm-ttl::after {
-  content: "";
-  flex: none;
-  width: 17px;
-  height: 17px;
-  background: var(--col-secondary);
-  -webkit-mask: var(--gm-snow) no-repeat center / contain;
-  mask: var(--gm-snow) no-repeat center / contain;
+  .gm-sec--list::-webkit-scrollbar { display: none; }
+  /* 持ち手：列の高さいっぱいの縦の帯。中央に縦長のつまみを描く（カレンダーの .split と同じ形） */
+  .gm-split {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+    touch-action: none;
+    outline: none;
+  }
+  .gm-split::before {
+    content: "";
+    width: 6px;
+    height: 48px;
+    border-radius: 999px;
+    background: var(--col-secondary-light);
+    transition: background-color .15s, height .15s;
+  }
+  .gm-split:hover::before,
+  .gm-split:focus-visible::before,
+  .gm-split.is-dragging::before { height: 72px; background: var(--col-primary); }
 }
 
 /* ---------- 会場マップ ---------- */
+/* マップの列の縦幅は画面の大きさだけで決める（中身の量では変えない。カレンダーの時間割 .board と同じ）。
+   スマホは画面の高さ、2カラムは列の高さいっぱい。マップは残りの高さに収まる大きさで描く（goodsmap.js の sizeMap） */
+.gm-sec--map {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* 拡大したマップの大きさで、列が広がらないように */
+}
+@media (max-width: 959px) {
+  /* スマホ（1カラム）は、画面の幅にマップ全体がちょうど収まる高さ（goodsmap.js の shrink が --gm-sec-h に入れる） */
+  .gm-sec--map { height: var(--gm-sec-h, calc(100svh - 32px)); }
+}
 .gm-floors {
   display: flex;
   flex-wrap: wrap;
@@ -227,6 +132,10 @@
   background: var(--col-paper);
   box-shadow: var(--gm-shadow);
   scroll-margin-top: 8px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 .gm-maptools {
   display: flex;
@@ -252,20 +161,32 @@
 }
 .gm-zoom button:hover:not(:disabled) { background: var(--col-secondary-lighter); }
 .gm-zoom button:disabled { opacity: .4; cursor: default; }
-/* 拡大したら、この枠の中を横にスクロールして見る。二本指は拡大縮小に使う（goodsmap.js） */
+/* 拡大したら、この枠の中を縦横にスクロールして見る。移動（1本指）と拡大縮小（二本指）は goodsmap.js が自前で行うので、ブラウザのタッチ操作は止める
+   （ブラウザのスクロールは動き始めの向きで縦か横に固定され、斜めに動かないため）。
+   マップが枠より小さいときは、まん中に置く（margin: auto。スクロールの始まりがずれないよう、place-items ではなくこれを使う） */
 .gm-map {
-  overflow-x: auto;
-  overflow-y: hidden;
-  touch-action: pan-x pan-y;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  touch-action: none;
   border-radius: 12px;
-  scrollbar-width: thin;
+  scrollbar-width: none; /* 動かすのはドラッグ・タッチ・ホイールなので、スクロールバーは出さない */
   -webkit-overflow-scrolling: touch;
+}
+.gm-map::-webkit-scrollbar { display: none; }
+/* マウスでは押したまま動かして移動できるので、手の形にする（ブースや売り場の上は指の形のまま） */
+@media (hover: hover) and (pointer: fine) {
+  .gm-map { cursor: grab; }
+  .gm-map.is-dragging,
+  .gm-map.is-dragging * { cursor: grabbing; }
 }
 .gm-map svg {
   display: block;
-  width: calc(var(--zoom, 1) * 100%);
+  flex: none;
+  margin: auto;
   max-width: none;
-  height: auto;
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -321,7 +242,65 @@
 .gm-area:focus { outline: none; }
 .gm-tile:focus-visible rect,
 .gm-area:focus-visible rect { stroke: var(--col-link); stroke-width: 4; }
+/* マップの絵と、拡大したときのブースの中身を重ねる台（大きさは goodsmap.js の sizeMap が入れる。--u はマップの1単位の画面での px） */
+.gm-canvas { position: relative; flex: none; margin: auto; }
+.gm-canvas svg { display: block; width: 100%; height: 100%; }
+.gm-minis { position: absolute; inset: 0; pointer-events: none; }
+/* 拡大したときにブースの上に出る中身（一覧のカードを縮めたもの）。枠はブースと同じ大きさで、マップと一緒に大きくなる。
+   文字は読める大きさにとどめ、拡大するほど行が増えて全部が見えてくる */
+.gm-mini {
+  position: absolute;
+  overflow: hidden;
+  padding: .35em .5em;
+  border: 2px solid var(--c);
+  border-top-width: 3px;
+  border-radius: clamp(6px, calc(var(--u) * 2.5px), 12px);
+  font-size: clamp(9px, calc(var(--u) * 3.2px), 15px);
+  line-height: 1.35;
+  background: var(--col-paper);
+  box-shadow: 0 2px 8px rgb(79 69 143 / .15);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s, visibility .2s, box-shadow .15s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.gm-map.is-detail .gm-mini { opacity: 1; visibility: visible; pointer-events: auto; }
+/* 中身が出ているあいだは、下のブースの絵（拡大されて太くなった枠線がはみ出す）を消す。押す・Tab で選ぶのはそのまま */
+.gm-tile,
+.gm-area.has-booths { transition: opacity .2s; }
+.gm-map.is-detail .gm-tile,
+.gm-map.is-detail .gm-area.has-booths { opacity: 0; }
+.gm-mini.is-picked { box-shadow: 0 0 0 3px var(--col-ink-primary), 0 4px 12px rgb(135 56 144 / .35); }
+.gm-mini__head {
+  display: flex;
+  align-items: baseline;
+  gap: .4em;
+  margin: 0 0 .2em;
+  font-weight: 900;
+  color: var(--c-dark);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gm-mini__no { flex: none; font-family: var(--font-display); font-weight: 400; color: var(--c); }
+.gm-mini__items { margin: 0; padding: 0; list-style: none; }
+.gm-mini__items li {
+  display: flex;
+  gap: .4em;
+  justify-content: space-between;
+  padding: .1em 0;
+  border-top: 1px dashed #e6e1fb;
+  font-weight: 700;
+}
+.gm-mini__items li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gm-mini__items li b { flex: none; font-family: var(--font-display); font-weight: 400; color: var(--c-dark); }
+.gm-mini__items li.theme-violet,
+.gm-mini__items li.theme-orange { color: var(--c-dark); font-weight: 500; }
+
 /* しぼり込み中は、当たらなかったブースと売り場を薄くする */
+.gm-map.is-filtering .gm-mini:not(.is-hit),
 .gm-map.is-filtering .gm-tile:not(.is-hit),
 .gm-map.is-filtering .gm-area.is-link:not(.is-hit) { opacity: .28; }
 
@@ -354,69 +333,6 @@
 @media (max-width: 640px) {
   .gm-maphint { display: block; }
 }
-.gm-mapnote { margin: 8px 2px 0; font-size: .72rem; opacity: .85; }
-.gm-mapnote a { display: inline-block; margin-left: .4em; color: var(--col-link); font-weight: 700; }
-
-/* マップの下の説明欄（選んだブース・売り場の内容） */
-.gm-pick {
-  margin-top: 12px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  font-size: .82rem;
-  background: var(--col-paper);
-  box-shadow: var(--gm-shadow);
-}
-.gm-pick__hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-weight: 700;
-  color: var(--col-secondary-dark);
-}
-.gm-pick__hint::before {
-  content: "";
-  flex: none;
-  width: 16px;
-  height: 16px;
-  background: var(--col-ink-primary);
-  -webkit-mask: var(--gm-star) no-repeat center / contain;
-  mask: var(--gm-star) no-repeat center / contain;
-}
-.gm-pick__title { margin: 0; font-size: .98rem; font-weight: 900; color: var(--c-dark, var(--col-primary-dark)); }
-.gm-pick__title small { margin-left: .6em; font-family: var(--font-display); font-weight: 400; color: var(--c); }
-.gm-pick__title + .gm-pick__booth { margin-top: 8px; }
-.gm-pick__booth + .gm-pick__booth { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--col-secondary-light); }
-.gm-pick__head { display: flex; align-items: center; gap: 8px; }
-.gm-pick__name { margin: 0; font-size: .95rem; font-weight: 900; line-height: 1.4; color: var(--c-dark); overflow-wrap: anywhere; }
-.gm-pick__line { margin: 6px 0 0; line-height: 1.6; }
-.gm-pick__line .gm-sub { margin: 0 6px 0 0; vertical-align: .05em; }
-.gm-pick__makers { font-weight: 700; color: var(--c-dark); }
-.gm-pick__dot { position: relative; padding-left: 16px; }
-.gm-pick__dot::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: .45em;
-  width: 11px;
-  height: 11px;
-  background: var(--c);
-  -webkit-mask: var(--gm-star) no-repeat center / contain;
-  mask: var(--gm-star) no-repeat center / contain;
-}
-.gm-pick__go {
-  margin-top: 10px;
-  padding: 5px 14px;
-  border: none;
-  border-radius: 999px;
-  font-size: .78rem;
-  font-weight: 900;
-  color: var(--col-paper);
-  background: var(--c);
-  cursor: pointer;
-}
-.gm-pick__go:hover { filter: brightness(1.08); }
-.gm-pick .gm-links { margin-top: 8px; }
 
 /* ---------- 出展ブースの一覧 ---------- */
 /* 検索欄としぼり込みは上に貼り付ける（長い一覧の途中でも、すぐさがし直せるように） */
@@ -673,27 +589,71 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-official .gm-also:not(.gm-also--no, .gm-also--note) { background: var(--col-paper); } /* 淡い紫の地の上でも札が見えるように */
 .gm-loose .gm-card__name { font-size: .92rem; }
 
-/* マップへ戻るボタン（カレンダーの「カレンダーへ」と同じ形）。2カラムではマップが常に見えているので出さない */
-.gm-to-map {
-  position: fixed;
-  right: 16px;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  z-index: 20;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 999px;
-  font-size: .85rem;
-  font-weight: 900;
-  color: var(--col-paper);
-  background: var(--brand-gradient);
-  box-shadow: 0 6px 18px rgb(79 69 143 / .35);
-  cursor: pointer;
-  transition: opacity .2s, transform .2s;
-}
-.gm-to-map[hidden] { display: block; opacity: 0; transform: translateY(12px); pointer-events: none; }
-@media (min-width: 960px) {
-  .gm-to-map,
-  .gm-to-map[hidden] { display: none; }
+/* スマホ（1カラム）のマップ：画面の上に貼り付け、ページを下へスクロールするほど低くし、最後は検索欄の上の細いプレビューにする（goodsmap.js の shrink）。
+   位置と高さは goodsmap.js が --gm-map-top・--gm-map-h に入れる。もとの場所の高さは .gm-sec--map が持つので、一覧の位置は動かない */
+.gm-pip__back { display: none; }
+@media (max-width: 959px) {
+  :root { --gm-preview: 160px; } /* プレビューの高さ（goodsmap.js の PREVIEW と合わせる） */
+  .gm-main { gap: 0; } /* 縮んでいくマップの下端に、検索欄がすき間なく続くように */
+  .gm-mapbox {
+    position: fixed;
+    top: var(--gm-map-top, 16px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    height: var(--gm-map-h, calc(100svh - 32px));
+    margin: 0;
+    border-radius: 0;
+    box-shadow: 0 6px 16px rgb(79 69 143 / .12);
+  }
+  /* 案内と凡例はフルスクリーンのときだけ出す（開いたときはマップ全体だけを、すき間なく見せる） */
+  .gm-mapbox:not(.is-full) .gm-maphint,
+  .gm-mapbox:not(.is-full) .gm-legend,
+  .gm-mapbox.is-preview .gm-maptools { display: none; }
+  /* 拡大したときだけの、画面いっぱいの表示。うしろのページはスクロールさせない */
+  .gm-mapbox.is-full {
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    height: auto;
+    padding: calc(10px + env(safe-area-inset-top)) 0 calc(10px + env(safe-area-inset-bottom));
+  }
+  html.gm-noscroll,
+  html.gm-noscroll body { overflow: hidden; }
+  .gm-mapbox.is-preview { padding: 4px 0; }
+  /* 検索欄はマップの下に貼り付く（--gm-pv はいまのマップの高さ） */
+  .gm-tools { top: var(--gm-pv, 0px); }
+  .gm-card { scroll-margin-top: calc(var(--gm-preview) + 132px); }
+  /* プレビューの右上の、いちばん上（大きいマップ）へ戻るボタン */
+  .gm-mapbox.is-full .gm-pip__back,
+  .gm-mapbox.is-preview .gm-pip__back {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    color: var(--col-paper);
+    background: var(--brand-gradient);
+    box-shadow: 0 2px 6px rgb(79 69 143 / .3);
+    cursor: pointer;
+  }
+  /* フルスクリーンでは、マップの上の行のボタンと重ならないよう、下の右に置く */
+  .gm-mapbox.is-full .gm-pip__back { top: auto; bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px; width: 44px; height: 44px; }
+  .gm-mapbox.is-full .gm-legend { padding-right: 72px; } /* 右下の×と重ならないように */
+  .gm-mapbox.is-full .gm-pip__back::before { -webkit-mask-image: var(--gm-close); mask-image: var(--gm-close); }
+  /* 広げる向きの矢印（右上と左下） */
+  .gm-pip__back::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    background: currentColor;
+    -webkit-mask: var(--gm-expand) no-repeat center / contain;
+    mask: var(--gm-expand) no-repeat center / contain;
+  }
 }
 
 /* ---------- フッター ---------- */
@@ -703,5 +663,4 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 
 @media (prefers-reduced-motion: reduce) {
   .gm-card.is-flash { animation: none; }
-  .gm-to-map { transition: none; }
 }

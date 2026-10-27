@@ -85,7 +85,7 @@ window.GM_DATA = {
         { kind: "workshop", spot: "workshop", x: 224, y: 278, w: 89, h: 53, label: ["ワーク", "ショップ"], size: 14 },
         { kind: "facility", x: 391, y: 278, w: 144, h: 54, label: ["エスカレーター"], size: 15 },
         { kind: "facility", x: 15, y: 515, w: 121, h: 86, label: ["更衣室"], size: 16 },
-        { kind: "facility", x: 15, y: 601, w: 121, h: 41, label: ["ねんどろいど", "引換所"], size: 13 },
+        { kind: "facility", spot: "nendo", x: 15, y: 601, w: 121, h: 41, label: ["ねんどろいど", "引換所"], size: 13 },
         { kind: "facility", spot: "cloak", x: 15, y: 642, w: 121, h: 44, label: ["クローク受付"], size: 15 },
         { kind: "gacha", spot: "gacha", x: 15, y: 686, w: 121, h: 71, label: ["ガチャ", "コーナー"], size: 16 },
         { kind: "official", spot: "official", x: 168, y: 758, w: 214, h: 67, label: ["公式物販"], size: 22 },
@@ -128,6 +128,7 @@ window.GM_DATA = {
       links: [{ label: "クローク", url: "https://snowmiku.com/2026/location_wingbay.html#wingbay_cloak" }],
     },
     gacha: { title: "ガチャコーナー", booths: ["g1", "g2"] },
+    nendo: { title: "ねんどろいど引換所", booths: ["n1"] },
     official: { title: "公式物販", official: true },
     entrance: {
       title: "出入口",
@@ -340,6 +341,14 @@ window.GM_DATA = {
       notes: ["ラバーキーチェーンは全6種で、＃C-pla限定"],
       links: [{ label: "特設サイト", url: "https://toshin.jpn.com/cplaold/snowmiku2026/" }],
     },
+    // 公式の出展ブースの一覧には無いが、ねんどろいどはここで扱う（作者の情報。公式の一覧には売り場の記載が無い）
+    {
+      no: "n1",
+      label: "引換所",
+      name: "ねんどろいど引換所",
+      org: "株式会社グッドスマイルカンパニー",
+      notes: ["例年、予約注文した分の引き換えと、当日の抽選販売"],
+    },
   ],
 
   goods: [
@@ -407,7 +416,7 @@ window.GM_DATA = {
     { id: "le-keyholder", maker: "株式会社ローソンエンタテインメント", name: "SNOW MIKU 2026 アクリルキーホルダー「SHIAWASE FOR YOU!」ver.", price: 1000, places: ["wingbay", "hmv"], floor: "公式物販", url: "https://snowmiku.com/2026/goods_le_mv-acrylic-key-holder.html" },
     { id: "cfm-cd", maker: "クリプトン・フューチャー・メディア株式会社", name: "ふかしぎプラリネージュ feat. 初音ミク（CD）", price: 2600, places: ["wingbay", "hmv", "skytown"], floor: "公式物販", url: "https://snowmiku.com/2026/goods_karent_cd.html" },
 
-    // ウイングベイで扱うが、公式の一覧に売り場の記載が無いもの
-    { id: "gsc-nendoroid", maker: "株式会社グッドスマイルカンパニー", name: "ねんどろいど 雪ミク Sweet Snow Ver.", price: 8300, places: ["wingbay"], url: "https://snowmiku.com/2026/goods_gsc_nendoroid.html" },
+    // ねんどろいど引換所（公式の一覧には売り場の記載が無い）
+    { id: "gsc-nendoroid", booth: "n1", maker: "株式会社グッドスマイルカンパニー", name: "ねんどろいど 雪ミク Sweet Snow Ver.", price: 8300, places: ["wingbay"], url: "https://snowmiku.com/2026/goods_gsc_nendoroid.html" },
   ],
 };
