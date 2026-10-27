@@ -58,7 +58,7 @@
       .replace(/[\s・]/g, "");
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   // 2カラム（左にマップを固定）にする幅。goodsmap.css と合わせる
-  const twoCol = matchMedia("(min-width: 960px)");
+  const twoCol = matchMedia("(min-width: 641px)");
 
   // ---------- データの整理 ----------
   const booths = D.booths;
@@ -208,10 +208,58 @@
   let floor = D.floors[0];
   const tileOf = (f) => f.tile ?? [57, 35]; // ブースの大きさ（フロアごとのデータ。無ければ公式の会場マップのブースと同じ）
   const INSET = 2.5; // 売り場・設備の四角を少し縮めて、となりとの間を空ける
-
+  // ブース名が出る拡大率（NAMED 以上）では、通路を狭めてその分ブースを大きくする（番号だけのあいだは元の大きさ）。
+  // どのブースも同じ大きさ（縦横とも GROW ずつ大きく）にそろえる。広げるのは通路に面した辺だけで、となりのブースとくっついている辺は広げない
+  // （両側が通路なら右・下へ。半分ずつにすると、片側だけ広げるとなりのブースと端がずれる。26 と 27 など）。広げたあとに、向かいとの間が AISLE より狭くなるところがあれば警告する（データの配置を直す）
+  const GROW = 12; // 縦横それぞれ大きくする量（マップの単位）
+  const AISLE = 16; // 広げても残したい通路の幅
+  const grownCache = new WeakMap(); // フロアごとに1回だけ計算する（警告も1回だけ）
+  function grownOf(f) {
+    if (grownCache.has(f)) return grownCache.get(f);
+    const [vx, vy, vw, vh] = f.view;
+    const [tw, th] = tileOf(f);
+    const tiles = Object.entries(f.booths).map(([no, [x, y]]) => ({ no, x, y, w: tw, h: th }));
+    const overlapY = (a, b) => a.y < b.y + b.h && a.y + a.h > b.y;
+    const overlapX = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x;
+    // その辺のすぐ向こうに、となりのブースがくっついているか
+    const joined = (t, side) =>
+      tiles.some((o) => {
+        if (o === t) return false;
+        if (side === "l") return overlapY(t, o) && t.x - (o.x + o.w) >= 0 && t.x - (o.x + o.w) < AISLE;
+        if (side === "r") return overlapY(t, o) && o.x - (t.x + t.w) >= 0 && o.x - (t.x + t.w) < AISLE;
+        if (side === "t") return overlapX(t, o) && t.y - (o.y + o.h) >= 0 && t.y - (o.y + o.h) < AISLE;
+        return overlapX(t, o) && o.y - (t.y + t.h) >= 0 && o.y - (t.y + t.h) < AISLE;
+      });
+    const split = (a, b) => (b ? [0, GROW] : a ? [GROW, 0] : [0, 0]);
+    const big = new Map(
+      tiles.map((t) => {
+        const [l, r] = split(!joined(t, "l"), !joined(t, "r"));
+        const [tp, bt] = split(!joined(t, "t"), !joined(t, "b"));
+        return [t.no, { x: t.x - l, y: t.y - tp, w: t.w + l + r, h: t.h + tp + bt }];
+      })
+    );
+    // 広げたブースどうし・売り場・マップの端との間が狭すぎないか（通路側の辺だけ。くっついている辺は元のすき間のまま）
+    const walls = f.areas.map((a) => ({ x: a.x + INSET, y: a.y + INSET, w: a.w - INSET * 2, h: a.h - INSET * 2 }));
+    const near = (a, b) => overlapX(a, b) || overlapY(a, b);
+    const gapOf = (a, b) => Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), b.y - (a.y + a.h), a.y - (b.y + b.h));
+    for (const [no, g] of big) {
+      const t = tiles.find((x) => x.no === no);
+      const edge = Math.min(g.x - vx, vx + vw - g.x - g.w, g.y - vy, vy + vh - g.y - g.h);
+      if (edge < AISLE / 2) console.warn(`[goodsmap] ブース ${no} を大きくすると、マップの端に近すぎます（${r1(edge)}）`);
+      for (const [no2, g2] of big) {
+        if (no2 <= no) continue;
+        const t2 = tiles.find((x) => x.no === no2);
+        if (near(g, g2) && gapOf(t, t2) >= AISLE && gapOf(g, g2) < AISLE) console.warn(`[goodsmap] ブース ${no} と ${no2} の間の通路が狭すぎます（${r1(gapOf(g, g2))}）`);
+      }
+      for (const w of walls) if (near(g, w) && gapOf(g, w) < AISLE / 2) console.warn(`[goodsmap] ブース ${no} を大きくすると、売り場に近すぎます（${r1(gapOf(g, w))}）`);
+    }
+    grownCache.set(f, big);
+    return big;
+  }
   function mapSvg(f) {
     const [vx, vy, vw, vh] = f.view;
     const [tw, th] = tileOf(f);
+    const big = grownOf(f);
     const area = (a) => {
       const x = a.x + INSET;
       const y = a.y + INSET;
@@ -233,8 +281,11 @@
     };
     const tile = ([no, [x, y]]) => {
       const b = boothBy.get(no);
+      const g = big.get(no);
+      // 元の大きさの四角と、ブース名が出るときの大きい四角（goodsmap.css で入れ替える）
       return `<g class="gm-tile theme-${info.get(no)?.theme ?? "pink"}" data-pick="${esc(no)}" tabindex="0" role="button" aria-label="${esc(TEXT.boothName(no) + (b ? `：${b.name}` : ""))}">
-        <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="8"/>
+        <rect class="gm-tile__box" x="${x}" y="${y}" width="${tw}" height="${th}" rx="8"/>
+        <rect class="gm-tile__big" x="${r1(g.x)}" y="${r1(g.y)}" width="${r1(g.w)}" height="${r1(g.h)}" rx="8"/>
         <text x="${r1(x + tw / 2)}" y="${r1(y + th / 2)}" dy=".36em" font-size="${r1(Math.min(th * 0.55, tw * 0.48))}">${esc(no)}</text>
       </g>`;
     };
@@ -257,12 +308,14 @@
   const miniName = (name) => name.replace(/株式会社|有限会社|[（(]株[)）]/g, "").trim();
   const headK = (no, name, w) => r1(Math.min(7.5, (w - 6) / ([...name].length + [...no].length * 0.7 + 0.5)));
   // 中くらいの拡大で、ブースの上に出す番号とブース名（押せるのは下のブースの絵。名前は2行まで、長い名前は文字を小さくして収める）
+  // 置くのは、通路を狭めて大きくしたブースの四角（grownOf）
   function labelsHtml(f) {
     const [vx, vy, vw, vh] = f.view;
-    const [tw, th] = tileOf(f);
+    const big = grownOf(f);
     const pct = (v, all) => `${r1((v / all) * 1000) / 10}%`;
-    return Object.entries(f.booths)
-      .map(([no, [x, y]]) => {
+    return Object.keys(f.booths)
+      .map((no) => {
+        const { x, y, w: tw, h: th } = big.get(no);
         const b = boothBy.get(no);
         if (!b) return "";
         const name = miniName(b.short ?? b.name);
@@ -295,7 +348,11 @@
         <ul class="gm-mini__items">${rows.join("")}</ul>
       </div>`;
     };
-    const tiles = Object.entries(f.booths).map(([no, [x, y]]) => box(no, x, y, ...tileOf(f)));
+    const big = grownOf(f);
+    const tiles = Object.keys(f.booths).map((no) => {
+      const { x, y, w, h } = big.get(no);
+      return box(no, x, y, w, h);
+    });
     const inAreas = f.areas
       .filter((a) => a.label && D.spots[a.spot]?.booths)
       .flatMap((a) => {
@@ -354,6 +411,7 @@
   // (ax, ay)（枠の左上からの位置）の下にある内容が動かないように、スクロールを直す。
   // マップが枠より小さいあいだは枠のまん中に置いているので、その余白（マップの左上の位置）も含めて合わせる
   function setZoom(z, ax, ay) {
+    anchored = false;
     ax ??= $map.clientWidth / 2;
     ay ??= $map.clientHeight / 2;
     const k = clampZoom(z) / zoom;
@@ -381,15 +439,34 @@
     const m = $map.getBoundingClientRect();
     const left = $map.scrollLeft + r.left - m.left + ((x - vx) / vw) * r.width - m.width / 2;
     const top = $map.scrollTop + r.top - m.top + ((y - vy) / vh) * r.height - m.height / 2;
+    anchored = false;
     $map.scrollTo({ left, top, behavior: smooth ? behavior : "auto" });
   }
-  // スマホなど枠が狭いときは、ブースの番号が読める大きさまで拡大して開き、ブースの並びをまん中に出す
+  // スマホ（1カラム）は、ブース名が出る大きさ（NAMED）まで拡大して開き、右下に寄せる（左端の売り場はあえて見切れさせる）。
+  // 枠が広くて、いちばん左のブースの列とその左の売り場の端まで入るなら、そこまで入る大きさにする（左にも売り場があるとわかるように）。2カラムは全体
   function initialZoom() {
     zoom = 1;
     setZoom(1);
+    if (twoCol.matches) return;
+    const [vx, , vw, vh] = floor.view;
+    const fit = Math.min($map.clientWidth / vw, $map.clientHeight / vh);
+    const left = Math.min(...Object.values(floor.booths).map(([x]) => x)) - 120; // いちばん左のブースの列に、その左の売り場が少し見える分を足す
+    const u = Math.max((NAMED + 0.5) / tileOf(floor)[0], $map.clientWidth / (vx + vw - left));
+    setZoom(u / fit);
+    anchored = true;
+    toCorner();
   }
+  // 開いたときの右下寄せは、利用者がマップを動かすまで保つ（開いた直後に枠の大きさが変わると、スクロールの位置が左上に残るため）
+  let anchored = false;
+  const toCorner = () => {
+    $map.scrollLeft = $map.scrollWidth;
+    $map.scrollTop = $map.scrollHeight;
+  };
   // 画面の大きさが変わったら（端末を回したときなど）、枠に合わせて描き直す
-  new ResizeObserver(() => sizeMap()).observe($map);
+  new ResizeObserver(() => {
+    sizeMap();
+    if (anchored) toCorner();
+  }).observe($map);
 
   // 二本指で拡大縮小（カレンダーの時間割と同じ操作）。指の間の内容が動かないように、枠の中のスクロールで合わせる
   let pinch = null;
@@ -403,6 +480,7 @@
     (ev) => {
       if (ev.touches.length !== 2 || preview) return; // プレビューでは拡大縮小しない
       drag = null; // 1本指の移動から、ピンチに切り替える
+      anchored = false;
       const s = spread(ev.touches);
       const m = $map.getBoundingClientRect();
       pinch = { s, zoom, left: $map.scrollLeft, top: $map.scrollTop, ax: s.x - m.left, ay: s.y - m.top, raf: 0 };
@@ -458,6 +536,7 @@
   let drag = null;
   let glide = 0;
   const panBy = (dx, dy, chain) => {
+    anchored = false;
     const top = $map.scrollTop;
     $map.scrollLeft -= dx;
     $map.scrollTop -= dy;
@@ -716,16 +795,18 @@
     initialZoom();
   });
 
-  // 2カラムの持ち手：ドラッグ（ダブルクリックで初期の幅、← → キーでも動く）でマップの幅を変え、この端末に覚える（カレンダーの持ち手と同じ操作）
+  // 2カラムの持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）でマップの幅を変え、この端末に覚える（カレンダーの持ち手と同じ操作・同じ処理）
   {
     const $split = $("gmSplit");
     const $main = $("gmMain");
     const KEY = "sm27-goodsmap-w";
-    const DEFAULT = 55;
-    const MIN_MAP = 360; // マップと一覧が読める幅の下限（px）
-    const MIN_LIST = 340;
+    const DEFAULT = 50;
+    const MIN_MAP = 300; // マップと一覧が読める幅の下限（px）。カレンダーの持ち手と同じ（641px でも両方が収まる）
+    const MIN_LIST = 260;
+    // .gm-main の位置と幅はドラッグ中は変わらないので押した時に1回だけ測る（動かすたびに測ると、直前の幅の変更をその場でレイアウトさせて重い）
+    let rect = null;
     const setW = (pct, save) => {
-      const total = $main.clientWidth || innerWidth;
+      const total = rect?.width || $main.clientWidth || innerWidth;
       const w = Math.min(100 - ((MIN_LIST + 16) / total) * 100, Math.max((MIN_MAP / total) * 100, pct));
       $main.style.setProperty("--gm-map-w", `${w}%`);
       $split.setAttribute("aria-valuenow", String(Math.round(w)));
@@ -745,22 +826,57 @@
     setW(Number.isFinite(saved) ? saved : DEFAULT, false);
     // 持ち手の列（16px）の中央を指の位置に合わせる
     const pctAt = (x) => {
-      const r = $main.getBoundingClientRect();
+      const r = rect ?? $main.getBoundingClientRect();
       return ((x - r.left - 8) / r.width) * 100;
     };
+    // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。
+    // 動かす手を止めたら（SETTLE ms）、その幅で中身も組み直す
+    const $side = $("booths");
+    const SETTLE = 200;
+    let settle = 0;
+    const freeze = () => {
+      if ($side.classList.contains("is-frozen")) return;
+      $side.querySelectorAll(".gm-card").forEach((card) => {
+        const cs = getComputedStyle(card);
+        card.style.setProperty("--cw", `${card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)}px`);
+      });
+      $side.classList.add("is-frozen");
+    };
+    const thaw = () => $side.classList.remove("is-frozen");
+    // 幅の変更は1フレームに1回だけにまとめる
+    let moveX = 0;
+    let moveRaf = 0;
     $split.addEventListener("pointerdown", (ev) => {
       ev.preventDefault();
+      rect = $main.getBoundingClientRect();
+      freeze();
       $split.setPointerCapture(ev.pointerId);
       $split.classList.add("is-dragging");
+      document.documentElement.classList.add("is-resizing");
     });
     $split.addEventListener("pointermove", (ev) => {
-      if ($split.hasPointerCapture(ev.pointerId)) setW(pctAt(ev.clientX), false);
+      if (!$split.hasPointerCapture(ev.pointerId)) return;
+      moveX = ev.clientX;
+      if (!moveRaf)
+        moveRaf = requestAnimationFrame(() => {
+          moveRaf = 0;
+          freeze();
+          setW(pctAt(moveX), false);
+          clearTimeout(settle);
+          settle = setTimeout(thaw, SETTLE);
+        });
     });
     const end = (ev) => {
       if (!$split.hasPointerCapture(ev.pointerId)) return;
+      cancelAnimationFrame(moveRaf);
+      moveRaf = 0;
+      clearTimeout(settle);
+      thaw();
       $split.releasePointerCapture(ev.pointerId);
       $split.classList.remove("is-dragging");
+      document.documentElement.classList.remove("is-resizing");
       setW(pctAt(ev.clientX), true);
+      rect = null;
     };
     $split.addEventListener("pointerup", end);
     $split.addEventListener("pointercancel", end);
@@ -771,8 +887,15 @@
       ev.preventDefault();
       setW(parseFloat($main.style.getPropertyValue("--gm-map-w")) + step, true);
     });
-    // 画面の幅が変わったら、下限をかけ直す
-    window.addEventListener("resize", () => setW(parseFloat($main.style.getPropertyValue("--gm-map-w")), false));
+    // 2カラムの高さは dvh ではなく innerHeight で決める（goodsmap.css の --app-h。カレンダーと同じ）。
+    // Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、resize の後も直らないことがある
+    const setAppH = () => $main.style.setProperty("--app-h", `${innerHeight}px`);
+    setAppH();
+    // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す
+    window.addEventListener("resize", () => {
+      setW(parseFloat($main.style.getPropertyValue("--gm-map-w")), false);
+      setAppH();
+    });
   }
 
   // スマホ（1カラム）のマップ：開いたときは、画面の上半分に出す（1倍。マップと一覧が上下1:1）。
@@ -866,7 +989,7 @@
   renderStatic();
   renderList();
   renderMap();
+  shrink(); // スマホは、先にマップの枠を開いたときの高さにしてから拡大する（右下に寄せるため）
   initialZoom();
-  shrink();
   openHash({ instant: true });
 })();

@@ -1,0 +1,1219 @@
+<!doctype html>
+<!-- ブースマップのエディタ。website/test_sm26goodsmap/ のデータ（data-○○○○.js）の floors の配置（view・tile・areas・booths）を
+     ドラッグで直し、そのファイルに書き戻す。書き戻すのは数字だけで、コメントや並びはそのまま残す。
+     手元専用（tools/ はデプロイしない）。Chrome・Edge で開く（file:// でも LiveServer でも可）。?data= でデータのパスを変えられる -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ブースマップエディタ</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    font: 13px/1.5 system-ui, "Noto Sans JP", sans-serif;
+    color: #1f2328;
+    background: #f6f7f9;
+  }
+  button, select, input { font: inherit; }
+  button {
+    padding: 3px 10px;
+    border: 1px solid #c9ced6;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: #eef3fd; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { border-color: #1a73e8; background: #1a73e8; color: #fff; }
+  button.primary:hover { background: #1765cc; }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 6px 12px;
+    border-bottom: 1px solid #d8dde3;
+    background: #fff;
+  }
+  .bar strong { font-size: 14px; }
+  .bar .grow { flex: 1; }
+  .bar label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  #status { color: #57606a; }
+  #status.is-dirty { color: #c2410c; font-weight: 700; }
+
+  main { display: grid; grid-template-columns: 1fr 290px; min-height: 0; }
+  #cv { display: block; width: 100%; height: 100%; background: #e3e7ec; touch-action: none; user-select: none; }
+  #cv.is-pan, #cv.is-space { cursor: grab; }
+  aside { overflow: auto; border-left: 1px solid #d8dde3; background: #fff; }
+  aside section { padding: 10px 12px; border-bottom: 1px solid #eef0f3; }
+  aside h2 { margin: 0 0 6px; font-size: 12px; color: #57606a; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+  .fields label { display: grid; grid-template-columns: 3.2em 1fr; align-items: center; }
+  .fields input { width: 100%; padding: 2px 4px; border: 1px solid #c9ced6; border-radius: 4px; }
+  .name { margin: 0 0 6px; font-weight: 700; }
+  .note { margin: 6px 0 0; color: #57606a; font-size: 12px; }
+  .btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; }
+  .btns button { padding: 3px 4px; }
+  #checks ul { margin: 0; padding: 0; list-style: none; }
+  #checks li { padding: 3px 4px; border-radius: 4px; cursor: pointer; }
+  #checks li:hover { background: #fff4e5; }
+  #checks .ok { color: #1a7f37; }
+  .help dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; margin: 0; font-size: 12px; }
+  .help dt { color: #57606a; white-space: nowrap; }
+  .help dd { margin: 0; }
+
+  /* マップ（座標はマップの単位。線は画面の px で描く） */
+  #cv * { vector-effect: non-scaling-stroke; }
+  .view { fill: #fff; }
+  .outside { fill: rgb(227 231 236 / .7); pointer-events: none; }
+  .viewline { fill: none; stroke: #9aa3ad; stroke-dasharray: 4 3; pointer-events: none; }
+  .item { cursor: move; }
+  .item rect { stroke-width: 1.5; }
+  .item text { pointer-events: none; text-anchor: middle; fill: #3b3f45; font-weight: 700; }
+  .item .nm { font-weight: 400; fill: #57606a; }
+  .k-exhibit rect { fill: #ece6fb; stroke: #9185de; }
+  .k-market rect, .k-workshop rect { fill: #fde3f3; stroke: #dd67e2; }
+  .k-facility rect { fill: #eef0f3; stroke: #9aa3ad; }
+  .k-gacha rect { fill: #fff0dc; stroke: #f0a040; }
+  .k-official rect { fill: #fff4cc; stroke: #d4a017; }
+  .k-shop rect, .k-entrance rect { fill: #def4f2; stroke: #39c5bb; }
+  .k-booth rect { fill: #ffe3f1; stroke: #e0559a; }
+  .item.is-sel rect { stroke: #1a73e8; stroke-width: 2.5; }
+  .grown { fill: none; stroke: #e0559a; stroke-dasharray: 5 3; pointer-events: none; }
+  .grown.is-bad { stroke: #d1242f; stroke-width: 2; }
+  .selbox { fill: none; stroke: #1a73e8; stroke-dasharray: 4 3; pointer-events: none; }
+  .grp { fill: none; stroke: #8c959f; stroke-dasharray: 2 3; pointer-events: none; }
+  .grp.is-sel { stroke: #1a73e8; stroke-dasharray: none; stroke-width: 1.5; }
+  .grp.is-in { stroke: #1a73e8; stroke-dasharray: 6 3; }
+  .handle { fill: #fff; stroke: #1a73e8; stroke-width: 1.5; }
+  .guide { stroke: #f0287e; stroke-width: 1; pointer-events: none; }
+  .marquee { fill: rgb(26 115 232 / .08); stroke: #1a73e8; pointer-events: none; }
+  .tip { fill: #1f2328; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3; pointer-events: none; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <strong>ブースマップエディタ</strong>
+  <select id="floor" hidden></select>
+  <label title="マップの単位。線の間隔とスナップの幅（0で線もスナップもなし）">グリッド<input type="number" id="grid" min="0" step="any" style="width:5em"></label>
+  <label><input type="checkbox" id="snap">スナップ</label>
+  <label><input type="checkbox" id="guides">辺・中央に吸着</label>
+  <label><input type="checkbox" id="grown">拡大時のブース</label>
+  <button id="undo" title="Ctrl+Z">元に戻す</button>
+  <button id="redo" title="Ctrl+Y">やり直す</button>
+  <button id="fit" title="F">全体</button>
+  <span class="grow"></span>
+  <span id="status"></span>
+  <button id="open" title="データのファイルを選んで読み込み直す">開く…</button>
+  <button id="save" class="primary" title="Ctrl+S">保存</button>
+</header>
+<main>
+  <svg id="cv"></svg>
+  <aside>
+    <section id="insp"></section>
+    <section>
+      <h2>そろえる（1つだけ選んだときはマップに対して）</h2>
+      <div class="btns">
+        <button data-align="l">左</button>
+        <button data-align="c">左右の中央</button>
+        <button data-align="r">右</button>
+        <button data-align="t">上</button>
+        <button data-align="m">上下の中央</button>
+        <button data-align="b">下</button>
+      </div>
+      <div class="btns">
+        <button data-dist="x">横を等間隔</button>
+        <button data-dist="y">縦を等間隔</button>
+        <span></span>
+        <button data-size="w">幅を合わせる</button>
+        <button data-size="h">高さを合わせる</button>
+      </div>
+      <div class="btns">
+        <button id="group" title="Ctrl+G">グループ化</button>
+        <button id="ungroup" title="Ctrl+Shift+G">グループ解除</button>
+      </div>
+      <p class="note">売り場の大きさは、最後に押したものに合わせる。グループはまとめて1つとしてそろえる。</p>
+    </section>
+    <section id="checks"></section>
+    <section class="help">
+      <h2>操作</h2>
+      <dl>
+        <dt>ドラッグ</dt><dd>移動（Shift：縦か横だけ、Alt：吸着しない）</dd>
+        <dt>四隅・辺</dt><dd>売り場の大きさを変える</dd>
+        <dt>Shift+クリック</dt><dd>選択に足す・外す</dd>
+        <dt>Ctrl+G</dt><dd>グループにする（Ctrl+Shift+G：解除）</dd>
+        <dt>ダブルクリック</dt><dd>グループの中の1つだけを選ぶ</dd>
+        <dt>空き地をドラッグ</dt><dd>範囲で選ぶ</dd>
+        <dt>矢印</dt><dd>スナップ中は隣のグリッドへ（Shift：5マス、Alt：1ずつ）。スナップなしなら1ずつ（Shift：10）</dd>
+        <dt>ホイール</dt><dd>拡大縮小</dd>
+        <dt>Space+ドラッグ</dt><dd>見る場所を動かす（中・右ボタンも）</dd>
+        <dt>F</dt><dd>全体を表示</dd>
+        <dt>Ctrl+A / Esc</dt><dd>すべて選ぶ／選択を外す</dd>
+        <dt>Ctrl+Z / Y</dt><dd>元に戻す／やり直す</dd>
+        <dt>Ctrl+S</dt><dd>データのファイルに保存</dd>
+      </dl>
+      <p class="note">売り場は、マップと同じく各辺を2.5内側に縮めた見た目の四角で吸着・整列する（データの値はその分外側）。グリッドはデータの値に合わせ、スナップ中はどの操作でも必ずグリッドに乗る（グリッドから外れる辺・中央の吸着はしない）。</p>
+    </section>
+  </aside>
+</main>
+<script>
+(() => {
+  const DATA_SRC = new URLSearchParams(location.search).get("data") ?? "../website/test_sm26goodsmap/data-2026fix.js";
+  // goodsmap.js と同じ値
+  const INSET = 2.5;
+  const GROW = 12;
+  const AISLE = 16;
+  const SNAP_PX = 6; // 吸着する距離（画面の px）
+
+  const $ = (id) => document.getElementById(id);
+  const cv = $("cv");
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const rh = (v) => Math.round(v * 2) / 2;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+
+  // 好み（グリッドなど）はこのブラウザに覚える
+  const PREF_KEY = "sm27-goodsmap-editor";
+  const pref = { grid: 5, snap: true, guides: true, grown: false };
+  try { Object.assign(pref, JSON.parse(localStorage.getItem(PREF_KEY)) ?? {}); } catch {}
+  const savePref = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify(pref)); } catch {} };
+
+  // ---------- データ ----------
+  let D; // window.GM_DATA
+  let fi = 0; // フロアの番号
+  let F; // 元のフロア（ラベルなど、編集しないもの）
+  let M; // 編集する配置 { view, tile, areas: [{x, y, w, h, labelY?}], booths: {no: [x, y]} }
+  let base; // 最後に読み込んだ・保存した配置（未保存の判定）
+  let hist = [];
+  let fut = [];
+  let handle = null; // 書き戻すファイル（File System Access API）
+  const sel = new Set();
+  let primary = null; // 最後に押したもの（大きさを合わせる基準）
+  const cam = { x: 0, y: 0, s: 1 };
+  let guides = [];
+  let drag = null;
+  let spaceDown = false;
+  let entered = -1; // ダブルクリックで中に入っているグループ（中の1つずつを選べる）
+  let lastDown = null; // ダブルクリックの判定 { id, t }
+
+  // groups：エディタだけで使うグループ（"b"＋ブースの番号、"a"＋areas の番号の配列）。データの floors に保存し、マップの表示には使わない
+  const geomOf = (f) => ({
+    view: [...f.view],
+    tile: [...(f.tile ?? [57, 35])],
+    areas: f.areas.map((a) => ({ x: a.x, y: a.y, w: a.w, h: a.h, ...("labelY" in a ? { labelY: a.labelY } : {}) })),
+    booths: Object.fromEntries(Object.entries(f.booths).map(([k, v]) => [k, [...v]])),
+    groups: (f.groups ?? []).map((g) => [...g]),
+  });
+  const evalData = (text) => {
+    const w = {};
+    new Function("window", text)(w);
+    if (!w.GM_DATA?.floors) throw new Error("GM_DATA.floors が見つかりません");
+    return w.GM_DATA;
+  };
+
+  function loadData(data) {
+    D = data;
+    $("floor").innerHTML = D.floors.map((f, i) => `<option value="${i}">${esc(f.label)}</option>`).join("");
+    $("floor").hidden = D.floors.length < 2;
+    setFloor(Math.min(fi, D.floors.length - 1));
+  }
+  function setFloor(i) {
+    fi = i;
+    $("floor").value = i;
+    F = D.floors[i];
+    M = geomOf(F);
+    base = clone(M);
+    hist = [];
+    fut = [];
+    sel.clear();
+    entered = -1;
+    fit();
+    renderSide();
+  }
+
+  // ---------- 四角 ----------
+  // id は売り場が "a" + 番号、ブースが "b" + ブースの番号
+  const isArea = (id) => id[0] === "a";
+  const areaOf = (id) => M.areas[+id.slice(1)];
+  const allIds = () => [...M.areas.map((_, i) => "a" + i), ...Object.keys(M.booths).map((n) => "b" + n)];
+  function rectOf(id) {
+    if (isArea(id)) {
+      const { x, y, w, h } = areaOf(id);
+      return { x, y, w, h };
+    }
+    const [x, y] = M.booths[id.slice(1)];
+    return { x, y, w: M.tile[0], h: M.tile[1] };
+  }
+  // 見た目の四角（売り場はマップと同じく各辺を INSET 縮める）
+  const visOfRect = (id, r) => {
+    const k = isArea(id) ? INSET : 0;
+    return { x: r.x + k, y: r.y + k, w: r.w - k * 2, h: r.h - k * 2 };
+  };
+  const visOf = (id) => visOfRect(id, rectOf(id));
+  const viewRect = () => ({ x: M.view[0], y: M.view[1], w: M.view[2], h: M.view[3] });
+  function bboxOf(rs) {
+    const x = Math.min(...rs.map((r) => r.x));
+    const y = Math.min(...rs.map((r) => r.y));
+    return { x, y, w: Math.max(...rs.map((r) => r.x + r.w)) - x, h: Math.max(...rs.map((r) => r.y + r.h)) - y };
+  }
+  function moveTo(id, x, y) {
+    if (!isArea(id)) return void (M.booths[id.slice(1)] = [x, y]);
+    const a = areaOf(id);
+    if ("labelY" in a) a.labelY = r2(a.labelY + y - a.y); // 文字も一緒に動かす
+    a.x = x;
+    a.y = y;
+  }
+  const shiftBy = (id, dx, dy) => {
+    const r = rectOf(id);
+    moveTo(id, r2(r.x + dx), r2(r.y + dy));
+  };
+  function nameOf(id) {
+    if (isArea(id)) {
+      const a = F.areas[+id.slice(1)];
+      return a.label?.join("").replace(/[←→]/g, "") || `${a.kind}（名前なし）`;
+    }
+    return `ブース${id.slice(1)}`;
+  }
+  // ---------- グループ ----------
+  const groupOf = (id) => M.groups.findIndex((g) => g.includes(id));
+  // 押したもの（id）で選ぶもの。グループの中に入っていなければ、グループ全部
+  const pickOf = (id) => {
+    const g = groupOf(id);
+    return g >= 0 && g !== entered ? M.groups[g] : [id];
+  };
+  // 選んだものを、そろえるときの単位に分ける（グループは丸ごと選んでいれば1つ）
+  function unitsOf() {
+    const out = new Map();
+    for (const id of sel) {
+      const g = groupOf(id);
+      const whole = g >= 0 && g !== entered && M.groups[g].every((x) => sel.has(x));
+      const key = whole ? "g" + g : id;
+      if (!out.has(key)) out.set(key, whole ? M.groups[g] : [id]);
+    }
+    return [...out.values()].map((ids) => ({ ids, v: bboxOf(ids.map(visOf)) }));
+  }
+  function group() {
+    if (sel.size < 2) return;
+    const before = snap();
+    const ids = allIds().filter((id) => sel.has(id));
+    M.groups = M.groups.map((g) => g.filter((id) => !sel.has(id))).filter((g) => g.length > 1);
+    M.groups.push(ids);
+    entered = -1;
+    commit(before);
+    render();
+  }
+  function ungroup() {
+    const before = snap();
+    M.groups = M.groups.filter((g) => !g.some((id) => sel.has(id)));
+    entered = -1;
+    commit(before);
+    render();
+  }
+
+  function boothName(no) {
+    const b = D.booths?.find((x) => x.no === no);
+    return b ? (b.short ?? b.name.replace(/株式会社|有限会社/g, "").trim()) : "";
+  }
+
+  // ---------- 元に戻す ----------
+  const snap = () => JSON.stringify(M);
+  function commit(before) {
+    if (before === snap()) return;
+    hist.push(before);
+    fut = [];
+    renderSide();
+  }
+  function undo() {
+    if (!hist.length) return;
+    fut.push(snap());
+    M = JSON.parse(hist.pop());
+    entered = -1;
+    render();
+    renderSide();
+  }
+  function redo() {
+    if (!fut.length) return;
+    hist.push(snap());
+    M = JSON.parse(fut.pop());
+    entered = -1;
+    render();
+    renderSide();
+  }
+
+  // ---------- 拡大時のブース（goodsmap.js の grownOf と同じ計算。警告は文字で返す） ----------
+  function grown() {
+    const [vx, vy, vw, vh] = M.view;
+    const [tw, th] = M.tile;
+    const tiles = Object.entries(M.booths).map(([no, [x, y]]) => ({ no, x, y, w: tw, h: th }));
+    const overlapY = (a, b) => a.y < b.y + b.h && a.y + a.h > b.y;
+    const overlapX = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x;
+    const joined = (t, side) =>
+      tiles.some((o) => {
+        if (o === t) return false;
+        if (side === "l") return overlapY(t, o) && t.x - (o.x + o.w) >= 0 && t.x - (o.x + o.w) < AISLE;
+        if (side === "r") return overlapY(t, o) && o.x - (t.x + t.w) >= 0 && o.x - (t.x + t.w) < AISLE;
+        if (side === "t") return overlapX(t, o) && t.y - (o.y + o.h) >= 0 && t.y - (o.y + o.h) < AISLE;
+        return overlapX(t, o) && o.y - (t.y + t.h) >= 0 && o.y - (t.y + t.h) < AISLE;
+      });
+    const split = (a, b) => (b ? [0, GROW] : a ? [GROW, 0] : [0, 0]);
+    const big = new Map(
+      tiles.map((t) => {
+        const [l, r] = split(!joined(t, "l"), !joined(t, "r"));
+        const [tp, bt] = split(!joined(t, "t"), !joined(t, "b"));
+        return [t.no, { x: t.x - l, y: t.y - tp, w: t.w + l + r, h: t.h + tp + bt }];
+      })
+    );
+    const warns = [];
+    const walls = M.areas.map((a, i) => ({ id: "a" + i, x: a.x + INSET, y: a.y + INSET, w: a.w - INSET * 2, h: a.h - INSET * 2 }));
+    const near = (a, b) => overlapX(a, b) || overlapY(a, b);
+    const gapOf = (a, b) => Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), b.y - (a.y + a.h), a.y - (b.y + b.h));
+    for (const [no, g] of big) {
+      const t = tiles.find((x) => x.no === no);
+      const edge = Math.min(g.x - vx, vx + vw - g.x - g.w, g.y - vy, vy + vh - g.y - g.h);
+      if (edge < AISLE / 2) warns.push({ ids: ["b" + no], text: `ブース${no}を大きくすると、マップの端に近すぎる（${r2(edge)}）` });
+      for (const [no2, g2] of big) {
+        if (no2 <= no) continue;
+        const t2 = tiles.find((x) => x.no === no2);
+        if (near(g, g2) && gapOf(t, t2) >= AISLE && gapOf(g, g2) < AISLE) warns.push({ ids: ["b" + no, "b" + no2], text: `ブース${no}と${no2}の間の通路が狭すぎる（${r2(gapOf(g, g2))}）` });
+      }
+      for (const w of walls) if (near(g, w) && gapOf(g, w) < AISLE / 2) warns.push({ ids: ["b" + no, w.id], text: `ブース${no}を大きくすると、${nameOf(w.id)}に近すぎる（${r2(gapOf(g, w))}）` });
+    }
+    return { big, warns };
+  }
+  function checks() {
+    const out = [...grown().warns];
+    const ids = allIds();
+    M.groups.forEach((g, i) => {
+      const lost = g.filter((id) => !ids.includes(id));
+      if (lost.length) out.push({ ids: g.filter((id) => ids.includes(id)), text: `グループ${i + 1}の${lost.join("・")}がデータにない` });
+    });
+    const hit = (a, b) => a.x < b.x + b.w - 0.01 && a.x + a.w > b.x + 0.01 && a.y < b.y + b.h - 0.01 && a.y + a.h > b.y + 0.01;
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const [p, q] = [ids[i], ids[j]];
+        // 同じ説明の売り場どうし（主催展示の区画と張り出し）は、重ねて1つに見せている
+        if (isArea(p) && isArea(q) && F.areas[+p.slice(1)].spot && F.areas[+p.slice(1)].spot === F.areas[+q.slice(1)].spot) continue;
+        if (hit(visOf(p), visOf(q))) out.push({ ids: [p, q], text: `${nameOf(p)}と${nameOf(q)}が重なっている` });
+      }
+    }
+    const v = viewRect();
+    for (const no of Object.keys(M.booths)) {
+      const r = visOf("b" + no);
+      if (r.x < v.x || r.y < v.y || r.x + r.w > v.x + v.w || r.y + r.h > v.y + v.h) out.push({ ids: ["b" + no], text: `ブース${no}がマップの外にはみ出している` });
+    }
+    return out;
+  }
+
+  // ---------- 描画 ----------
+  function render() {
+    if (!M) return;
+    const W = cv.clientWidth;
+    const H = cv.clientHeight;
+    const px = 1 / cam.s; // 画面の1px
+    cv.setAttribute("viewBox", `${cam.x} ${cam.y} ${W * px} ${H * px}`);
+    const [vx, vy, vw, vh] = M.view;
+    let s = `<rect class="view" x="${vx}" y="${vy}" width="${vw}" height="${vh}"/>`;
+    // グリッドの線と、5マスごとの濃い線（画面で5px より細かくなる線は出さない）
+    const g = +pref.grid;
+    let defs = "";
+    for (const [id, step, color] of [["gr", g, "#e6eaef"], ["gr5", g * 5, "#d3d9e0"]]) {
+      if (!(step > 0 && step * cam.s >= 5)) continue;
+      defs += `<pattern id="${id}" width="${step}" height="${step}" patternUnits="userSpaceOnUse"><path d="M${step} 0H0V${step}" fill="none" stroke="${color}" stroke-width="${px}"/></pattern>`;
+      s += `<rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="url(#${id})" pointer-events="none"/>`;
+    }
+
+    M.areas.forEach((a, i) => {
+      const id = "a" + i;
+      const src = F.areas[i];
+      const v = visOf(id);
+      const lines = src.label ?? [];
+      const size = src.size ?? 15;
+      const top = (a.labelY ?? v.y + v.h / 2) - ((lines.length - 1) * size * 1.2) / 2;
+      s += `<g class="item k-${esc(src.kind)}${sel.has(id) ? " is-sel" : ""}" data-id="${id}">
+        <rect x="${v.x}" y="${v.y}" width="${v.w}" height="${v.h}" rx="${Math.min(10, v.h / 3)}"/>
+        ${lines.map((t, k) => `<text x="${v.x + v.w / 2}" y="${top + k * size * 1.2}" dy=".36em" font-size="${size}">${esc(t)}</text>`).join("")}
+      </g>`;
+    });
+    const [tw, th] = M.tile;
+    for (const [no, [x, y]] of Object.entries(M.booths)) {
+      const id = "b" + no;
+      const nm = boothName(no);
+      const fs = Math.min(13, (tw - 8) / Math.max(1, [...nm].length));
+      s += `<g class="item k-booth${sel.has(id) ? " is-sel" : ""}" data-id="${id}">
+        <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="8"/>
+        <text x="${x + tw / 2}" y="${y + th * 0.42}" dy=".36em" font-size="${Math.min(th * 0.4, tw * 0.36)}">${esc(no)}</text>
+        ${nm ? `<text class="nm" x="${x + tw / 2}" y="${y + th * 0.78}" dy=".36em" font-size="${fs}">${esc(nm)}</text>` : ""}
+      </g>`;
+    }
+    // マップの外（公開ページでは見えない部分）は薄くする
+    const big = 1e5;
+    s += `<path class="outside" fill-rule="evenodd" d="M${-big} ${-big}H${big}V${big}H${-big}Z M${vx} ${vy}h${vw}v${vh}h${-vw}Z"/>`;
+    s += `<rect class="viewline" x="${vx}" y="${vy}" width="${vw}" height="${vh}"/>`;
+
+    if (pref.grown) {
+      const { big: gs, warns } = grown();
+      const bad = new Set(warns.flatMap((w) => w.ids));
+      for (const [no, r] of gs) s += `<rect class="grown${bad.has("b" + no) ? " is-bad" : ""}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="8"/>`;
+    }
+
+    // グループの枠（選んでいれば青、中に入っていれば青の点線）
+    const ids = new Set(allIds());
+    M.groups.forEach((gr, i) => {
+      const live = gr.filter((id) => ids.has(id));
+      if (!live.length) return;
+      const b = bboxOf(live.map(visOf));
+      const cls = i === entered ? " is-in" : live.every((id) => sel.has(id)) ? " is-sel" : "";
+      s += `<rect class="grp${cls}" x="${b.x - 6 * px}" y="${b.y - 6 * px}" width="${b.w + 12 * px}" height="${b.h + 12 * px}" rx="${4 * px}"/>`;
+    });
+
+    // 選択の枠と、売り場を1つだけ選んだときの持ち手
+    const list = [...sel];
+    if (list.length > 1) {
+      const b = bboxOf(list.map(visOf));
+      s += `<rect class="selbox" x="${b.x - 3 * px}" y="${b.y - 3 * px}" width="${b.w + 6 * px}" height="${b.h + 6 * px}"/>`;
+    }
+    if (list.length === 1 && isArea(list[0])) {
+      const v = visOf(list[0]);
+      const hs = 8 * px;
+      const pos = { nw: [0, 0], n: [0.5, 0], ne: [1, 0], e: [1, 0.5], se: [1, 1], s: [0.5, 1], sw: [0, 1], w: [0, 0.5] };
+      const cur = { nw: "nwse", se: "nwse", ne: "nesw", sw: "nesw", n: "ns", s: "ns", e: "ew", w: "ew" };
+      for (const [h, [fx, fy]] of Object.entries(pos)) {
+        s += `<rect class="handle" data-h="${h}" style="cursor:${cur[h]}-resize" x="${v.x + v.w * fx - hs / 2}" y="${v.y + v.h * fy - hs / 2}" width="${hs}" height="${hs}"/>`;
+      }
+    }
+    for (const l of guides) s += `<line class="guide" x1="${l[0]}" y1="${l[1]}" x2="${l[2]}" y2="${l[3]}"/>`;
+    if (drag?.mode === "box") {
+      const r = boxOf(drag);
+      s += `<rect class="marquee" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/>`;
+    }
+    // ドラッグ中は位置（大きさ）を出す
+    if ((drag?.mode === "move" && drag.moved) || drag?.mode === "resize") {
+      const id = drag.mode === "move" ? primary : drag.id;
+      const r = rectOf(id);
+      const t = drag.mode === "move" ? `x ${r.x}  y ${r.y}` : `x ${r.x}  y ${r.y}  w ${r.w}  h ${r.h}`;
+      const v = visOf(id);
+      s += `<text class="tip" x="${v.x}" y="${v.y - 8 * px}" font-size="${12 * px}">${t}</text>`;
+    }
+    cv.innerHTML = `<defs>${defs}</defs>${s}`;
+  }
+
+  const boxOf = (d) => ({ x: Math.min(d.p0.x, d.p1.x), y: Math.min(d.p0.y, d.p1.y), w: Math.abs(d.p1.x - d.p0.x), h: Math.abs(d.p1.y - d.p0.y) });
+
+  function renderSide() {
+    const list = [...sel];
+    const field = (f, label, v) => `<label>${label}<input type="number" step="any" data-f="${f}" value="${v}"></label>`;
+    let h;
+    if (!list.length) {
+      const [x, y, w, hh] = M.view;
+      h = `<h2>マップ全体（何も選んでいないとき）</h2>
+        <div class="fields">${field("v0", "x", x)}${field("v1", "y", y)}${field("v2", "幅", w)}${field("v3", "高さ", hh)}</div>
+        <h2 style="margin-top:10px">ブースの大きさ（すべて同じ）</h2>
+        <div class="fields">${field("t0", "幅", M.tile[0])}${field("t1", "高さ", M.tile[1])}</div>`;
+    } else if (list.length === 1) {
+      const id = list[0];
+      const r = rectOf(id);
+      const name = isArea(id) ? nameOf(id) : `${nameOf(id)}${boothName(id.slice(1)) ? `：${boothName(id.slice(1))}` : ""}`;
+      h = `<p class="name">${esc(name)}</p><div class="fields">${field("x", "x", r.x)}${field("y", "y", r.y)}`;
+      if (isArea(id)) {
+        h += `${field("w", "幅", r.w)}${field("h", "高さ", r.h)}`;
+        if ("labelY" in areaOf(id)) h += field("labelY", "文字y", areaOf(id).labelY);
+        h += `</div><p class="note">データの値（見た目の四角は各辺が${INSET}内側）</p>`;
+      } else {
+        h += `</div><p class="note">大きさはすべてのブースで共通（何も選んでいないときに変える）</p>`;
+      }
+    } else {
+      const b = bboxOf(list.map(visOf));
+      const g = groupOf(list[0]);
+      const isGroup = g >= 0 && M.groups[g].length === list.length && list.every((id) => M.groups[g].includes(id));
+      h = `<p class="name">${isGroup ? `グループ（${list.length}個）` : `${list.length}個を選択`}</p><p class="note">見た目の範囲：x ${r2(b.x)}〜${r2(b.x + b.w)}、y ${r2(b.y)}〜${r2(b.y + b.h)}</p>`;
+    }
+    $("insp").innerHTML = h;
+
+    const areas = list.filter(isArea);
+    const units = unitsOf().length;
+    for (const b of document.querySelectorAll("[data-align]")) b.disabled = !list.length;
+    for (const b of document.querySelectorAll("[data-dist]")) b.disabled = units < 3;
+    $("group").disabled = list.length < 2;
+    $("ungroup").disabled = !list.some((id) => groupOf(id) >= 0);
+    for (const b of document.querySelectorAll("[data-size]")) b.disabled = areas.length < 2 || !isArea(primary ?? "");
+
+    const cs = checks();
+    $("checks").innerHTML = `<h2>チェック</h2>${
+      cs.length
+        ? `<ul>${cs.map((c) => `<li data-sel="${c.ids.join(",")}">⚠ ${esc(c.text)}</li>`).join("")}</ul>`
+        : `<p class="ok">問題なし</p>`
+    }`;
+    $("undo").disabled = !hist.length;
+    $("redo").disabled = !fut.length;
+    const dirty = JSON.stringify(M) !== JSON.stringify(base);
+    const file = handle?.name ?? DATA_SRC.split("/").pop();
+    $("status").textContent = `${file}${dirty ? "（未保存の変更あり）" : ""}`;
+    $("status").classList.toggle("is-dirty", dirty);
+  }
+
+  // ---------- カメラ ----------
+  function fit() {
+    const [vx, vy, vw, vh] = M.view;
+    const W = cv.clientWidth;
+    const H = cv.clientHeight;
+    const pad = 30;
+    cam.s = Math.max(0.05, Math.min((W - pad * 2) / vw, (H - pad * 2) / vh));
+    cam.x = vx - (W / cam.s - vw) / 2;
+    cam.y = vy - (H / cam.s - vh) / 2;
+    render();
+  }
+  function toUnit(ev) {
+    const b = cv.getBoundingClientRect();
+    return { x: cam.x + (ev.clientX - b.left) / cam.s, y: cam.y + (ev.clientY - b.top) / cam.s };
+  }
+  cv.addEventListener(
+    "wheel",
+    (ev) => {
+      ev.preventDefault();
+      const b = cv.getBoundingClientRect();
+      const mx = ev.clientX - b.left;
+      const my = ev.clientY - b.top;
+      const ux = cam.x + mx / cam.s;
+      const uy = cam.y + my / cam.s;
+      cam.s = Math.min(20, Math.max(0.05, cam.s * Math.exp(-ev.deltaY * (ev.deltaMode ? 0.05 : 0.0015))));
+      cam.x = ux - mx / cam.s;
+      cam.y = uy - my / cam.s;
+      render();
+    },
+    { passive: false }
+  );
+  new ResizeObserver(() => render()).observe(cv);
+
+  // ---------- 吸着 ----------
+  const snapOn = () => pref.snap && +pref.grid > 0;
+  const snapG = (v) => (snapOn() ? r2(Math.round(v / +pref.grid) * +pref.grid) : v);
+  // スナップ中は、辺・中央への吸着もグリッドに乗る位置のときだけ効かせる（グリッドから外れる吸着はしない）
+  const onGrid = (v) => !snapOn() || Math.abs(v / +pref.grid - Math.round(v / +pref.grid)) < 1e-6;
+  // ほかの四角とマップの、辺と中央の位置
+  function candidates(excl) {
+    const xs = [];
+    const ys = [];
+    const add = (r) => {
+      xs.push(r.x, r.x + r.w / 2, r.x + r.w);
+      ys.push(r.y, r.y + r.h / 2, r.y + r.h);
+    };
+    for (const id of allIds()) if (!excl.has(id)) add(visOf(id));
+    add(viewRect());
+    return { xs, ys };
+  }
+  // edges の中で、いちばん近い候補への差（無ければ null）。ok(差) が偽になる候補は使わない
+  function nearest(edges, cs, ok = () => true) {
+    let best = null;
+    for (const e of edges) for (const c of cs) if (Math.abs(c - e) < SNAP_PX / cam.s && (best === null || Math.abs(c - e) < Math.abs(best)) && ok(c - e)) best = c - e;
+    return best;
+  }
+  // 動かしたもの（ids）の辺・中央と、ぴったりそろっているものを結ぶ線
+  function guidesFor(ids) {
+    const ex = new Set(ids);
+    const me = bboxOf(ids.map(visOf));
+    const others = [...allIds().filter((id) => !ex.has(id)).map(visOf), viewRect()];
+    const out = [];
+    const eq = (a, b) => Math.abs(a - b) < 0.01;
+    for (const x of [me.x, me.x + me.w / 2, me.x + me.w]) {
+      const hits = others.filter((r) => [r.x, r.x + r.w / 2, r.x + r.w].some((v) => eq(v, x)));
+      if (hits.length) {
+        const all = [me, ...hits];
+        out.push([x, Math.min(...all.map((r) => r.y)), x, Math.max(...all.map((r) => r.y + r.h))]);
+      }
+    }
+    for (const y of [me.y, me.y + me.h / 2, me.y + me.h]) {
+      const hits = others.filter((r) => [r.y, r.y + r.h / 2, r.y + r.h].some((v) => eq(v, y)));
+      if (hits.length) {
+        const all = [me, ...hits];
+        out.push([Math.min(...all.map((r) => r.x)), y, Math.max(...all.map((r) => r.x + r.w)), y]);
+      }
+    }
+    return out;
+  }
+
+  // ---------- 操作 ----------
+  cv.addEventListener("contextmenu", (ev) => ev.preventDefault());
+  cv.addEventListener("pointerdown", (ev) => {
+    if (!M) return;
+    cv.setPointerCapture(ev.pointerId);
+    const p = toUnit(ev);
+    const before = snap();
+    if (ev.button === 1 || ev.button === 2 || spaceDown) {
+      drag = { mode: "pan", sx: ev.clientX, sy: ev.clientY, cx: cam.x, cy: cam.y };
+      cv.classList.add("is-pan");
+      return;
+    }
+    const hd = ev.target.closest("[data-h]");
+    if (hd) {
+      const id = [...sel][0];
+      drag = { mode: "resize", id, h: hd.dataset.h, p0: p, r0: rectOf(id), before };
+      return;
+    }
+    const g = ev.target.closest("[data-id]");
+    if (g) {
+      const id = g.dataset.id;
+      // グループの中のものをダブルクリックしたら、そのグループに入ってそれだけを選ぶ
+      const dbl = lastDown?.id === id && ev.timeStamp - lastDown.t < 400;
+      lastDown = { id, t: ev.timeStamp };
+      if (dbl && groupOf(id) >= 0) entered = groupOf(id);
+      else if (groupOf(id) !== entered) entered = -1; // グループの外を押したら出る
+      const picks = pickOf(id);
+      let collapse = false;
+      if (ev.shiftKey || ev.ctrlKey || ev.metaKey) {
+        if (sel.has(id)) {
+          for (const x of picks) sel.delete(x);
+          drag = null;
+          render();
+          renderSide();
+          return;
+        }
+        for (const x of picks) sel.add(x);
+      } else if (!sel.has(id) || dbl) {
+        sel.clear();
+        for (const x of picks) sel.add(x);
+      } else collapse = sel.size > picks.length; // 動かさずに離したら、それ（のグループ）だけを選ぶ
+      primary = id;
+      drag = { mode: "move", p0: p, orig: new Map([...sel].map((i) => [i, rectOf(i)])), before, moved: false, collapse, id, picks };
+      render();
+      renderSide();
+      return;
+    }
+    entered = -1;
+    drag = { mode: "box", p0: p, p1: p, keep: ev.shiftKey ? new Set(sel) : new Set() };
+    if (!ev.shiftKey) sel.clear();
+    render();
+    renderSide();
+  });
+
+  cv.addEventListener("pointermove", (ev) => {
+    if (!drag) return;
+    const p = toUnit(ev);
+    const free = ev.altKey;
+    if (drag.mode === "pan") {
+      cam.x = drag.cx - (ev.clientX - drag.sx) / cam.s;
+      cam.y = drag.cy - (ev.clientY - drag.sy) / cam.s;
+      return render();
+    }
+    if (drag.mode === "box") {
+      drag.p1 = p;
+      const r = boxOf(drag);
+      sel.clear();
+      for (const id of drag.keep) sel.add(id);
+      for (const id of allIds()) {
+        const v = visOf(id);
+        if (v.x < r.x + r.w && v.x + v.w > r.x && v.y < r.y + r.h && v.y + v.h > r.y) for (const x of pickOf(id)) sel.add(x);
+      }
+      return render();
+    }
+    if (drag.mode === "move") {
+      let dx = p.x - drag.p0.x;
+      let dy = p.y - drag.p0.y;
+      if (!drag.moved && Math.hypot(dx, dy) * cam.s < 3) return;
+      drag.moved = true;
+      const lock = ev.shiftKey ? (Math.abs(dx) > Math.abs(dy) ? "y" : "x") : null; // 動かさない向き
+      if (!free) {
+        const ids = [...drag.orig.keys()];
+        const B = bboxOf(ids.map((id) => visOfRect(id, drag.orig.get(id))));
+        const o = drag.orig.get(primary);
+        let sx = snapG(o.x + dx) - o.x;
+        let sy = snapG(o.y + dy) - o.y;
+        if (pref.guides) {
+          const cs = candidates(new Set(ids));
+          const nx = nearest([B.x, B.x + B.w / 2, B.x + B.w].map((e) => e + dx), cs.xs, (d) => onGrid(o.x + dx + d));
+          const ny = nearest([B.y, B.y + B.h / 2, B.y + B.h].map((e) => e + dy), cs.ys, (d) => onGrid(o.y + dy + d));
+          if (nx !== null) sx = dx + nx;
+          if (ny !== null) sy = dy + ny;
+        }
+        dx = sx;
+        dy = sy;
+      }
+      if (lock === "x") dx = 0;
+      if (lock === "y") dy = 0;
+      for (const [id, r] of drag.orig) moveTo(id, r2(r.x + dx), r2(r.y + dy));
+      guides = free || !pref.guides ? [] : guidesFor([...drag.orig.keys()]);
+      return render();
+    }
+    if (drag.mode === "resize") {
+      const { r0, h, id } = drag;
+      const dx = p.x - drag.p0.x;
+      const dy = p.y - drag.p0.y;
+      const cs = candidates(new Set([id]));
+      // データの辺 e（見た目では k だけ内側）を、見た目の辺の吸着かグリッドに合わせる
+      const edge = (e, k, list) => {
+        if (free) return r2(e);
+        if (pref.guides) {
+          const d = nearest([e + k], list, (d) => onGrid(e + d));
+          if (d !== null) return r2(e + d);
+        }
+        return r2(snapG(e));
+      };
+      let L = r0.x;
+      let R = r0.x + r0.w;
+      let T = r0.y;
+      let B = r0.y + r0.h;
+      if (h.includes("w")) L = Math.min(edge(r0.x + dx, INSET, cs.xs), R - 10);
+      if (h.includes("e")) R = Math.max(edge(R + dx, -INSET, cs.xs), L + 10);
+      if (h.includes("n")) T = Math.min(edge(r0.y + dy, INSET, cs.ys), B - 10);
+      if (h.includes("s")) B = Math.max(edge(B + dy, -INSET, cs.ys), T + 10);
+      const a = areaOf(id);
+      if ("labelY" in a && T !== a.y) a.labelY = r2(a.labelY + T - a.y);
+      Object.assign(a, { x: r2(L), y: r2(T), w: r2(R - L), h: r2(B - T) });
+      guides = free || !pref.guides ? [] : guidesFor([id]);
+      return render();
+    }
+  });
+
+  function endDrag() {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    guides = [];
+    cv.classList.remove("is-pan");
+    if (d.mode === "move" && !d.moved && d.collapse) {
+      sel.clear();
+      for (const x of d.picks) sel.add(x);
+    }
+    if (d.before) commit(d.before);
+    render();
+    renderSide();
+  }
+  cv.addEventListener("pointerup", endDrag);
+  cv.addEventListener("pointercancel", endDrag);
+
+  // 見た目の位置 to へ動かすときの差。スナップ中は、データの値（最初のものの x・y）がグリッドに乗るように丸める
+  function deltaTo(ids, v, to) {
+    if (!snapOn()) return [rh(to[0]) - v.x, rh(to[1]) - v.y];
+    const r = rectOf(ids[0]);
+    return [snapG(r.x + to[0] - v.x) - r.x, snapG(r.y + to[1] - v.y) - r.y];
+  }
+  // 矢印キー。スナップ中は隣のグリッドへ（Shift：5マス、Alt：グリッドを無視して1）、それ以外は1（Shift：10）
+  function nudge(dir, ev) {
+    const g = +pref.grid;
+    const grid = snapOn() && !ev.altKey;
+    const step = grid ? (ev.shiftKey ? 5 : 1) : ev.shiftKey ? 10 : 1;
+    const r = rectOf(sel.has(primary) ? primary : [...sel][0]);
+    const to = (v, d) => (grid ? r2((Math.round(v / g) + d * step) * g) : v + d * step);
+    const dx = to(r.x, dir[0]) - r.x;
+    const dy = to(r.y, dir[1]) - r.y;
+    const before = snap();
+    for (const id of sel) shiftBy(id, dir[0] ? dx : 0, dir[1] ? dy : 0);
+    commit(before);
+    render();
+  }
+  // グループは丸ごと1つとしてそろえる（1つだけならマップに対して）
+  function align(kind) {
+    const units = unitsOf();
+    if (!units.length) return;
+    const ref = units.length === 1 ? viewRect() : bboxOf(units.map((u) => u.v));
+    const before = snap();
+    for (const { ids, v } of units) {
+      const to = {
+        l: [ref.x, v.y],
+        c: [ref.x + ref.w / 2 - v.w / 2, v.y],
+        r: [ref.x + ref.w - v.w, v.y],
+        t: [v.x, ref.y],
+        m: [v.x, ref.y + ref.h / 2 - v.h / 2],
+        b: [v.x, ref.y + ref.h - v.h],
+      }[kind];
+      const [dx, dy] = deltaTo(ids, v, to);
+      for (const id of ids) shiftBy(id, dx, dy);
+    }
+    commit(before);
+    render();
+  }
+  function distribute(axis) {
+    const [p, s] = axis === "x" ? ["x", "w"] : ["y", "h"];
+    const list = unitsOf().sort((a, b) => a.v[p] - b.v[p]);
+    if (list.length < 3) return;
+    const first = list[0].v;
+    const last = list.at(-1).v;
+    const gap = (last[p] + last[s] - first[p] - list.reduce((n, o) => n + o.v[s], 0)) / (list.length - 1);
+    const before = snap();
+    let at = first[p];
+    for (const { ids, v } of list) {
+      const [dx, dy] = deltaTo(ids, v, p === "x" ? [at, v.y] : [v.x, at]);
+      for (const id of ids) shiftBy(id, p === "x" ? dx : 0, p === "y" ? dy : 0);
+      at += v[s] + gap;
+    }
+    commit(before);
+    render();
+  }
+  function matchSize(dim) {
+    if (!primary || !isArea(primary)) return;
+    const before = snap();
+    const v = areaOf(primary)[dim];
+    for (const id of sel) if (isArea(id)) areaOf(id)[dim] = v;
+    commit(before);
+    render();
+  }
+
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("button");
+    if (b?.dataset.align) align(b.dataset.align);
+    if (b?.dataset.dist) distribute(b.dataset.dist);
+    if (b?.dataset.size) matchSize(b.dataset.size);
+    const li = ev.target.closest("#checks li");
+    if (li) {
+      sel.clear();
+      for (const id of li.dataset.sel.split(",")) sel.add(id);
+      primary = [...sel][0];
+      // 選んだものが画面の外なら、真ん中に持ってくる
+      const r = bboxOf([...sel].map(visOf));
+      cam.x = r.x + r.w / 2 - cv.clientWidth / cam.s / 2;
+      cam.y = r.y + r.h / 2 - cv.clientHeight / cam.s / 2;
+      render();
+      renderSide();
+    }
+  });
+
+  $("insp").addEventListener("change", (ev) => {
+    const f = ev.target.dataset.f;
+    const v = Number(ev.target.value);
+    if (!f || ev.target.value === "" || !Number.isFinite(v)) return renderSide();
+    const before = snap();
+    if (f[0] === "v" && f.length === 2) M.view[+f[1]] = v;
+    else if (f[0] === "t" && f.length === 2) M.tile[+f[1]] = Math.max(1, v);
+    else {
+      const id = [...sel][0];
+      const r = rectOf(id);
+      if (f === "x") moveTo(id, v, r.y);
+      if (f === "y") moveTo(id, r.x, v);
+      if (f === "w" || f === "h") areaOf(id)[f] = Math.max(1, v);
+      if (f === "labelY") areaOf(id).labelY = v;
+    }
+    commit(before);
+    render();
+    renderSide();
+  });
+
+  addEventListener("keydown", (ev) => {
+    const mod = ev.ctrlKey || ev.metaKey;
+    const k = ev.key.toLowerCase();
+    if (mod && k === "s") {
+      ev.preventDefault();
+      return save();
+    }
+    if (ev.target.matches("input, select, textarea")) return;
+    if (mod && k === "z") return ev.preventDefault(), ev.shiftKey ? redo() : undo();
+    if (mod && k === "y") return ev.preventDefault(), redo();
+    if (mod && k === "g") return ev.preventDefault(), ev.shiftKey ? ungroup() : group();
+    if (mod && k === "a") {
+      ev.preventDefault();
+      for (const id of allIds()) sel.add(id);
+      return render(), renderSide();
+    }
+    if (ev.key === "Escape") return (entered = -1), sel.clear(), render(), renderSide();
+    if (k === "f" && !mod) return fit();
+    if (ev.key === " ") {
+      ev.preventDefault();
+      spaceDown = true;
+      cv.classList.add("is-space");
+      return;
+    }
+    const arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    if (arrows[ev.key] && sel.size) {
+      ev.preventDefault();
+      nudge(arrows[ev.key], ev);
+      renderSide();
+    }
+  });
+  addEventListener("keyup", (ev) => {
+    if (ev.key === " ") {
+      spaceDown = false;
+      cv.classList.remove("is-space");
+    }
+  });
+  addEventListener("beforeunload", (ev) => {
+    if (M && JSON.stringify(M) !== JSON.stringify(base)) ev.preventDefault();
+  });
+
+  // ---------- 書き戻し ----------
+  // ファイルの文字列のうち、配置の数字だけを差し替える（コメント・並び・ほかのデータはそのまま）。
+  // 位置を探すのは、コメントと文字列の中身を空白にした「影」の文字列（長さは元と同じ）
+  function shadowOf(src) {
+    let out = "";
+    let i = 0;
+    const n = src.length;
+    const blank = (s) => s.replace(/[^\n]/g, " ");
+    while (i < n) {
+      const c = src[i];
+      const d = src[i + 1];
+      if (c === "/" && d === "/") {
+        const e = src.indexOf("\n", i);
+        const j = e < 0 ? n : e;
+        out += blank(src.slice(i, j));
+        i = j;
+      } else if (c === "/" && d === "*") {
+        const e = src.indexOf("*/", i + 2);
+        const j = e < 0 ? n : e + 2;
+        out += blank(src.slice(i, j));
+        i = j;
+      } else if (c === '"' || c === "'" || c === "`") {
+        let j = i + 1;
+        while (j < n && src[j] !== c) j += src[j] === "\\" ? 2 : 1;
+        out += c + blank(src.slice(i + 1, j)) + (j < n ? c : "");
+        i = j + 1;
+      } else {
+        out += c;
+        i++;
+      }
+    }
+    return out;
+  }
+  function closeOf(sh, i) {
+    let dep = 0;
+    for (let j = i; j < sh.length; j++) {
+      if ("[{(".includes(sh[j])) dep++;
+      else if ("]})".includes(sh[j]) && --dep === 0) return j;
+    }
+    throw new Error("括弧が閉じていません");
+  }
+  // 配列の要素（{…} か […]）の範囲
+  function itemsOf(sh, open) {
+    const close = closeOf(sh, open);
+    const out = [];
+    for (let i = open + 1; i < close; i++) {
+      if (sh[i] === "{" || sh[i] === "[") {
+        const e = closeOf(sh, i);
+        out.push([i, e]);
+        i = e;
+      }
+    }
+    return out;
+  }
+  // オブジェクト（open の位置の {）の、すぐ下の階層のキーの値の位置
+  function valueOf(sh, open, key) {
+    const close = closeOf(sh, open);
+    const re = new RegExp(`^${key}\\s*:\\s*`);
+    let dep = 0;
+    for (let j = open; j <= close; j++) {
+      const c = sh[j];
+      if ("[{(".includes(c)) dep++;
+      else if ("]})".includes(c)) dep--;
+      else if (dep === 1 && /[A-Za-z_$]/.test(c) && !/[\w$]/.test(sh[j - 1])) {
+        const m = re.exec(sh.slice(j, j + key.length + 40));
+        if (m) return j + m[0].length;
+      }
+    }
+    return -1;
+  }
+  const NUM = /-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?/y;
+  const fmt = (v) => String(r2(v));
+
+  function patch(src, fl, g) {
+    const sh = shadowOf(src);
+    const reps = [];
+    const num = (pos, v, what) => {
+      NUM.lastIndex = pos;
+      const m = NUM.exec(sh);
+      if (!m) throw new Error(`${what}の数字が読めません`);
+      if (Number(m[0]) !== r2(v)) reps.push([pos, pos + m[0].length, fmt(v)]);
+    };
+    const nums = (open, vals, what) => {
+      const close = closeOf(sh, open);
+      const found = [...sh.slice(open, close).matchAll(/-?(?:\d+\.?\d*|\.\d+)/g)];
+      if (found.length !== vals.length) throw new Error(`${what}の数が合いません`);
+      found.forEach((m, i) => num(open + m.index, vals[i], what));
+    };
+    const at = (open, key, what) => {
+      const p = valueOf(sh, open, key);
+      if (p < 0) throw new Error(`${what}が見つかりません`);
+      return p;
+    };
+
+    const fm = /\bfloors\s*:\s*\[/.exec(sh);
+    if (!fm) throw new Error("floors が見つかりません");
+    const floors = itemsOf(sh, fm.index + fm[0].length - 1);
+    if (!floors[fl]) throw new Error(`${fl + 1}番目のフロアがありません`);
+    const fo = floors[fl][0];
+
+    nums(at(fo, "view", "view"), g.view, "view");
+    const tp = valueOf(sh, fo, "tile");
+    if (tp >= 0) nums(tp, g.tile, "tile");
+    else if (g.tile.join() !== "57,35") throw new Error("tile がファイルにありません（先にデータへ tile を書いてください）");
+
+    const areas = itemsOf(sh, at(fo, "areas", "areas"));
+    if (areas.length !== g.areas.length) throw new Error(`売り場の数が合いません（ファイル${areas.length}、エディタ${g.areas.length}）`);
+    areas.forEach(([o], i) => {
+      for (const k of ["x", "y", "w", "h", "labelY"]) {
+        if (!(k in g.areas[i])) continue;
+        num(at(o, k, `売り場${i + 1}の${k}`), g.areas[i][k], `売り場${i + 1}の${k}`);
+      }
+    });
+
+    const bo = at(fo, "booths", "booths");
+    const bc = closeOf(sh, bo);
+    const seen = new Set();
+    for (const m of src.slice(bo, bc).matchAll(/(["']?)([\w-]+)\1\s*:\s*\[/g)) {
+      const pos = bo + m.index;
+      if (sh[pos] === " ") continue; // コメントの中
+      const no = m[2];
+      if (!(no in g.booths)) throw new Error(`ブース${no}がエディタにありません`);
+      seen.add(no);
+      nums(pos + m[0].length - 1, g.booths[no], `ブース${no}`);
+    }
+    for (const no of Object.keys(g.booths)) if (!seen.has(no)) throw new Error(`ブース${no}がファイルにありません`);
+
+    // グループは数字ではないので、値を丸ごと書き直す（変わっていなければ触らない）。無ければ booths の前（コメントの上）に足す
+    const old = JSON.stringify(evalData(src).floors[fl].groups ?? []);
+    if (old !== JSON.stringify(g.groups)) {
+      const ks = bo - /booths\s*:\s*$/.exec(sh.slice(0, bo))[0].length; // booths のキーの位置
+      let ls = src.lastIndexOf("\n", ks) + 1;
+      const ind = src.slice(ls, ks);
+      const text = !g.groups.length
+        ? "[]"
+        : `[\n${g.groups.map((gr) => `${ind}  [${gr.map((id) => JSON.stringify(id)).join(", ")}],`).join("\n")}\n${ind}]`;
+      const gp = valueOf(sh, fo, "groups");
+      if (gp >= 0) reps.push([gp, closeOf(sh, gp) + 1, text]);
+      else {
+        // booths の上のコメントの行は booths に付けたままにする
+        while (ls > 0) {
+          const prev = src.lastIndexOf("\n", ls - 2) + 1;
+          if (!src.slice(prev, ls).trim().startsWith("//")) break;
+          ls = prev;
+        }
+        reps.push([ls, ls, `${ind}// エディタ（tools/goodsmap-editor.html）でまとめて動かすグループ（"b"＋ブースの番号、"a"＋areas の番号）。マップの表示には使わない\n${ind}groups: ${text},\n`]);
+      }
+    }
+
+    let out = src;
+    for (const [s, e, t] of reps.sort((a, b) => b[0] - a[0])) out = out.slice(0, s) + t + out.slice(e);
+    // 書いた結果を読み直して、エディタの配置と同じになっているか確かめる
+    const back = JSON.stringify(geomOf(evalData(out).floors[fl]));
+    if (back !== JSON.stringify(geomOf(g))) throw new Error("書き戻した結果が合いません（保存を中止しました）");
+    return out;
+  }
+  // ---------- 書き戻しここまで ----------
+
+  // ファイルの場所は次に開いたときのために IndexedDB に覚える
+  const idb = (mode, fn) =>
+    new Promise((ok, ng) => {
+      const r = indexedDB.open("sm27-goodsmap-editor", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("kv");
+      r.onerror = () => ng(r.error);
+      r.onsuccess = () => {
+        const t = r.result.transaction("kv", mode);
+        const q = fn(t.objectStore("kv"));
+        t.oncomplete = () => ok(q.result);
+        t.onerror = () => ng(t.error);
+      };
+    });
+  const HANDLE_KEY = "handle:" + DATA_SRC;
+  const pickFile = async () =>
+    (await showOpenFilePicker({ id: "gmdata", types: [{ description: "ブースマップのデータ", accept: { "text/javascript": [".js"] } }] }))[0];
+  async function writable(h) {
+    if ((await h.queryPermission({ mode: "readwrite" })) === "granted") return true;
+    return (await h.requestPermission({ mode: "readwrite" })) === "granted";
+  }
+
+  async function save() {
+    if (!M) return;
+    try {
+      if (!window.showOpenFilePicker) return saveDownload();
+      if (!handle) handle = (await idb("readonly", (s) => s.get(HANDLE_KEY)).catch(() => null)) ?? null;
+      if (!handle) {
+        alert(`書き戻すファイル（${DATA_SRC.split("/").pop()}）を選んでください。次からは聞きません。`);
+        handle = await pickFile();
+      }
+      if (!(await writable(handle))) throw new Error("ファイルに書き込む許可がありません");
+      const text = await (await handle.getFile()).text();
+      if (evalData(text).year !== D.year) throw new Error(`年が違うファイルです（${handle.name}）`);
+      const out = patch(text, fi, M);
+      if (out !== text) {
+        const w = await handle.createWritable();
+        await w.write(out);
+        await w.close();
+      }
+      await idb("readwrite", (s) => s.put(handle, HANDLE_KEY)).catch(() => {});
+      base = clone(M);
+      renderSide();
+      $("status").textContent = `${handle.name}に保存しました（${new Date().toLocaleTimeString()}）`;
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error(e);
+      alert(`保存できませんでした：${e.message}`);
+    }
+  }
+  // File System Access API が無いブラウザ：ファイルを選んでもらい、直したものをダウンロードする
+  function saveDownload() {
+    const input = Object.assign(document.createElement("input"), { type: "file", accept: ".js" });
+    input.onchange = async () => {
+      try {
+        const file = input.files[0];
+        const out = patch(await file.text(), fi, M);
+        const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([out], { type: "text/javascript" })), download: file.name });
+        a.click();
+        base = clone(M);
+        renderSide();
+      } catch (e) {
+        alert(`保存できませんでした：${e.message}`);
+      }
+    };
+    input.click();
+  }
+  async function openFile() {
+    if (M && JSON.stringify(M) !== JSON.stringify(base) && !confirm("未保存の変更を捨てて読み込み直しますか？")) return;
+    try {
+      const h = await pickFile();
+      loadData(evalData(await (await h.getFile()).text()));
+      handle = h;
+      await idb("readwrite", (s) => s.put(h, HANDLE_KEY)).catch(() => {});
+      renderSide();
+    } catch (e) {
+      if (e.name !== "AbortError") alert(`読み込めませんでした：${e.message}`);
+    }
+  }
+
+  // ---------- 起動 ----------
+  $("grid").value = String(pref.grid);
+  $("snap").checked = pref.snap;
+  $("guides").checked = pref.guides;
+  $("grown").checked = pref.grown;
+  // 打っているあいだも線を描き直す。空・マイナスは0（線もスナップもなし）
+  $("grid").addEventListener("input", (ev) => {
+    pref.grid = Math.max(0, +ev.target.value || 0);
+    savePref();
+    render();
+  });
+  $("grid").addEventListener("change", (ev) => (ev.target.value = String(pref.grid)));
+  $("snap").addEventListener("change", (ev) => {
+    pref.snap = ev.target.checked;
+    savePref();
+  });
+  $("guides").addEventListener("change", (ev) => {
+    pref.guides = ev.target.checked;
+    savePref();
+  });
+  $("grown").addEventListener("change", (ev) => {
+    pref.grown = ev.target.checked;
+    savePref();
+    render();
+  });
+  $("floor").addEventListener("change", (ev) => {
+    if (JSON.stringify(M) !== JSON.stringify(base) && !confirm("未保存の変更を捨ててフロアを切り替えますか？")) return void (ev.target.value = fi);
+    setFloor(+ev.target.value);
+  });
+  $("group").addEventListener("click", group);
+  $("ungroup").addEventListener("click", ungroup);
+  $("undo").addEventListener("click", undo);
+  $("redo").addEventListener("click", redo);
+  $("fit").addEventListener("click", fit);
+  $("save").addEventListener("click", save);
+  $("open").addEventListener("click", openFile);
+  if (!window.showOpenFilePicker) $("open").hidden = true;
+
+  const script = Object.assign(document.createElement("script"), { src: DATA_SRC });
+  script.onload = () => window.GM_DATA ? loadData(window.GM_DATA) : ($("status").textContent = "データが読めません。「開く…」で選んでください");
+  script.onerror = () => ($("status").textContent = `${DATA_SRC} が読めません。「開く…」で選んでください`);
+  document.head.append(script);
+
+  // 書き戻しの確認用（tools の外からは使わない）
+  window.__gmEditor = { patch, geomOf, evalData, get M() { return M; } };
+})();
+</script>
+</body>
+</html>

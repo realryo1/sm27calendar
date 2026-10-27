@@ -28,7 +28,7 @@ SNOWMIKU2027（2027.2.5〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/delay/`|姉妹プロジェクト（運行情報）への転送ページ（旧URL）|
 |`website/test_sm26goodsmap/`|グッズ・出展ブースマップの試験ページ（2026年のデータ。`noindex`、カレンダーからはリンクしていない）|
 |`document/`|実装メモ・進捗（グッズ・出展ブースマップは`goodsmapProgress.md`）|
-|`tools/`|アイコン・OGP画像の元になるHTML、デプロイスクリプト（`deploy-pages.mjs`）|
+|`tools/`|アイコン・OGP画像の元になるHTML、ブースマップのエディタ（`goodsmap-editor.html`）、デプロイスクリプト（`deploy-pages.mjs`）|
 
 ## PWA
 
