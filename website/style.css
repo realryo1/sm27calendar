@@ -110,14 +110,27 @@ button { font: inherit; color: inherit; }
   inherits: false;
   initial-value: 50%;
 }
+/* 持ち手を選んだとき、持ち手の列が広がる分（左右の列を半分ずつ押しのける。動かせるよう型を登録する） */
+@property --split-extra {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
 /* 2カラム：左に時間割（画面に固定）、右に会場一覧（こちらだけスクロール）。
    スマホ表示（640px以下）でなければ2カラムにする（iPad mini・折りたたみスマホを開いたとき・横向きのスマホも） */
 @media (min-width: 641px) {
   /* 時間割・持ち手・会場一覧の3列。時間割の幅（--board-w）は持ち手で変えられる（app.js が .main に入れる） */
   .main {
     display: grid;
-    grid-template-columns: var(--board-w, 50%) 16px 1fr;
+    /* 持ち手の中心は、広がっても幅の割合（--board-w）の位置 + 8px のまま */
+    grid-template-columns: calc(var(--board-w, 50%) - var(--split-extra) / 2) calc(16px + var(--split-extra)) 1fr;
+    transition: --split-extra .2s cubic-bezier(.22, 1, .36, 1);
     align-items: start;
+  }
+  /* 持ち手を選んだら、持ち手の列を広げて左右の列を押しのける */
+  .main:has(> .split:is(:hover, :focus-visible, .is-dragging)) { --split-extra: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    .main { transition: none; }
   }
   .board {
     position: sticky;
@@ -157,11 +170,11 @@ button { font: inherit; color: inherit; }
     height: 48px;
     border-radius: 999px;
     background: var(--col-secondary-light);
-    transition: background-color .15s, height .15s;
+    transition: background-color .15s, width .15s, height .15s;
   }
   .split:hover::before,
   .split:focus-visible::before,
-  .split.is-dragging::before { height: 72px; background: var(--col-primary); }
+  .split.is-dragging::before { width: 10px; height: 72px; background: var(--col-primary); }
   /* ドラッグ中（app.js が html に .is-resizing を付ける）は、毎フレームの描き直しが重い装飾を止め、離したら戻す */
   /* 止めるのは動いている要素だけに絞る（* にすると、クラスの付け外しのたびに全要素のスタイルを計算し直して重い） */
   .is-resizing .tl-sign__num,

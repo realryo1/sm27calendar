@@ -11,6 +11,13 @@
   --gm-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5' fill='none' stroke='%23000' stroke-width='2.6'/%3E%3Cpath d='M15.5 15.5 21 21' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
+/* スマホでマップが縮む高さ・位置（goodsmap.js の shrink が、使う要素に直接入れる）。継承しないので、スクロールのたびに子孫のスタイルを計算し直さない。
+   値の型は決めない（"*"）ので、var() の予備の値はそのまま使える */
+@property --gm-map-top { syntax: "*"; inherits: false; }
+@property --gm-map-h { syntax: "*"; inherits: false; }
+@property --gm-pv { syntax: "*"; inherits: false; }
+@property --gm-sec-h { syntax: "*"; inherits: false; }
+
 .gm { padding: 16px 16px 0; }
 .gm-notice[hidden],
 .gm-floors[hidden],
@@ -56,6 +63,12 @@
 }
 
 /* ---------- 並べ方 ---------- */
+/* 2カラムで持ち手を選んだとき、持ち手の列が広がる分（動かせるよう型を登録する） */
+@property --gm-split-extra {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
 .gm-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -71,7 +84,10 @@
   /* 上下16pxずつ空ける（カレンダーの .board と同じ）。画面の高さは goodsmap.js が innerHeight から --app-h に入れる
      （Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残ることがある。カレンダーと同じ対策） */
   .gm-main {
-    grid-template-columns: var(--gm-map-w, 50%) 16px minmax(0, 1fr);
+    /* 持ち手の列は、持ち手を選んだとき（下の :has）に --gm-split-extra だけ広がり、左右の列を半分ずつ押しのける。
+       持ち手の中心は、広がっても幅の割合（--gm-map-w）の位置 + 8px のまま */
+    grid-template-columns: calc(var(--gm-map-w, 50%) - var(--gm-split-extra) / 2) calc(16px + var(--gm-split-extra)) minmax(0, 1fr);
+    transition: --gm-split-extra .2s cubic-bezier(.22, 1, .36, 1);
     gap: 0;
     height: calc(100svh - 32px);
     height: calc(100dvh - 32px);
@@ -88,19 +104,37 @@
     box-shadow: var(--gm-shadow);
   }
   .gm-sec--map .gm-mapbox { border-radius: 0; box-shadow: none; }
-  /* スクロールはできるが、スクロールバーは出さない */
+  /* 検索欄は列の上に置き、その下の .gm-scroll だけがスクロールする。
+     こうすると、カードは検索欄の下の縁で切れ、丸い角の外にもぐったカードが見えることがない。
+     スクロールはできるが、スクロールバーは出さない */
   .gm-sec--list {
+    display: flex;
+    flex-direction: column;
     padding-right: 16px;
+    overflow: hidden;
+  }
+  .gm-sec--list .gm-tools { position: relative; flex: none; margin-bottom: 0; } /* 下に書いた .gm-tools より強くする */
+  .gm-scroll {
+    position: relative;
+    z-index: 0;
+    flex: 1;
+    min-height: 0;
+    /* カードの影が左右で切れないよう、8px 広げて同じ分だけ内側に戻す。持ち手（z-index: 1）の上には重ならない */
+    margin: 0 -8px;
+    padding: 12px 8px 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: none;
   }
-  .gm-sec--list::-webkit-scrollbar { display: none; }
+  .gm-scroll::-webkit-scrollbar { display: none; }
+  .gm-sec--list .gm-card { scroll-margin-top: 4px; } /* 検索欄は貼り付かないので、上に空ける分は要らない */
   /* 持ち手：列の高さいっぱいの縦の帯。中央に縦長のつまみを描く（カレンダーの .split と同じ形） */
   .gm-split {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    z-index: 1;
     cursor: col-resize;
     touch-action: none;
     outline: none;
@@ -111,11 +145,16 @@
     height: 48px;
     border-radius: 999px;
     background: var(--col-secondary-light);
-    transition: background-color .15s, height .15s;
+    transition: background-color .15s, width .15s, height .15s;
   }
   .gm-split:hover::before,
   .gm-split:focus-visible::before,
-  .gm-split.is-dragging::before { height: 72px; background: var(--col-primary); }
+  .gm-split.is-dragging::before { width: 10px; height: 72px; background: var(--col-primary); }
+  /* 持ち手を選んだら、持ち手の列を広げて左右の列を押しのける（マップと一覧の中身は goodsmap.js が止めておき、動かし終えてから組み直す） */
+  .gm-main:has(> .gm-split:is(:hover, :focus-visible, .is-dragging)) { --gm-split-extra: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    .gm-main { transition: none; }
+  }
   /* ドラッグ中のカードは枠だけ幅に合わせ、中身は押した時の幅（--cw、goodsmap.js の freeze）のまま組み直さない。
      手を止めたら（.is-frozen が外れたら）中身も組み直す（カレンダーの会場カードと同じ） */
   .is-frozen .gm-card { overflow: clip; min-width: 0; }
@@ -124,6 +163,12 @@
   /* 一覧は独立したレイヤーにして、横に動いても中身を描き直さない。最初のフレームが重いので、持ち手にマウスが乗った時点で作っておく */
   .gm-main:has(> .gm-split:hover) .gm-sec--list,
   .is-resizing .gm-sec--list { will-change: transform; }
+  /* マップの列は、枠の大きさが変わっても中身のレイアウトを外へ広げない（中身は列の中で完結させる） */
+  .gm-sec--map { contain: layout paint; }
+  /* ドラッグ中は、描き直しが重い装飾と動きを止め、離したら戻す（カレンダーの .is-resizing と同じ） */
+  .is-resizing .gm-tools { -webkit-backdrop-filter: none; backdrop-filter: none; } /* 背景はほぼ不透明なので見た目は変わらない */
+  .is-resizing .gm-tile.is-picked { filter: none; }
+  .is-resizing .gm-card.is-flash { animation-play-state: paused; }
 }
 /* 2カラムで画面の高さが低いとき（横向きのスマホ）：上下の余白を8pxに詰める（カレンダーと同じ） */
 @media (min-width: 641px) and (max-height: 500px) {
@@ -171,11 +216,12 @@
 }
 .gm-maptools__floor { margin: 0; font-size: .88rem; font-weight: 900; color: var(--col-secondary-dark); }
 .gm-maptools__floor small { margin-left: .5em; font-size: .85em; font-weight: 700; color: var(--col-ink); opacity: .7; }
-.gm-zoom { display: flex; gap: 4px; }
+.gm-zoom { display: flex; flex: none; gap: 4px; }
 .gm-zoom button {
   min-width: 36px;
   height: 32px;
   padding: 0 10px;
+  white-space: nowrap;
   border: 2px solid var(--col-secondary-light);
   border-radius: 999px;
   font-size: .8rem;
@@ -203,6 +249,11 @@
 .gm-full[aria-pressed="true"]::before { -webkit-mask-image: var(--gm-close); mask-image: var(--gm-close); }
 @media (max-width: 640px) {
   .gm-zoom .gm-full { display: block; }
+}
+/* 回す・縮小・全体・拡大・全画面の5つが、幅320pxでもフロア名の横に収まるように詰める */
+@media (max-width: 360px) {
+  .gm-zoom { gap: 3px; }
+  .gm-zoom button { min-width: 32px; padding: 0 7px; }
 }
 /* 拡大したら、この枠の中を縦横にスクロールして見る。移動（1本指）と拡大縮小（二本指）は goodsmap.js が自前で行うので、ブラウザのタッチ操作は止める
    （ブラウザのスクロールは動き始めの向きで縦か横に固定され、斜めに動かないため）。
@@ -291,6 +342,12 @@
 .gm-canvas { position: relative; flex: none; margin: auto; }
 .gm-canvas svg { display: block; width: 100%; height: 100%; }
 .gm-minis { position: absolute; inset: 0; pointer-events: none; }
+/* マップを回すあいだ（goodsmap.js の turnMap）：文字を消して絵だけを回し、描き直したら文字をふわっと出す。回す時間は TURN と合わせる */
+.gm-canvas { transition: transform .375s cubic-bezier(.22, 1, .36, 1); } /* easeOutQuint */
+.gm-svg text,
+.gm-minis { transition: opacity .2s; }
+.gm-map.is-turning .gm-svg text,
+.gm-map.is-turning .gm-minis { opacity: 0; transition: none; }
 /* 中くらいの拡大で、ブースの上に出す番号とブース名（goodsmap.js の labelsHtml・NAMED）。押せるのは下のブースの絵 */
 .gm-label {
   position: absolute;
@@ -435,6 +492,7 @@
 }
 @media (max-width: 640px) {
   .gm-tools { margin: 0 -16px 12px; padding: 10px 16px; border-radius: 0; }
+  .gm-scroll { display: contents; } /* スマホはページ全体がスクロールする */
 }
 .gm-search { position: relative; flex: 1 1 100%; }
 .gm-search__icon {
@@ -482,7 +540,6 @@
   color: var(--col-paper);
   background: var(--brand-gradient) border-box; /* 透明の枠の下までグラデーションで塗る（カレンダーの日付ボタンと同じ） */
 }
-.gm-count { margin: 0 0 0 auto; font-size: .74rem; font-weight: 700; opacity: .8; }
 .gm-lead { margin: 0 0 12px; padding-left: 10px; font-size: .76rem; border-left: 3px solid var(--col-gold); }
 .gm-empty {
   margin: 0;

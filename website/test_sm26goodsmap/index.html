@@ -55,13 +55,15 @@
             <input type="search" id="gmQuery" autocomplete="off" enterkeyhint="search">
           </label>
           <div class="gm-chips" id="gmChips" role="group"></div>
-          <p class="gm-count" id="gmCount" aria-live="polite"></p>
         </div>
-        <p class="gm-notice" id="gmNotice" hidden></p>
-        <p class="gm-lead" id="gmLead"></p>
-        <div class="gm-list" id="gmList"></div>
-        <p class="gm-empty" id="gmEmpty" hidden></p>
-        <footer class="site-footer gm-footer" id="gmFooter"></footer>
+        <!-- 2カラムでは、検索欄の下だけがスクロールする（検索欄の角の外にカードが見えないように） -->
+        <div class="gm-scroll">
+          <p class="gm-notice" id="gmNotice" hidden></p>
+          <p class="gm-lead" id="gmLead"></p>
+          <div class="gm-list" id="gmList"></div>
+          <p class="gm-empty" id="gmEmpty" hidden></p>
+          <footer class="site-footer gm-footer" id="gmFooter"></footer>
+        </div>
       </section>
     </main>
   </div>

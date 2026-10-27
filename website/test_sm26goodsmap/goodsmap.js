@@ -24,7 +24,6 @@
     soldAt: (where) => `${where}で販売`,
     also: (where) => `${where}でも`,
     more: (n) => `ほか${n}件`,
-    count: (n, total) => (n === total ? `全${total}ブース` : `${total}ブース中${n}ブース`),
     empty: "見つかりませんでした。ほかのことばでさがしてみてください。",
     officialLead: "公式グッズの売り場です。商品の写真や詳しい説明は、公式のグッズ一覧で見られます。",
     officialLink: "公式のグッズ一覧",
@@ -32,6 +31,7 @@
     loose: "売り場の記載がないグッズ",
     looseLead: "公式のグッズ一覧ではウイングベイで扱うとあるものの、売り場が書かれていません。",
     zoom: { out: ["－", "縮小"], fit: ["全体", "全体を表示"], in: ["＋", "拡大"] },
+    turn: ["↻", "マップを右へ90度回す"],
     boothName: (no) => `ブース${no}`,
     showOnMap: (name) => `${name}をマップで見る`,
     updated: (date) => `データ：${date}時点の公式サイト`,
@@ -256,6 +256,54 @@
     grownCache.set(f, big);
     return big;
   }
+  // マップを右へ90度ずつ回す（rot は回した回数。0〜3）。絵を回すのではなく、データの座標を回してから描くので、文字は立ったまま。
+  // 大きくしたブース（grownOf）は回す前のもので計算して一緒に回す（広げる向きが変わらないように）。
+  // 横に長かった売り場が縦長になり、名前が横書きで収まらないとき（エスカレーターなど）は縦書きにする（vert）
+  let rot = 0;
+  const turnedCache = new WeakMap();
+  const ARROWS = "↑→↓←"; // 右へ90度ずつ回した順
+  function turned(f, q) {
+    if (!q) return f;
+    const all = turnedCache.get(f) ?? [];
+    turnedCache.set(f, all);
+    if (all[q]) return all[q];
+    let view = f.view;
+    let [tw, th] = tileOf(f);
+    let booths = Object.entries(f.booths).map(([no, [x, y]]) => [no, { x, y, w: tw, h: th }]);
+    let big = [...grownOf(f)];
+    let areas = f.areas.map((a) => ({ ...a, lx: a.x + a.w / 2, ly: a.labelY ?? a.y + a.h / 2 }));
+    for (let i = 0; i < q; i++) {
+      const [vx, vy, vw, vh] = view;
+      const rect = (r) => ({ ...r, x: vx + vy + vh - r.y - r.h, y: vy + r.x - vx, w: r.h, h: r.w });
+      booths = booths.map(([no, r]) => [no, rect(r)]);
+      big = big.map(([no, r]) => [no, rect(r)]);
+      areas = areas.map((a) => ({ ...rect(a), lx: vx + vy + vh - a.ly, ly: vy + a.lx - vx }));
+      view = [vx, vy, vh, vw];
+      [tw, th] = [th, tw];
+    }
+    const [vx, vy, vw, vh] = view;
+    areas = areas.map(({ lx, ly, ...a }) => {
+      const size = a.size ?? 15;
+      // 矢印はマップと一緒に向きを変える
+      let lines = (a.label ?? []).map((t) => [...t].map((c) => (ARROWS.includes(c) ? ARROWS[(ARROWS.indexOf(c) + q) % 4] : c)).join(""));
+      // 見えている部分（表示範囲の外まで続く区画は、その内側）に横書きで収まるか
+      const w = Math.min(a.x + a.w - INSET, vx + vw) - Math.max(a.x + INSET, vx);
+      const h = Math.min(a.y + a.h - INSET, vy + vh) - Math.max(a.y + INSET, vy);
+      const fits = Math.max(0, ...lines.map((t) => [...t].length)) * size <= w && lines.length * size * 1.2 <= h;
+      let vert = false;
+      if (q % 2 && !fits) {
+        // 1文字ずつの行（縦に並べた出入口など）は1行の横書きに、それ以外は縦書きにする
+        if (lines.every((t) => [...t].length === 1)) lines = [lines.join("")];
+        else vert = true;
+      }
+      return { ...a, label: lines, labelX: lx, labelY: ly, vert };
+    });
+    const t = { ...f, view, tile: [tw, th], booths: Object.fromEntries(booths.map(([no, r]) => [no, [r.x, r.y]])), areas };
+    grownCache.set(t, new Map(big));
+    all[q] = t;
+    return t;
+  }
+  let shown = floor; // 描いているフロア（floor を rot だけ回したもの）
   function mapSvg(f) {
     const [vx, vy, vw, vh] = f.view;
     const [tw, th] = tileOf(f);
@@ -267,8 +315,20 @@
       const h = a.h - INSET * 2;
       const lines = a.label ?? [];
       const size = a.size ?? 15;
-      // labelY：文字の中心の高さ（区画が表示範囲の外まで続くとき、見えている部分に文字を置く）
-      const top = (a.labelY ?? y + h / 2) - ((lines.length - 1) * size * 1.2) / 2;
+      // labelY：文字の中心の高さ（区画が表示範囲の外まで続くとき、見えている部分に文字を置く）。labelX・vert はマップを回したとき（turned）
+      const cx = a.labelX ?? x + w / 2;
+      const cy = a.labelY ?? y + h / 2;
+      const top = cy - ((lines.length - 1) * size * 1.2) / 2;
+      const text = (t, tx, ty, attr = "") => `<text x="${r1(tx)}" y="${r1(ty)}" dy=".36em" font-size="${size}"${attr}>${esc(t)}</text>`;
+      // 縦書き：行を右から左へ並べ、1文字ずつ下へ置く。長音などは90度回す
+      const vert = () =>
+        lines.flatMap((t, i) =>
+          [...t].map((c, j, cs) => {
+            const tx = cx + ((lines.length - 1) / 2 - i) * size * 1.2;
+            const ty = cy + (j - (cs.length - 1) / 2) * size * 1.05;
+            return text(c, tx, ty, /[ー－〜～]/.test(c) ? ` transform="rotate(90 ${r1(tx)} ${r1(ty)})"` : "");
+          })
+        );
       const spot = a.spot && D.spots[a.spot];
       // 名前のない帯やパネルも押せるが、Tab では止まらない（同じ説明に何度も止まらないように）
       const attrs = spot
@@ -276,7 +336,7 @@
         : ' aria-hidden="true"';
       return `<g class="gm-area gm-area--${a.kind}${spot ? " is-link" : ""}${spot?.booths ? " has-booths" : ""}"${attrs}>
         <rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${r1(Math.min(10, h / 3))}"/>
-        ${lines.map((t, i) => `<text x="${r1(x + w / 2)}" y="${r1(top + i * size * 1.2)}" dy=".36em" font-size="${size}">${esc(t)}</text>`).join("")}
+        ${(a.vert ? vert() : lines.map((t, i) => text(t, cx, top + i * size * 1.2))).join("")}
       </g>`;
     };
     const tile = ([no, [x, y]]) => {
@@ -364,6 +424,7 @@
   }
 
   function renderMap() {
+    shown = turned(floor, rot);
     $("gmFloorLabel").innerHTML = `${esc(floor.label)}${floor.sub ? `<small>${esc(floor.sub)}</small>` : ""}`;
     const $floors = $("gmFloors");
     $floors.hidden = D.floors.length < 2;
@@ -371,7 +432,7 @@
       .map((f) => `<button type="button" class="gm-chip" data-floor="${esc(f.id)}" aria-pressed="${f === floor}">${esc(f.label)}</button>`)
       .join("");
     // マップの絵（SVG）と、拡大したときにブースの上に出す中身（HTML）を、同じ大きさの台に重ねる
-    $map.innerHTML = `<div class="gm-canvas">${mapSvg(floor)}<div class="gm-minis" aria-hidden="true">${labelsHtml(floor)}${minisHtml(floor)}</div></div>`;
+    $map.innerHTML = `<div class="gm-canvas">${mapSvg(shown)}<div class="gm-minis" aria-hidden="true">${labelsHtml(shown)}${minisHtml(shown)}</div></div>`;
     sizeMap();
     // 凡例は、このフロアにあるものだけ
     const kinds = new Set(Object.keys(floor.booths).map((no) => info.get(no)?.kinds[0] ?? "sale"));
@@ -398,7 +459,7 @@
   function sizeMap() {
     const $canvas = $map.firstElementChild;
     if (!$canvas) return;
-    const [, , vw, vh] = floor.view;
+    const [, , vw, vh] = shown.view;
     const fit = Math.min($map.clientWidth / vw, $map.clientHeight / vh);
     const u = fit * zoom; // マップの1単位の、画面での px
     $canvas.style.width = `${vw * u}px`;
@@ -434,7 +495,7 @@
   }
   // 枠の中で、マップ上の点 (x, y)（viewBox の座標）をまん中に出す
   function centerOn([x, y], smooth = false) {
-    const [vx, vy, vw, vh] = floor.view;
+    const [vx, vy, vw, vh] = shown.view;
     const r = $map.firstElementChild.getBoundingClientRect();
     const m = $map.getBoundingClientRect();
     const left = $map.scrollLeft + r.left - m.left + ((x - vx) / vw) * r.width - m.width / 2;
@@ -443,11 +504,11 @@
     $map.scrollTo({ left, top, behavior: smooth ? behavior : "auto" });
   }
   // スマホ（1カラム）は、ブース名が出る大きさ（NAMED）まで拡大して開き、右下に寄せる（左端の売り場はあえて見切れさせる）。
-  // 枠が広くて、いちばん左のブースの列とその左の売り場の端まで入るなら、そこまで入る大きさにする（左にも売り場があるとわかるように）。2カラムは全体
+  // 枠が広くて、いちばん左のブースの列とその左の売り場の端まで入るなら、そこまで入る大きさにする（左にも売り場があるとわかるように）。2カラムと、回しているときは全体
   function initialZoom() {
     zoom = 1;
     setZoom(1);
-    if (twoCol.matches) return;
+    if (twoCol.matches || rot) return;
     const [vx, , vw, vh] = floor.view;
     const fit = Math.min($map.clientWidth / vw, $map.clientHeight / vh);
     const left = Math.min(...Object.values(floor.booths).map(([x]) => x)) - 120; // いちばん左のブースの列に、その左の売り場が少し見える分を足す
@@ -463,7 +524,11 @@
     $map.scrollTop = $map.scrollHeight;
   };
   // 画面の大きさが変わったら（端末を回したときなど）、枠に合わせて描き直す
+  // 2カラムの持ち手を動かしているあいだは測り直さない（毎フレーム --u が変わると、ブースの文字をすべて組み直して重い）。
+  // 中身は押した時の大きさのまま、枠だけが動く。手を止めたら持ち手の処理が sizeMap を呼ぶ
+  let resizing = false;
   new ResizeObserver(() => {
+    if (resizing) return;
     sizeMap();
     if (anchored) toCorner();
   }).observe($map);
@@ -650,9 +715,9 @@
       renderMap();
       initialZoom();
     }
-    const pos = floor.booths[key];
-    const a = floor.areas.find((x) => x.spot === key && x.label);
-    if (pos) centerOn([pos[0] + tileOf(floor)[0] / 2, pos[1] + tileOf(floor)[1] / 2], true);
+    const pos = shown.booths[key];
+    const a = shown.areas.find((x) => x.spot === key && x.label);
+    if (pos) centerOn([pos[0] + tileOf(shown)[0] / 2, pos[1] + tileOf(shown)[1] / 2], true);
     else if (a) centerOn([a.x + a.w / 2, a.y + a.h / 2], true);
   }
 
@@ -701,8 +766,6 @@
       const id = el.dataset.pick;
       el.classList.toggle("is-hit", hits.has(id) || (D.spots[id]?.booths ?? []).some((no) => hits.has(no)));
     });
-    const n = booths.filter((b) => hits.has(b.no)).length;
-    $("gmCount").textContent = TEXT.count(n, booths.length);
     $("gmEmpty").hidden = hits.size > 0;
   }
 
@@ -722,6 +785,7 @@
       $("gmNotice").hidden = false;
     }
     $("gmZoom").innerHTML =
+      `<button type="button" class="gm-turn" data-turn aria-label="${esc(TEXT.turn[1])}">${esc(TEXT.turn[0])}</button>` +
       Object.entries(TEXT.zoom)
         .map(([z, [label, aria]]) => `<button type="button" data-zoom="${z}" aria-label="${esc(aria)}">${esc(label)}</button>`)
         .join("") + `<button type="button" class="gm-full" id="gmFull" aria-pressed="false" aria-label="${esc(TEXT.fullOn)}"></button>`;
@@ -782,6 +846,7 @@
   $("gmZoom").addEventListener("click", (ev) => {
     // 全画面のボタン（＋の右）。押したときだけ切り替える（拡大しても自動では全画面にしない）
     if (ev.target.closest("#gmFull")) return setFull(!full);
+    if (ev.target.closest("[data-turn]")) return turnMap();
     const el = ev.target.closest("[data-zoom]");
     if (!el) return;
     const z = el.dataset.zoom;
@@ -841,8 +906,31 @@
         card.style.setProperty("--cw", `${card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)}px`);
       });
       $side.classList.add("is-frozen");
+      resizing = true;
     };
-    const thaw = () => $side.classList.remove("is-frozen");
+    // 幅を変えたか（持ち手を選んだだけで列が広がったときは、マップを測り直さない。外したら元の幅に戻るので、中身は元の大きさのままでぴったり収まる）
+    let moved = false;
+    const thaw = () => {
+      $side.classList.remove("is-frozen");
+      if (!resizing) return;
+      // 持ち手の列が広がる動き（goodsmap.css の --gm-split-extra）が終わってから測る
+      const grow = $main.getAnimations().filter((a) => a.transitionProperty === "--gm-split-extra");
+      Promise.allSettled(grow.map((a) => a.finished)).then(() => {
+        if ($side.classList.contains("is-frozen")) return; // また動かし始めた
+        resizing = false;
+        if (!moved) return;
+        moved = false;
+        settleMap(); // 止めた幅でマップを1回だけ測り直す（回すときと同じ動きで）
+      });
+    };
+    // 持ち手を選ぶ・外すと列が広がる・戻るので、そのあいだ中身を止めておく（ドラッグ中は pointerdown からの処理に任せる）
+    const hold = () => {
+      if ($split.classList.contains("is-dragging")) return;
+      freeze();
+      clearTimeout(settle);
+      settle = setTimeout(thaw, SETTLE);
+    };
+    for (const type of ["pointerenter", "pointerleave", "focus", "blur"]) $split.addEventListener(type, hold);
     // 幅の変更は1フレームに1回だけにまとめる
     let moveX = 0;
     let moveRaf = 0;
@@ -861,6 +949,7 @@
         moveRaf = requestAnimationFrame(() => {
           moveRaf = 0;
           freeze();
+          moved = true;
           setW(pctAt(moveX), false);
           clearTimeout(settle);
           settle = setTimeout(thaw, SETTLE);
@@ -871,21 +960,29 @@
       cancelAnimationFrame(moveRaf);
       moveRaf = 0;
       clearTimeout(settle);
-      thaw();
       $split.releasePointerCapture(ev.pointerId);
       $split.classList.remove("is-dragging");
       document.documentElement.classList.remove("is-resizing");
+      moved = true;
       setW(pctAt(ev.clientX), true);
+      thaw(); // 離した幅が決まってから、マップを測り直す
       rect = null;
     };
     $split.addEventListener("pointerup", end);
     $split.addEventListener("pointercancel", end);
-    $split.addEventListener("dblclick", () => setW(DEFAULT, true));
+    // ダブルクリックと矢印キーも、ドラッグと同じく枠だけ先に動かし、マップは測り直して動かす
+    const jump = (pct) => {
+      freeze();
+      moved = true;
+      setW(pct, true);
+      thaw();
+    };
+    $split.addEventListener("dblclick", () => jump(DEFAULT));
     $split.addEventListener("keydown", (ev) => {
       const step = { ArrowLeft: -2, ArrowRight: 2 }[ev.key];
       if (!step) return;
       ev.preventDefault();
-      setW(parseFloat($main.style.getPropertyValue("--gm-map-w")) + step, true);
+      jump(parseFloat($main.style.getPropertyValue("--gm-map-w")) + step);
     });
     // 2カラムの高さは dvh ではなく innerHeight で決める（goodsmap.css の --app-h。カレンダーと同じ）。
     // Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、resize の後も直らないことがある
@@ -905,15 +1002,27 @@
   // 2カラムではマップが常に見えているので、どれも使わない
   const $sec = $("map");
   const PREVIEW = 160; // goodsmap.css の --gm-preview と合わせる
-  const rootStyle = document.documentElement.style;
+  // 縮む高さと位置は、使う要素に直接入れる（:root に入れると、スクロールのたびにページ全体のスタイルを計算し直して重い。goodsmap.css の @property）
+  const $tools = document.querySelector(".gm-tools");
+  const boxStyle = $mapbox.style;
+  const toolsStyle = $tools.style;
+  const secStyle = $sec.style;
+  let fitTimer = 0; // スクロールのあいだ止めているマップの測り直し（下の shrink）を、止まってからやる
+  let scrolled = false; // 次の shrink がスクロール（か、プレビューを開く動き）によるもの
   let preview = false; // プレビューのあいだは拡大縮小しない（小さすぎて操作しにくい）
   let expanded = null; // プレビューを押して大きくしたときの、ページのスクロール位置（一覧をスクロールしたら、プレビューに戻す）
   let full = false;
   let shrinkRaf = 0;
+  // deferMs：枠の高さが動いているあいだはマップの絵（SVG とブースの文字）を描き直さず、枠で切るだけにして、止まってから1回だけ測り直す
+  // （描き直すのは枠の高さが変わる毎フレームだと重く、スクロールがガクガクする。測り直しは settleMap。大きさが変わらなければ何も動かない）
+  const FIT_SCROLL = 150;
+  const FIT_EXPAND = 300; // プレビューを開く動き（.is-animating の 0.25 秒）が終わってから
   function shrink() {
     shrinkRaf = 0;
+    const deferMs = scrolled ? (expanded != null && $mapbox.classList.contains("is-animating") ? FIT_EXPAND : FIT_SCROLL) : 0;
+    scrolled = false;
     if (twoCol.matches) {
-      for (const k of ["--gm-map-top", "--gm-map-h", "--gm-pv", "--gm-sec-h"]) rootStyle.removeProperty(k);
+      for (const style of [boxStyle, toolsStyle, secStyle]) for (const k of ["--gm-map-top", "--gm-map-h", "--gm-pv", "--gm-sec-h"]) style.removeProperty(k);
       $mapbox.classList.remove("is-shrunk", "is-preview");
       preview = false;
       return sizeMap();
@@ -922,17 +1031,24 @@
     // 開いたときの高さ：画面の上半分（マップと一覧が上下1:1。これがマップの列の高さになる）。マップはその中に収まる大きさで描く
     const top0 = $sec.offsetTop; // ページの中での、マップの列の上端
     const H = Math.round(window.innerHeight / 2 - top0);
-    rootStyle.setProperty("--gm-sec-h", `${H}px`);
+    secStyle.setProperty("--gm-sec-h", `${H}px`);
     const y = window.scrollY;
     if (expanded != null && Math.abs(y - expanded) > 4) expanded = null;
     const h = expanded != null ? H : Math.max(PREVIEW, H - Math.max(0, y - top0));
-    rootStyle.setProperty("--gm-map-top", `${Math.max(0, top0 - y)}px`);
-    rootStyle.setProperty("--gm-map-h", `${h}px`);
-    rootStyle.setProperty("--gm-pv", `${h}px`); // 検索欄は、この高さの下に貼り付く
+    boxStyle.setProperty("--gm-map-top", `${Math.max(0, top0 - y)}px`);
+    boxStyle.setProperty("--gm-map-h", `${h}px`);
+    toolsStyle.setProperty("--gm-pv", `${h}px`); // 検索欄は、この高さの下に貼り付く
     preview = h <= PREVIEW;
     $mapbox.classList.toggle("is-shrunk", h < H);
     $mapbox.classList.toggle("is-preview", preview);
-    sizeMap();
+    if (!deferMs) return sizeMap();
+    resizing = true; // 枠の大きさが変わっても、ResizeObserver は測り直さない
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(() => {
+      resizing = false;
+      settleMap();
+    }, deferMs);
+    if (anchored) toCorner(); // 右下寄せは枠の動きに合わせて保つ
   }
   // 全画面にする・戻す。拡大率はそのまま。全画面のあいだ、うしろのページはスクロールさせない
   function setFull(on) {
@@ -949,20 +1065,98 @@
     const cx = (m.left + m.width / 2 - r.left) / r.width;
     const cy = (m.top + m.height / 2 - r.top) / r.height;
     shrink();
-    const [vx, vy, vw, vh] = floor.view;
+    const [vx, vy, vw, vh] = shown.view;
     centerOn([vx + cx * vw, vy + cy * vh]);
+  }
+  // マップを右へ90度回す（turned）。拡大率はそのままで、まん中に見えていたところをまん中に保つ。
+  // 回すあいだは文字を消し、TURN ms かけて回してから文字を出す（goodsmap.css の .is-turning）。
+  // 縦横が入れ替わると枠に収まる大きさ（1倍）も変わるので、先に回したデータで描き直し、その絵に「回す前の向き・大きさ・位置」に見える変形をかけてから、
+  // 変形を外していく（回転と拡大縮小が一緒に滑らかに動く）
+  const TURN = 375; // 0.3秒の0.8倍速
+  let turning = 0;
+  function turnMap() {
+    if (turning) return; // 回している途中は、絵に変形がかかっていて位置を測れない
+    const r0 = $map.firstElementChild.getBoundingClientRect();
+    const m = $map.getBoundingClientRect();
+    const cx = Math.min(1, Math.max(0, (m.left + m.width / 2 - r0.left) / r0.width));
+    const cy = Math.min(1, Math.max(0, (m.top + m.height / 2 - r0.top) / r0.height));
+    const [vx, vy, vw, vh] = shown.view;
+    rot = (rot + 1) % 4;
+    renderMap();
+    // 回す前の (x, y) は、回したあと (vx + vy + vh - y, vy + x - vx) に来る
+    centerOn([vx + vh * (1 - cy), vy + vw * cx]);
+    if (behavior === "auto") return; // 動きを減らす設定では、すぐ切り替える
+    cancelAnimationFrame(glide);
+    $map.classList.add("is-turning");
+    const $canvas = $map.firstElementChild;
+    const rn = $canvas.getBoundingClientRect();
+    // 新しい絵の点 p（絵の左上からの px）が、回す前の絵で同じ場所だった画面の位置：r0 + (p.y / s, r0.height - p.x / s)（s は大きさの比）。
+    // 枠のまん中 o を軸に、左へ90度回して 1/s 倍し、残りのずれを translate で足す
+    const s = rn.width / r0.height;
+    const o = [m.left + m.width / 2 - rn.left, m.top + m.height / 2 - rn.top];
+    const tx = r0.left - rn.left - o[0] + o[1] / s;
+    const ty = r0.top - rn.top + r0.height - o[1] - o[0] / s;
+    $canvas.style.transition = "none";
+    $canvas.style.transformOrigin = `${o[0]}px ${o[1]}px`;
+    $canvas.style.transform = `translate(${tx}px, ${ty}px) rotate(-90deg) scale(${1 / s})`;
+    void $canvas.offsetWidth; // 回す前の見た目から動き始める
+    $canvas.style.transition = "";
+    $canvas.style.transform = "";
+    // 描き直した文字は、回し終わってから出す
+    turning = setTimeout(() => {
+      $map.classList.remove("is-turning");
+      turning = 0;
+    }, TURN);
+  }
+  // 2カラムの持ち手を止めて幅が決まったとき：止めていたマップを新しい枠の大きさに測り直す。
+  // まん中に見えていたところをまん中に保ち、大きさと位置の変わり目を回すときと同じ動き（TURN ms・easeOutQuint）で動かす。文字は動かさず、終わってから出す
+  function settleMap() {
+    if (turning) return sizeMap(); // 回している途中は、絵に変形がかかっていて位置を測れない
+    const $canvas = $map.firstElementChild;
+    const r0 = $canvas.getBoundingClientRect();
+    const m = $map.getBoundingClientRect();
+    const cx = Math.min(1, Math.max(0, (m.left + m.width / 2 - r0.left) / r0.width));
+    const cy = Math.min(1, Math.max(0, (m.top + m.height / 2 - r0.top) / r0.height));
+    sizeMap();
+    if (anchored) toCorner();
+    else {
+      const [vx, vy, vw, vh] = shown.view;
+      centerOn([vx + cx * vw, vy + cy * vh]);
+    }
+    if (behavior === "auto") return; // 動きを減らす設定では、すぐ切り替える
+    const rn = $canvas.getBoundingClientRect();
+    if (Math.abs(rn.width - r0.width) < 0.5 && Math.abs(rn.left - r0.left) < 0.5 && Math.abs(rn.top - r0.top) < 0.5) return;
+    $map.classList.add("is-turning");
+    $canvas.style.transition = "none";
+    $canvas.style.transformOrigin = "0 0";
+    $canvas.style.transform = `translate(${r0.left - rn.left}px, ${r0.top - rn.top}px) scale(${r0.width / rn.width})`;
+    void $canvas.offsetWidth; // 測り直す前の見た目から動き始める
+    $canvas.style.transition = "";
+    $canvas.style.transform = "";
+    turning = setTimeout(() => {
+      $map.classList.remove("is-turning");
+      turning = 0;
+    }, TURN);
   }
   // プレビューを押したとき：一覧はそのまま、マップだけを開いたときの高さに戻す（大きさの変わり目だけ、なめらかに動かす）
   function expand() {
     expanded = window.scrollY;
     $mapbox.classList.add("is-animating");
+    scrolled = true;
     shrink();
     setTimeout(() => $mapbox.classList.remove("is-animating"), 300);
   }
   const requestShrink = () => {
     if (!shrinkRaf) shrinkRaf = requestAnimationFrame(shrink);
   };
-  window.addEventListener("scroll", requestShrink, { passive: true });
+  window.addEventListener(
+    "scroll",
+    () => {
+      scrolled = true;
+      requestShrink();
+    },
+    { passive: true }
+  );
   window.addEventListener("resize", requestShrink);
   twoCol.addEventListener("change", () => {
     setFull(false);

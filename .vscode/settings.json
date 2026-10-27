@@ -1,6 +1,6 @@
 {
   "liveServer.settings.ignoreFiles": [
     "tools/**", ".git/**", ".github/**", "hokkaido_delay/**",
-    "**/tools/**", "**/.git/**", "**/.github/**"
+    "**/tools/**", "**/.git/**", "**/.github/**","website/test_sm26goodsmap/*.js"
   ]
 }

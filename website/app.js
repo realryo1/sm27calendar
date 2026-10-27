@@ -70,6 +70,15 @@
       $side.classList.add("is-frozen");
     };
     const thaw = () => $side.classList.remove("is-frozen");
+    // 持ち手を選ぶ・外すと持ち手の列が広がる・戻る（style.css の --split-extra）ので、そのあいだ会場カードの中身を止めておく
+    // （ドラッグ中は pointerdown からの処理に任せる）
+    const hold = () => {
+      if ($split.classList.contains("is-dragging")) return;
+      freeze();
+      clearTimeout(settle);
+      settle = setTimeout(thaw, SETTLE);
+    };
+    for (const type of ["pointerenter", "pointerleave", "focus", "blur"]) $split.addEventListener(type, hold);
     // 幅の変更は1フレームに1回だけにまとめる
     let moveX = 0;
     let moveRaf = 0;
