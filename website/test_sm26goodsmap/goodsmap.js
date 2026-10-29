@@ -8,6 +8,9 @@
 
   // 会場のタブ。index.html の GM_TABS（年ごとのデータをまたいで並べる）。無ければ、このデータのフロア
   const TABS = window.GM_TABS ?? D.floors.map((f) => ({ year: D.year, floor: f.id, label: f.label }));
+  // カレンダーのサイドバーから iframe で開いたとき（?embed=1。カレンダーの nav.js）。カレンダーへ戻るリンクを出さない
+  const EMBED = new URLSearchParams(location.search).has("embed");
+  if (EMBED) document.documentElement.classList.add("is-embed"); // goodsmap.css（左右の金の帯を消す）
 
   // 画面の文言（年に関係しないもの）。日付・会場・注意書きなど、年ごとに変わるものはデータ側
   const TEXT = {
@@ -820,7 +823,7 @@
       <p class="gm-sources">${esc(TEXT.sources)}：${D.sources
         .map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(`${s.label}（${E.name}）`)} ↗</a>`)
         .join("／")}</p>
-      <p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`;
+      ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
   }
 
   // ---------- 操作 ----------
@@ -870,7 +873,7 @@
     const el = ev.target.closest("[data-floor]");
     if (!el) return;
     // 別の年のデータのタブは、その年のデータで読み込み直す
-    if (+el.dataset.year !== D.year) return location.assign(`?year=${el.dataset.year}#map-${el.dataset.floor}`);
+    if (+el.dataset.year !== D.year) return location.assign(`?year=${el.dataset.year}${EMBED ? "&embed=1" : ""}#map-${el.dataset.floor}`);
     floor = D.floors.find((f) => f.id === el.dataset.floor) ?? floor;
     history.replaceState(null, "", `#map-${floor.id}`);
     renderMap();

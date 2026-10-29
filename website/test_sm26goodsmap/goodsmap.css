@@ -48,6 +48,13 @@
   }
   .gm::before { left: 0; }
   .gm::after { right: 0; }
+  /* カレンダーのサイドバーから開いたとき（?embed=1）は、カレンダーの続きに見えるよう帯を出さない */
+  .is-embed .gm::before,
+  .is-embed .gm::after { display: none; }
+}
+/* スマホでは、カレンダーの下のバー（高さはカレンダーの style.css の --nav-h。いまは75px＋画面の下端の余白）が重なるので、それより少し多めに下を空ける */
+@media (max-width: 640px) {
+  .is-embed body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 }
 
 /* 試験版の注意。カレンダーの「時間仮」と同じく破線の枠で、確定情報ではないことを示す */
