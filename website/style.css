@@ -1692,27 +1692,55 @@ button { font: inherit; color: inherit; }
   left: var(--gap);
   bottom: var(--gap);
   z-index: 30;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: min(420px, calc(100% - 32px));
-  padding: 14px 14px 14px 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  container: install / inline-size; /* 中の並べ方を、案内の幅で切り替える（下の @container） */
+  width: min(420px, calc(100% - var(--gap) * 2));
+  padding: 12px 10px 10px; /* 上の4pxは残り時間のバー */
+  overflow: hidden;
   border-radius: 16px;
   background: var(--col-paper);
   box-shadow: 0 10px 30px rgb(79 69 143 / .3);
-  border-top: 4px solid var(--col-ink-primary);
   animation: install-in .3s ease-out;
 }
 .install[hidden] { display: none; }
 @keyframes install-in { from { transform: translateY(16px); opacity: 0; } }
-.install__icon { flex: none; border-radius: 12px; }
-.install__body { flex: 1; min-width: 0; }
-.install__title { margin: 0; font-size: .95rem; font-weight: 900; color: var(--col-primary-dark); }
-.install__text { margin: 2px 0 0; font-size: .78rem; line-height: 1.5; }
+/* 上端の残り時間のバー：10秒で右から縮み、無くなったら閉じる（pwa.js が animationend で閉じる）。
+   マウスを乗せている間・中を操作している間は止める */
+.install::before,
+.install::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+.install::before { background: var(--col-primary-light); }
+.install::after {
+  background: var(--col-ink-primary);
+  transform-origin: left;
+  animation: install-timer 10s linear forwards;
+}
+.install:is(:hover, :focus-within)::after { animation-play-state: paused; }
+@keyframes install-timer { to { transform: scaleX(0); } }
+/* 時間切れで閉じるときは、出てきたときの逆向きにフェードアウトする（pwa.js） */
+.install.is-leaving { animation: install-out .3s ease-in forwards; pointer-events: none; }
+@keyframes install-out { to { transform: translateY(16px); opacity: 0; } }
+/* アイコンの右に見出し、その下に本文と、本文の右下にインストールボタン。閉じるボタンは右上の角（pwa.js の .install__body は並べ方に関わらない） */
+.install__icon { grid-column: 1; grid-row: 1 / span 2; align-self: start; width: 44px; height: 44px; border-radius: 11px; }
+.install__body { display: contents; }
+.install__title { grid-column: 2 / -1; grid-row: 1; padding-right: 30px; margin: 0; font-size: 1rem; font-weight: 900; line-height: 1.3; white-space: nowrap; color: var(--col-primary-dark); }
+.install__text { grid-column: 2; grid-row: 2; margin: 2px 0 0; font-size: .82rem; line-height: 1.45; }
 .install__share { width: 1.1em; height: 1.1em; vertical-align: -.2em; color: #0a84ff; }
 .install__btn {
-  margin-top: 8px;
-  padding: 6px 18px;
+  grid-column: 3;
+  grid-row: 2;
+  align-self: end;
+  justify-self: end;
+  padding: 5px 18px;
   border: none;
   border-radius: 999px;
   font-weight: 900;
@@ -1721,14 +1749,21 @@ button { font: inherit; color: inherit; }
   background: var(--brand-gradient);
   cursor: pointer;
 }
+/* 本文がボタンの左に収まらない幅（狭いスマホ）では、ボタンを本文の下の右端に回す */
+@container install (max-width: 350px) {
+  .install__text { grid-column: 2 / -1; }
+  .install__btn { grid-column: 2 / -1; grid-row: 3; margin-top: 6px; }
+}
 .install__close {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  margin: -4px -4px 0 0;
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
   border: none;
   border-radius: 50%;
-  font-size: 1.1rem;
+  font-size: .95rem;
   line-height: 1;
   background: var(--col-secondary-lighter);
   cursor: pointer;

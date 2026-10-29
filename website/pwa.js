@@ -25,6 +25,14 @@
   $card.setAttribute("role", "dialog");
   $card.setAttribute("aria-label", "アプリとしてインストール");
   document.body.append($card);
+  // 上端のバー（style.css の .install::after）が10秒で無くなったら、フェードアウトして閉じる。今回だけ閉じ、次に開いたときはまた出す
+  $card.addEventListener("animationend", (ev) => {
+    if (ev.animationName === "install-timer") $card.classList.add("is-leaving");
+    if (ev.animationName === "install-out") {
+      $card.hidden = true;
+      $card.classList.remove("is-leaving");
+    }
+  });
 
   function show(html) {
     $card.innerHTML = `
@@ -53,7 +61,7 @@
     deferred = ev;
     if (dismissed()) return;
     show(`<p class="install__title">アプリとしてインストール</p>
-      <p class="install__text">・オフラインや、電波が悪くてもすぐ見れる！<br>・アプリのような画面でわかりやすい！</p>
+      <p class="install__text">・オフラインでもすぐ見れる！<br>・アプリのように見やすい！</p>
       <button type="button" class="install__btn" data-install>インストール</button>`);
   });
   window.addEventListener("appinstalled", () => ($card.hidden = true));
@@ -61,7 +69,7 @@
   // iOS Safari：自動のダイアログがないので、ホーム画面への追加手順を案内する
   if (isIOS && !dismissed()) {
     show(`<p class="install__title">ホーム画面に追加</p>
-      <p class="install__text">・オフラインや、電波が悪くてもすぐ見れる！<br>・アプリのような画面でわかりやすい！<br>
+      <p class="install__text">・オフラインでもすぐ見れる！<br>・アプリのように見やすい！<br>
         右下「 … 」の 「<svg class="install__share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
        共有 」から「ホーム画面に追加」しよう！</p>`);
   }
