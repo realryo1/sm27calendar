@@ -75,10 +75,10 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 `website/image/`のPNG（`favicon-32.png`を除く）はPNG-8（256色、中央値カット・ディザなし）です。オクトリーやディザありでは背景のグラデーションに段差やノイズが出ます。`tools/`で書き出した直後は24bitなので、次の手順で減色します。
 
 ```python
-fromPILimportImage
+from PIL import Image
 
-im=Image.open("ogp.png").convert("RGB")
-im.quantize(256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE).save("ogp.png",optimize=True)
+im = Image.open("ogp.png").convert("RGB")
+im.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save("ogp.png", optimize=True)
 ```
 
 ## デプロイ
