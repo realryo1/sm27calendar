@@ -44,7 +44,7 @@ window.TT_DATA = {
     // 雪ミク電車いまどこ（市電マップ）の文言。運行期間・時刻表などのデータは train.js
     train: {
       chip: "市電いまどこ",
-      chipEn: "TRAIN",
+      chipEn: "TRAM",
       title: "雪ミク<wbr>電車<wbr>いまどこ？",
       titleSub: "（在線予測）",
       tripsSummary: "発車時刻（2024年ダイヤ）",

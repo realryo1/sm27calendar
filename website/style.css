@@ -1464,7 +1464,7 @@ button { font: inherit; color: inherit; }
 .tl-table tr.is-current td { background: var(--col-primary-light); }
 
 /* ---------- Venues（会場・イベント詳細） ---------- */
-.venues { margin-top: 36px; scroll-margin-top: 16px; }
+.venues { margin-top: 16px; scroll-margin-top: 16px; }
 .section-title {
   margin: 0 0 16px;
   font-size: 1.3rem;

@@ -772,17 +772,26 @@
 
   // タッチのピンチ
   let pinch = null;
-  const spread = (t) => ({
-    dx: Math.abs(t[0].clientX - t[1].clientX),
-    dy: Math.abs(t[0].clientY - t[1].clientY),
-    x: (t[0].clientX + t[1].clientX) / 2,
-    y: (t[0].clientY + t[1].clientY) / 2,
-  });
+  const spread = (t) => {
+    const dx = Math.abs(t[0].clientX - t[1].clientX);
+    const dy = Math.abs(t[0].clientY - t[1].clientY);
+    return { dx, dy, d: Math.hypot(dx, dy), x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 };
+  };
+  // 指の間隔の変化（goodsmap と同じ二点間の距離）を、指の向きに応じて縦と横に振り分ける。
+  // 縦向きなら時間方向だけ、横向きなら列の幅だけ、斜めなら両方が同じ割合で動く。
+  // 向きは連続的に変わるので、縦横の軸ごとに間隔を測る方式のように、指の開きが小さい軸で急に拡大率が跳ねたり止まったりしない。
+  // 縦横に近い向きでは、指の少しの傾きで逆の軸まで動かないよう、傾きが小さいうちは振り分けない
+  const axisWeights = (s) => {
+    const r = Math.min(s.dx, s.dy) / Math.max(s.dx, s.dy);
+    const minor = Math.min(1, Math.max(0, (r - 0.3) / 0.4));
+    return { wx: s.dx >= s.dy ? 1 : minor, wy: s.dy >= s.dx ? 1 : minor };
+  };
+  const logRange = (base, range) => [Math.log(range[0] / base), Math.log(range[1] / base)];
   $scroll.addEventListener(
     "touchstart",
     (ev) => {
       if (ev.touches.length !== 2) return;
-      pinch = { start: spread(ev.touches), base: zoomBase(), raf: 0 };
+      pinch = { prev: spread(ev.touches), base: zoomBase(), lx: 0, ly: 0, raf: 0 };
     },
     { passive: true }
   );
@@ -792,9 +801,19 @@
       if (!pinch || ev.touches.length !== 2) return;
       ev.preventDefault();
       const now = spread(ev.touches);
-      // 指の開き方が小さい方向は拡大率が暴れるので変えない
-      const kx = pinch.start.dx > 40 ? now.dx / pinch.start.dx : 1;
-      const ky = pinch.start.dy > 40 ? now.dy / pinch.start.dy : 1;
+      // 指がほぼ重なっているときは向きも比率も定まらないので、何もしない
+      if (pinch.prev.d >= 20 && now.d >= 20) {
+        const dl = Math.log(now.d / pinch.prev.d);
+        const { wx, wy } = axisWeights(now);
+        const [xlo, xhi] = logRange(pinch.base.col, ZOOM.col);
+        const [ylo, yhi] = logRange(pinch.base.hour, ZOOM.hour);
+        // 上限・下限に当たった分は溜めない（戻すとすぐ動き出す）
+        pinch.lx = Math.min(xhi, Math.max(xlo, pinch.lx + dl * wx));
+        pinch.ly = Math.min(yhi, Math.max(ylo, pinch.ly + dl * wy));
+        pinch.prev = now;
+      } else if (now.d >= 20) pinch.prev = now;
+      const kx = Math.exp(pinch.lx);
+      const ky = Math.exp(pinch.ly);
       cancelAnimationFrame(pinch.raf);
       pinch.raf = requestAnimationFrame(() => applyZoom(pinch.base, kx, ky, now));
     },
