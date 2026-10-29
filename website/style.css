@@ -317,7 +317,7 @@ button { font: inherit; color: inherit; }
   }
   .to-board { display: none; } /* 表は常に左に見えているので不要 */
 }
-/* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中でタイトル・日付ボタンが高さを使い切らないよう詰める */
+/* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中で日付ボタンが高さを使い切らないよう詰める */
 @media (min-width: 641px) and (max-height: 500px) {
   .board, .split { top: calc(var(--gap) / 2); height: calc(100svh - var(--gap)); height: calc(100dvh - var(--gap)); height: calc(var(--app-h, 100dvh) - var(--gap)); } /* 上下の隙間を半分に */
   /* 日付ボタンの基本の指定はこの後ろにあるので、.board を付けて優先させる */
@@ -338,16 +338,16 @@ button { font: inherit; color: inherit; }
     background: var(--col-paper);
     box-shadow: 0 -6px 16px rgb(79 69 143 / .1);
   }
-  /* スマホはタイトルを下のバーに出さない代わりに、日付帯の日付の右横にサブタイトルを出す（.tt-day__sub） */
-  .tt-day__label .tt-day__sub { display: inline; }
-  .day-nav__title {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
+}
+/* タイトル（h1）は画面に出さず読み上げ用にだけ残し、代わりに日付帯の日付の右横にサブタイトルを出す（.tt-day__sub） */
+.tt-day__label .tt-day__sub { display: inline; }
+.day-nav__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 @media (max-width: 360px) {
   .day-chip--train { font-size: .68rem; }
