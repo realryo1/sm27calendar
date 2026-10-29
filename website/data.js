@@ -25,7 +25,6 @@ window.TT_DATA = {
     badges: { official: "公式", fan: "非公式", tentative: "時間仮" },
     // 凡例。mark は app.js の描き分けキー（badge 系は badges の名前、open / wait は帯の色見本）。今の画面に出ているものだけ載せる
     legend: [
-      { mark: "official", text: "SNOW MIKU 2027 公式イベント" },
       { mark: "fan", text: "非公式（ファン主催・公式とは無関係）" },
       { mark: "open", text: "開場〜開演" },
       { mark: "wait", text: "早朝待機（前年参考）" },
@@ -136,14 +135,25 @@ window.TT_DATA = {
       name: "SYNC north",
       short: "Digital Stars",
       area: "すすきの駅",
-      address: "北海道札幌市中央区南2条西5丁目6番地1 Sプラザ2 5ビル",
+      address: "北海道札幌市中央区南2条西5丁目6-1 Sプラザ2.5ビル",
       station: "地下鉄南北線「すすきの駅」",
-      price: "未発表",
+      price: "4,400円（税込）",
       theme: "orange",
       days: ["2027-02-06"],
-      allDay: true,
+      open: "18:30",
+      start: "19:30",
+      end: "21:30",
+      // 予定ブロックの時刻を「開演 ▶ 終演」で出す（省略時は START 開演のみ）
+      range: true,
       official: true,
-      links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-digital-stars.html" }],
+      note: "DJイベント。出演はかいりきベア（ギター演奏）、サツキ、ハナカミリユウ。バーチャルシンガーの出演はありません。<br>WEB抽選先行受付：2026年11月19日（木）12:00～12月14日（月）23:59<br>当落発表・入金：12月17日（木）15:00～12月22日（火）23:59<br>※予定は変更になる可能性があります。会場への問い合わせは不可。",
+      links: [
+        { label: "公式ページ", url: "https://snowmiku.com/2027/event-digital-stars.html" },
+        { label: "Digital Stars ポータルサイト", url: "https://digitalstars.club/" },
+        { label: "かいりきベア X", url: "https://x.com/kairiki_bear" },
+        { label: "サツキ X", url: "https://x.com/32ki_May" },
+        { label: "ハナカミリユウ X", url: "https://x.com/Nakayakusyon" },
+      ],
     },
     {
       id: "ginkasai",

@@ -151,7 +151,7 @@
 
   const badge = (cls, text) => `<span class="badge badge--${cls}">${text}</span>`;
   const badges = (ev) =>
-    (ev.official ? badge("official", B.official) : badge("fan", B.fan)) +
+    (ev.official ? "" : badge("fan", B.fan)) +
     (ev.tentative === true ? badge("tentative", B.tentative) : "");
 
   // 会場見出し名（表の列見出しと下のカードで共通）。括弧書きは小さく表示
@@ -240,7 +240,7 @@
         (v) => `<div class="tt-head-cell"><div class="tt-head theme-${v.theme}">
           <span class="tt-head__letter">${v.letter}</span>
           <span class="tt-head__name" style="--nl:${nameWidth(v)}" title="${esc(v.name)}">${headName(v)}</span>
-          <span class="tt-head__kind tt-head__kind--${v.fan ? "fan" : "official"}">${v.fan ? B.fan : B.official}</span>
+          ${v.fan ? `<span class="tt-head__kind tt-head__kind--fan">${B.fan}</span>` : ""}
         </div></div>`
       )
       .join("")}`;
@@ -383,7 +383,7 @@
       ${openPart}
       <span class="ev__inner">
         <span class="ev__meta">
-          <span class="ev__time">${e.live ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
+          <span class="ev__time">${e.live || e.range ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
           <span class="ev__badges">${badges(e)}</span>
         </span>
         <span class="ev__title">${e.official ? "" : `<span class="ev__fan-label">${B.fan}</span>`}${br(e.title)}</span>
