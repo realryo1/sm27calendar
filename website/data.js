@@ -105,6 +105,7 @@ window.TT_DATA = {
       start: "10:00",
       end: "17:00",
       lastEntry: "16:30",
+      range: true,
       official: true,
       links: [{ label: "公式ページ", url: "https://snowmiku.com/2027/event-wingbay.html" }],
     },

@@ -218,7 +218,7 @@ button { font: inherit; color: inherit; }
 /* 日付ジャンプ（タブではなくスクロール位置へのショートカット） */
 .day-nav {
   display: flex;
-  align-items: center;
+  align-items: stretch; /* 日付ボタンと市電ボタンで中身の高さが違っても、ボタンの高さをそろえる */
   gap: 6px;
 }
 .day-nav__title {
@@ -502,7 +502,7 @@ button { font: inherit; color: inherit; }
     border-radius: 0;
     /* 帯の文字は改行させず、幅に応じて小さくする */
     white-space: nowrap;
-    font-size: round(clamp(.6rem, 6cqw, .8rem), 1px);
+    font-size: 15px;
     line-height: 1.3;
   }
   .tt-head .tt-head__kind--official { font-weight: 700; background: var(--c-light); }

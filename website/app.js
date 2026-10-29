@@ -240,7 +240,7 @@
         (v) => `<div class="tt-head-cell"><div class="tt-head theme-${v.theme}">
           <span class="tt-head__letter">${v.letter}</span>
           <span class="tt-head__name" style="--nl:${nameWidth(v)}" title="${esc(v.name)}">${headName(v)}</span>
-          ${v.fan ? `<span class="tt-head__kind tt-head__kind--fan">${B.fan}</span>` : ""}
+          <span class="tt-head__kind tt-head__kind--${v.fan ? "fan" : "official"}">${v.fan ? B.fan : B.official}</span>
         </div></div>`
       )
       .join("")}`;
