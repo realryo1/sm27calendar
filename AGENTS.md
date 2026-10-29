@@ -7,6 +7,8 @@
 ・pushしない。ユーザーがF5（.vscode/launch.jsonのDeploy）でまとめてpushする。
 ・サイト名や説明文を変えたら、website/index.htmlのtitle/metaも直す。
 ・website/image/のPNGを置き換えたら、READMEの手順でPNG-8に減色する。
+・タスク（確認待ち・やること・済）はdocument/sm27progress.mdに書き、進めたら更新する。仕様や経緯はそこに書かない。
+・グッズ・出展ブースマップの構成・仕様・注意はdocument/goodsmap.mdに書く。
 
 姉妹プロジェクト（hokkaido_delay/）
 ・運行情報はhokkaido_delay/の別リポジトリ。作業するときはhokkaido_delay/AGENTS.mdに従う。
@@ -19,6 +21,3 @@ PWA・キャッシュ
 ・更新ボタンとsw.jsのキャッシュ方針はREADMEの「PWA」の仕様を崩さない。
 ・website/delay/（運行情報への転送ページ）はPWAの対象外。キャッシュしない。
 ・website/test_で始まるフォルダ（試験ページ）もPWAの対象外。キャッシュしない。
-
-グッズ・出展ブースマップ（website/test_sm26goodsmap/）
-・実装と進捗はdocument/goodsmapProgress.mdに書き、進めたら更新する（現在位置と次にやることも）。
