@@ -24,7 +24,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/app.js`|カレンダー描画|
 |`website/train.js`/`train-view.js`|雪ミク電車の時刻表と在線予測|
 |`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連|
-|`website/style.css`|スタイル|
+|`website/style.css`|スタイル（ページの隙間は`:root`の`--gap`の1か所で決める。グッズマップも同じ値を使う）|
 |`website/delay/`|姉妹プロジェクト（運行情報）への転送ページ（旧URL）|
 |`website/test_sm26goodsmap/`|グッズ・出展ブースマップの試験ページ（既定は2027年の会場の略図＋チ・カ・ホのタブ。`?year=2026`で前年の見本。`noindex`、カレンダーからはリンクしていない）|
 |`document/`|実装メモ・進捗（グッズ・出展ブースマップは`goodsmapProgress.md`）|

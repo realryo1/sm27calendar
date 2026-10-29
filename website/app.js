@@ -27,10 +27,12 @@
     const MIN_SIDE = 260;
     // .main の位置と幅はドラッグ中は変わらないので押した時に1回だけ測る（動かすたびに測ると、直前の幅の変更をその場でレイアウトさせて重い）
     let rect = null;
+    // 持ち手の列の幅＝ページの隙間（style.css の --gap）
+    const gap = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--gap")) || 16;
     const setW = (pct, save) => {
       const total = rect?.width || $main.clientWidth || window.innerWidth;
       const lo = (MIN_BOARD / total) * 100;
-      const hi = 100 - ((MIN_SIDE + 16) / total) * 100;
+      const hi = 100 - ((MIN_SIDE + gap()) / total) * 100;
       // 表示は丸めない（0.1% 刻みだと、ゆっくり動かしたとき 1〜2px ずつ段になって動く）。覚えるときだけ丸める
       const w = Math.min(hi, Math.max(lo, pct));
       $main.style.setProperty("--board-w", `${w}%`);
@@ -51,10 +53,10 @@
       saved = NaN;
     }
     setW(Number.isFinite(saved) ? saved : 50, false);
-    // 持ち手の列（16px）の中央を指の位置に合わせる
+    // 持ち手の列（幅は --gap）の中央を指の位置に合わせる
     const pctAt = (x) => {
       const r = rect ?? $main.getBoundingClientRect();
-      return ((x - r.left - 8) / r.width) * 100;
+      return ((x - r.left - gap() / 2) / r.width) * 100;
     };
     // ドラッグ中は会場カードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（時間割だけを毎フレーム組み直す。style.css の .is-frozen）。
     // 動かす手を止めたら（SETTLE ms）、その幅で中身も組み直す

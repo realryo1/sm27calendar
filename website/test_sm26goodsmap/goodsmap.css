@@ -18,7 +18,7 @@
 @property --gm-pv { syntax: "*"; inherits: false; }
 @property --gm-sec-h { syntax: "*"; inherits: false; }
 
-.gm { padding: 16px 16px 0; }
+.gm { padding: var(--gap) var(--gap) 0; } /* 隙間はカレンダーの style.css の --gap */
 .gm-notice[hidden],
 .gm-floors[hidden],
 .gm-tools[hidden],
@@ -88,18 +88,18 @@
 @media (min-width: 641px) {
   html,
   body { height: 100%; overflow: hidden; }
-  .gm { height: 100%; padding: 16px 0 0 16px; }
-  /* 上下16pxずつ空ける（カレンダーの .board と同じ）。画面の高さは goodsmap.js が innerHeight から --app-h に入れる
+  .gm { height: 100%; padding: var(--gap) 0 0 var(--gap); }
+  /* 上下に隙間（--gap）を空ける（カレンダーの .board と同じ）。画面の高さは goodsmap.js が innerHeight から --app-h に入れる
      （Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残ることがある。カレンダーと同じ対策） */
   .gm-main {
     /* 持ち手の列は、持ち手を選んだとき（下の :has）に --gm-split-extra だけ広がり、左右の列を半分ずつ押しのける。
-       持ち手の中心は、広がっても幅の割合（--gm-map-w）の位置 + 8px のまま */
-    grid-template-columns: calc(var(--gm-map-w, 50%) - var(--gm-split-extra) / 2) calc(16px + var(--gm-split-extra)) minmax(0, 1fr);
+       持ち手の列の幅は --gap。持ち手の中心は、広がっても幅の割合（--gm-map-w）の位置 + --gap の半分のまま */
+    grid-template-columns: calc(var(--gm-map-w, 50%) - var(--gm-split-extra) / 2) calc(var(--gap) + var(--gm-split-extra)) minmax(0, 1fr);
     transition: --gm-split-extra .2s cubic-bezier(.22, 1, .36, 1);
     gap: 0;
-    height: calc(100svh - 32px);
-    height: calc(100dvh - 32px);
-    height: calc(var(--app-h, 100dvh) - 32px);
+    height: calc(100svh - var(--gap) * 2);
+    height: calc(100dvh - var(--gap) * 2);
+    height: calc(var(--app-h, 100dvh) - var(--gap) * 2);
   }
   .gm-sec { min-height: 0; }
   /* マップの列はスクロールしない（高さは画面で決まり、マップはその中に収まる）。一覧の列だけがスクロールする。
@@ -118,7 +118,7 @@
   .gm-sec--list {
     display: flex;
     flex-direction: column;
-    padding-right: 16px;
+    padding-right: var(--gap);
     overflow: hidden;
   }
   .gm-sec--list .gm-tools { position: relative; flex: none; margin-bottom: 0; } /* 下に書いた .gm-tools より強くする */
@@ -178,10 +178,10 @@
   .is-resizing .gm-tile.is-picked { filter: none; }
   .is-resizing .gm-card.is-flash { animation-play-state: paused; }
 }
-/* 2カラムで画面の高さが低いとき（横向きのスマホ）：上下の余白を8pxに詰める（カレンダーと同じ） */
+/* 2カラムで画面の高さが低いとき（横向きのスマホ）：上下の隙間を半分に詰める（カレンダーと同じ） */
 @media (min-width: 641px) and (max-height: 500px) {
-  .gm { padding-top: 8px; }
-  .gm-main { height: calc(100svh - 16px); height: calc(100dvh - 16px); height: calc(var(--app-h, 100dvh) - 16px); }
+  .gm { padding-top: calc(var(--gap) / 2); }
+  .gm-main { height: calc(100svh - var(--gap)); height: calc(100dvh - var(--gap)); height: calc(var(--app-h, 100dvh) - var(--gap)); }
 }
 
 /* ---------- 会場マップ ---------- */
@@ -295,7 +295,7 @@
 }
 @media (max-width: 640px) {
   /* スマホは左右の余白も使い、マップを画面の幅いっぱいにする（カレンダーの時間割と同じ） */
-  .gm-mapbox { margin: 0 -16px; padding: 10px 0 12px; border-radius: 0; }
+  .gm-mapbox { margin: 0 calc(-1 * var(--gap)); padding: 10px 0 12px; border-radius: 0; }
   .gm-maptools,
   .gm-legend { padding: 0 12px; }
   .gm-map { border-radius: 0; }
@@ -510,7 +510,7 @@
   backdrop-filter: blur(8px);
 }
 @media (max-width: 640px) {
-  .gm-tools { margin: 0 -16px 12px; padding: 10px 16px; border-radius: 0; }
+  .gm-tools { margin: 0 calc(-1 * var(--gap)) 12px; padding: 10px var(--gap); border-radius: 0; }
   .gm-scroll { display: contents; } /* スマホはページ全体がスクロールする */
 }
 .gm-search { position: relative; flex: 1 1 100%; }

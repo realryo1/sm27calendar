@@ -890,9 +890,11 @@
     const MIN_LIST = 260;
     // .gm-main の位置と幅はドラッグ中は変わらないので押した時に1回だけ測る（動かすたびに測ると、直前の幅の変更をその場でレイアウトさせて重い）
     let rect = null;
+    // 持ち手の列の幅＝ページの隙間（カレンダーの style.css の --gap）
+    const gap = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--gap")) || 16;
     const setW = (pct, save) => {
       const total = rect?.width || $main.clientWidth || innerWidth;
-      const w = Math.min(100 - ((MIN_LIST + 16) / total) * 100, Math.max((MIN_MAP / total) * 100, pct));
+      const w = Math.min(100 - ((MIN_LIST + gap()) / total) * 100, Math.max((MIN_MAP / total) * 100, pct));
       $main.style.setProperty("--gm-map-w", `${w}%`);
       $split.setAttribute("aria-valuenow", String(Math.round(w)));
       if (!save) return;
@@ -909,10 +911,10 @@
       saved = NaN;
     }
     setW(Number.isFinite(saved) ? saved : DEFAULT, false);
-    // 持ち手の列（16px）の中央を指の位置に合わせる
+    // 持ち手の列（幅は --gap）の中央を指の位置に合わせる
     const pctAt = (x) => {
       const r = rect ?? $main.getBoundingClientRect();
-      return ((x - r.left - 8) / r.width) * 100;
+      return ((x - r.left - gap() / 2) / r.width) * 100;
     };
     // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。
     // 動かす手を止めたら（SETTLE ms）、その幅で中身も組み直す
