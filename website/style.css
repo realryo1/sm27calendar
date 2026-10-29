@@ -2006,6 +2006,10 @@ button { font: inherit; color: inherit; }
     padding: 0;
   }
   .app-nav__views { flex: 3 1 0; }
+  /* この幅では切り替えボタンが無くても日付のバーが帯に入るので、帯の高さは下げない（上の :not(.has-views) を打ち消す） */
+  .has-nav:not(.has-views) { --nav-h: calc(var(--glass-h) + var(--glass-gap) * 2 + env(safe-area-inset-bottom)); }
+  /* 切り替えボタンが無いと日付のバーが帯いっぱいに伸びて横に長すぎるので、幅に上限を付けて中央に置く */
+  .has-nav:not(.has-views) .app-nav .day-nav { max-width: 512px; }
   /* バーの帯はページの背景と同じ色で塗り、スクロールする会場一覧が裏に透けないようにする */
   .app-nav { background: var(--col-secondary-lighter); }
   /* 時間割（と持ち手）は、バーの帯の上端まで（バーとの間は帯の上の余白） */
