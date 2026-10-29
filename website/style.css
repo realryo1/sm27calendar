@@ -32,7 +32,7 @@
 }
 
 /* スマホ表示の切り替え幅は 640px に統一（ボトムバー・操作ヒント・会場列の横スクロール）。
-   640px 超は5会場がすべて収まる列幅、640px 以下は列幅を広げて横スワイプで見る */
+   640px 超は6会場がすべて収まる列幅、640px 以下は列幅を広げて横スワイプで見る */
 
 /* 列が狭くなる幅では見出しを2段（会場名＋公式/非公式の帯）にするので、高さを確保 */
 @media (max-width: 900px) {
@@ -53,6 +53,7 @@
 .theme-orange { --c: #D08100; --c-dark: #8f5900; --c-light: #ffc567; --c-tint: #fff4dc; }
 .theme-gold   { --c: #b5a43a; --c-dark: #736B32; --c-light: #D9CA5E; --c-tint: #f8f4d8; }
 .theme-indigo { --c: #4F458F; --c-dark: #352d6b; --c-light: #9185DE; --c-tint: #ecebf7; }
+.theme-teal   { --c: #2E9CAA; --c-dark: #1d6571; --c-light: #8edbe6; --c-tint: #e6f6f8; }
 
 *,
 *::before,

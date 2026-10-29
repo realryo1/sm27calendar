@@ -9,8 +9,8 @@
   </script>
   <!-- 試験ページ：検索に載せない。カレンダーからはリンクしない。PWA の対象外（sw.js は test_ で始まるフォルダをキャッシュしない） -->
   <meta name="robots" content="noindex">
-  <title>ウイングベイ出展ブースマップ（試験版）</title>
-  <meta name="description" content="ウイングベイ小樽の出展ブースで売っているものを、会場マップと出展企業ごとにまとめた非公式ページの試験版。">
+  <title>グッズ・出展ブースマップ（試験版）</title>
+  <meta name="description" content="ウイングベイ小樽の出展ブース・チ・カ・ホで売っているものを、会場マップと出展企業ごとにまとめた非公式ページの試験版。">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="../favicon.ico" sizes="48x48">
   <link rel="icon" href="../image/favicon-32.png" type="image/png" sizes="32x32">
@@ -22,8 +22,16 @@
   <!-- 配色・フォント・背景・フッターはカレンダーの style.css をそのまま使う（変えたときに、このページも一緒に変わるように） -->
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="goodsmap.css">
-  <!-- 年ごとのデータ。27年の情報が出たら data-2027.js を作って差し替える -->
-  <script src="data-2026fix.js" defer></script>
+  <!-- 年ごとのデータ。既定は27年（data-2027.js）。?year=2026 で前年の見本（data-2026fix.js）。defer の順番を守るため document.write で書く -->
+  <script>
+    // 会場のタブ（年のデータをまたいで並べる。goodsmap.js）。別の年のタブは、その年のデータで読み込み直す
+    window.GM_TABS = [
+      { year: 2027, floor: "wingbay", label: "2027 ウイングベイ" },
+      { year: 2027, floor: "chikaho", label: "2027 チ・カ・ホ" },
+      { year: 2026, floor: "6-4f", label: "2026 ウイングベイ" },
+    ];
+    document.write(`<script src="${new URLSearchParams(location.search).get("year") === "2026" ? "data-2026fix.js" : "data-2027.js"}" defer><\/script>`);
+  </script>
   <script src="goodsmap.js" defer></script>
 </head>
 <body>
@@ -31,10 +39,11 @@
     <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2026/location_wingbay.html#wingbay_sponsor">出展ブース</a>もご覧ください。</p></noscript>
     <!-- 2カラム（641px〜）では、左のマップと右の一覧がそれぞれスクロールし、ページ全体はスクロールしない。間の持ち手で幅を変える -->
     <main class="gm-main" id="gmMain">
-      <h1 class="gm-visually-hidden">ウイングベイ出展ブースマップ</h1>
+      <h1 class="gm-visually-hidden">グッズ・出展ブースマップ</h1>
       <section class="gm-sec gm-sec--map" id="map" aria-label="会場マップ">
-        <div class="gm-floors" id="gmFloors" hidden></div>
         <div class="gm-mapbox" id="gmMapbox">
+          <!-- フロアのタブ（スマホではマップの枠が上に重なるので、枠の中に置く） -->
+          <div class="gm-floors" id="gmFloors" hidden></div>
           <div class="gm-maptools">
             <p class="gm-maptools__floor" id="gmFloorLabel"></p>
             <div class="gm-zoom" id="gmZoom"></div>
@@ -49,7 +58,7 @@
       <div class="gm-split" id="gmSplit" role="separator" aria-orientation="vertical" aria-label="マップと一覧の幅" tabindex="0"></div>
 
       <section class="gm-sec gm-sec--list" id="booths" aria-label="出展ブース">
-        <div class="gm-tools">
+        <div class="gm-tools" id="gmTools">
           <label class="gm-search">
             <span class="gm-search__icon" aria-hidden="true"></span>
             <input type="search" id="gmQuery" autocomplete="off" enterkeyhint="search">

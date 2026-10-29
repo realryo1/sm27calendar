@@ -21,6 +21,7 @@
 .gm { padding: 16px 16px 0; }
 .gm-notice[hidden],
 .gm-floors[hidden],
+.gm-tools[hidden],
 .gm-empty[hidden] { display: none; }
 /* 見た目には出さない見出し（読み上げ用） */
 .gm-visually-hidden {
@@ -194,7 +195,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .gm-mapbox {
   padding: 10px 10px 12px;
@@ -307,6 +308,7 @@
 .gm-area--exhibit rect { fill: url(#gmStripe); stroke: var(--col-secondary-light); }
 .gm-area--exhibit text { font-weight: 900; fill: var(--col-secondary-dark); stroke: var(--col-paper); stroke-width: 4px; stroke-linejoin: round; paint-order: stroke; }
 .gm-area--void rect { fill: url(#gmHatch); stroke: none; }
+.gm-area--void text { font-weight: 900; fill: var(--col-secondary-dark); stroke: var(--col-paper); stroke-width: 4px; stroke-linejoin: round; paint-order: stroke; }
 .gm-area--facility rect { fill: var(--col-paper-muted); stroke: #dcd7f3; }
 .gm-area--market rect,
 .gm-area--workshop rect { fill: #fff4dc; stroke: var(--col-link-light); }
@@ -317,6 +319,16 @@
 .gm-area--official rect { fill: #f8f4d8; stroke: #b5a43a; stroke-width: 3; }
 .gm-area--official text { font-weight: 900; fill: var(--col-gold-dark); letter-spacing: .1em; }
 .gm-area--shop rect { fill: #ecebf7; stroke: var(--col-secondary); }
+/* 店舗の区画（イベントの区画が決まる前の外構の略図。番号だけ薄く描く）と、番街の見出しの帯 */
+.gm-area--store rect { fill: var(--col-paper); stroke: #e4e0f5; }
+.gm-area--store text { font-weight: 500; fill: var(--col-secondary); }
+.gm-area--street rect { fill: #ecebf7; stroke: none; }
+.gm-area--street text { font-weight: 900; letter-spacing: .3em; fill: var(--col-secondary-dark); }
+/* チ・カ・ホ：グッズ販売・展示など（ピンク）とマルシェ（オレンジ）の場所 */
+.gm-area--goods rect { fill: #fcecfd; stroke: #DD67E2; stroke-width: 2.5; }
+.gm-area--goods text { font-weight: 900; fill: #873890; }
+.gm-area--marche rect { fill: #fff4dc; stroke: var(--col-link-light); stroke-width: 2.5; }
+.gm-area--marche text { font-weight: 900; fill: #8f5900; }
 .gm-area--entrance rect { fill: var(--col-paper); stroke: var(--col-ink-primary); stroke-dasharray: 6 4; }
 .gm-area--entrance text { font-weight: 900; fill: var(--col-ink-primary); }
 .gm-area.is-link { cursor: pointer; }
@@ -522,6 +534,11 @@
 }
 .gm-search input::placeholder { color: var(--col-secondary); opacity: 1; }
 .gm-search input:focus { outline: none; border-color: var(--col-ink-primary); box-shadow: 0 0 0 4px rgb(221 103 226 / .15); }
+/* フロアのタブ（ウイングベイ・チ・カ・ホ）：絞り込みの札より少し大きく */
+.gm-tab { padding: 6px 18px; font-size: .88rem; }
+@media (max-width: 640px) {
+  .gm-tab { padding: 5px 11px; font-size: .78rem; }
+}
 .gm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .gm-chip {
   padding: 4px 13px;
@@ -535,7 +552,8 @@
   transition: background .15s, color .15s, border-color .15s;
 }
 .gm-chip:hover { background: var(--col-secondary-lighter); }
-.gm-chip[aria-pressed="true"] {
+.gm-chip[aria-pressed="true"],
+.gm-chip[aria-selected="true"] {
   border-color: transparent;
   color: var(--col-paper);
   background: var(--brand-gradient) border-box; /* 透明の枠の下までグラデーションで塗る（カレンダーの日付ボタンと同じ） */
@@ -741,7 +759,8 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   /* 案内と凡例はフルスクリーンのときだけ出す（開いたときはマップ全体だけを、すき間なく見せる） */
   .gm-mapbox:not(.is-full) .gm-maphint,
   .gm-mapbox:not(.is-full) .gm-legend,
-  .gm-mapbox.is-preview .gm-maptools { display: none; }
+  .gm-mapbox.is-preview .gm-maptools,
+  .gm-mapbox.is-preview .gm-floors { display: none; }
   /* 拡大したときだけの、画面いっぱいの表示。うしろのページはスクロールさせない */
   .gm-mapbox.is-full {
     top: 0;

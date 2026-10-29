@@ -6,9 +6,13 @@
   if (!D) return;
   const E = D.event;
 
+  // 会場のタブ。index.html の GM_TABS（年ごとのデータをまたいで並べる）。無ければ、このデータのフロア
+  const TABS = window.GM_TABS ?? D.floors.map((f) => ({ year: D.year, floor: f.id, label: f.label }));
+
   // 画面の文言（年に関係しないもの）。日付・会場・注意書きなど、年ごとに変わるものはデータ側
   const TEXT = {
     mapNote: "公式の会場マップをもとに描いた略図です。",
+    floors: "会場",
     mapHint: "二本指で拡大するとブースの中身が出ます",
     officialMap: "公式の会場マップ（画像）",
     fullOn: "全画面で表示",
@@ -18,7 +22,7 @@
     all: "すべて",
     // カードの中の見出しと、しぼり込みのボタン
     kinds: { sale: "販売", exhibit: "展示・体験", gift: "配布・特典" },
-    legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示" },
+    legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示", goods: "グッズ販売・展示など", marche: "マルシェ" },
     noPrice: "価格未掲載",
     notSold: "会場では販売なし",
     soldAt: (where) => `${where}で販売`,
@@ -426,11 +430,13 @@
   function renderMap() {
     shown = turned(floor, rot);
     $("gmFloorLabel").innerHTML = `${esc(floor.label)}${floor.sub ? `<small>${esc(floor.sub)}</small>` : ""}`;
+    // 会場（ウイングベイ・チ・カ・ホ・前年のウイングベイ）はタブで切り替える。同じ年のデータの中はそのまま切り替え、別の年のタブは、その年のデータで読み込み直す
     const $floors = $("gmFloors");
-    $floors.hidden = D.floors.length < 2;
-    $floors.innerHTML = D.floors
-      .map((f) => `<button type="button" class="gm-chip" data-floor="${esc(f.id)}" aria-pressed="${f === floor}">${esc(f.label)}</button>`)
-      .join("");
+    $floors.hidden = TABS.length < 2;
+    $floors.innerHTML = TABS.map(
+      (t) => `<button type="button" class="gm-chip gm-tab" role="tab" data-year="${t.year}" data-floor="${esc(t.floor)}" aria-selected="${t.year === D.year && t.floor === floor.id}">${esc(t.label)}</button>`
+    ).join("");
+    $("gmMapHint").textContent = floor.hint ?? (booths.length ? TEXT.mapHint : "");
     // マップの絵（SVG）と、拡大したときにブースの上に出す中身（HTML）を、同じ大きさの台に重ねる
     $map.innerHTML = `<div class="gm-canvas">${mapSvg(shown)}<div class="gm-minis" aria-hidden="true">${labelsHtml(shown)}${minisHtml(shown)}</div></div>`;
     sizeMap();
@@ -441,6 +447,8 @@
       ...["sale", "exhibit", "gift"].filter((k) => kinds.has(k)).map((k) => `<li><i class="${theme(k)}"></i>${TEXT.legend[k]}</li>`),
       areas.has("official") ? `<li><i class="theme-gold"></i>${TEXT.legend.official}</li>` : "",
       areas.has("exhibit") ? `<li><i class="gm-legend__show"></i>${TEXT.legend.show}</li>` : "",
+      areas.has("goods") ? `<li><i class="theme-pink"></i>${TEXT.legend.goods}</li>` : "",
+      areas.has("marche") ? `<li><i class="theme-orange"></i>${TEXT.legend.marche}</li>` : "",
     ].join("");
     markPicked();
     applyFilter();
@@ -511,6 +519,7 @@
     if (twoCol.matches || rot) return;
     const [vx, , vw, vh] = floor.view;
     const fit = Math.min($map.clientWidth / vw, $map.clientHeight / vh);
+    if (!Object.keys(floor.booths).length) return; // ブースがまだ無いフロアは全体のまま
     const left = Math.min(...Object.values(floor.booths).map(([x]) => x)) - 120; // いちばん左のブースの列に、その左の売り場が少し見える分を足す
     const u = Math.max((NAMED + 0.5) / tileOf(floor)[0], $map.clientWidth / (vx + vw - left));
     setZoom(u / fit);
@@ -789,7 +798,9 @@
       Object.entries(TEXT.zoom)
         .map(([z, [label, aria]]) => `<button type="button" data-zoom="${z}" aria-label="${esc(aria)}">${esc(label)}</button>`)
         .join("") + `<button type="button" class="gm-full" id="gmFull" aria-pressed="false" aria-label="${esc(TEXT.fullOn)}"></button>`;
-    $("gmMapHint").textContent = TEXT.mapHint;
+    $("gmFloors").setAttribute("role", "tablist");
+    $("gmFloors").setAttribute("aria-label", TEXT.floors);
+    $("gmTools").hidden = !booths.length; // ブース・グッズがまだ無いあいだは、検索としぼり込みを出さない
     $query.placeholder = TEXT.search;
     $query.setAttribute("aria-label", TEXT.search);
     $chips.setAttribute("aria-label", TEXT.filter);
@@ -802,7 +813,10 @@
     $("gmFooter").innerHTML = `
       <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
       <p>${br(TEXT.disclaimer)}</p>
-      <p>${esc(TEXT.mapNote)}<a href="${esc(D.officialMap)}" target="_blank" rel="noopener">${esc(TEXT.officialMap)} ↗</a></p>
+      <p>${esc(D.mapNote ?? TEXT.mapNote)}${[].concat(D.officialMap)
+        .map((m) => (typeof m === "string" ? { label: TEXT.officialMap, url: m } : m))
+        .map((m) => `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.label)} ↗</a>`)
+        .join("")}</p>
       <p class="gm-sources">${esc(TEXT.sources)}：${D.sources
         .map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(`${s.label}（${E.name}）`)} ↗</a>`)
         .join("／")}</p>
@@ -855,7 +869,10 @@
   $("gmFloors").addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-floor]");
     if (!el) return;
+    // 別の年のデータのタブは、その年のデータで読み込み直す
+    if (+el.dataset.year !== D.year) return location.assign(`?year=${el.dataset.year}#map-${el.dataset.floor}`);
     floor = D.floors.find((f) => f.id === el.dataset.floor) ?? floor;
+    history.replaceState(null, "", `#map-${floor.id}`);
     renderMap();
     initialZoom();
   });
@@ -1167,10 +1184,22 @@
   // #booth-○○ なら、そのブースを選んで一覧のカードへ（共有したリンクから開いたとき・開いたままハッシュが変わったとき）
   function openHash({ instant = false } = {}) {
     let id = "";
+    let tab = "";
     try {
       id = decodeURIComponent(location.hash.match(/^#booth-(.+)$/)?.[1] ?? "");
+      tab = decodeURIComponent(location.hash.match(/^#map-(.+)$/)?.[1] ?? "");
     } catch {
       return false; // 壊れたハッシュは無視する
+    }
+    // #map-○○ ならそのフロアのタブで開く
+    const f = D.floors.find((x) => x.id === tab);
+    if (f) {
+      if (f !== floor) {
+        floor = f;
+        renderMap();
+        initialZoom();
+      }
+      return true;
     }
     if (!boothBy.has(id) && id !== "official") return false;
     pick(id);

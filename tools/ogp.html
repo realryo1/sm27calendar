@@ -8,7 +8,7 @@
   :root {
     --ink: #4F458F; --pink: #DD67E2; --pink-d: #873890; --pink-l: #F7BFFF;
     --violet: #9185DE; --violet-l: #BFB5FF; --violet-ll: #f4f1ff;
-    --orange: #D08100; --gold: #b5a43a; --indigo: #4F458F;
+    --orange: #D08100; --gold: #b5a43a; --indigo: #4F458F; --teal: #2E9CAA;
     --gold-grad: linear-gradient(to right, #736B32 0%, #D9CA5E 20%, #FFFFFF 30%, #D9CA5E 50%, #736B32 90%);
   }
   * { box-sizing: border-box; margin: 0; }
@@ -39,9 +39,9 @@
     box-shadow: 0 8px 20px rgb(135 56 144 / .25);
   }
   .date small { font-size: 18px; letter-spacing: .1em; }
-  .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; width: 620px; }
   .tags span {
-    padding: 6px 16px; border-radius: 999px; font-size: 20px; font-weight: 700;
+    padding: 6px 14px; border-radius: 999px; font-size: 19px; font-weight: 700;
     background: #fff; border: 2px solid var(--violet-l);
   }
   .foot { position: absolute; left: 60px; bottom: 40px; font-size: 18px; font-weight: 700; opacity: .7; }
@@ -52,8 +52,8 @@
     border-radius: 28px; background: #fff; box-shadow: 0 20px 50px rgb(79 69 143 / .2);
     transform: rotate(3deg);
   }
-  .heads, .cols { display: grid; grid-template-columns: 30px repeat(5, 1fr); gap: 6px; }
-  .heads div { height: 40px; border-radius: 10px 10px 0 0; font-family: "Dela Gothic One"; font-size: 20px; display: grid; place-items: center; }
+  .heads, .cols { display: grid; grid-template-columns: 30px repeat(6, 1fr); gap: 6px; }
+  .heads div { height: 40px; border-radius: 10px 10px 0 0; font-family: "Dela Gothic One"; font-size: 18px; display: grid; place-items: center; }
   .day { margin: 12px 0 8px; font-family: "Dela Gothic One"; font-size: 24px; color: var(--pink); }
   .day small { font-size: 14px; color: var(--violet); letter-spacing: .1em; }
   .cols { position: relative; height: 370px; }
@@ -68,8 +68,8 @@
   .wait { position: absolute; left: 4px; right: 4px; border-radius: 8px 8px 0 0; background: linear-gradient(transparent, var(--pink-l)); }
   .tl { position: absolute; left: 0; right: 0; height: 0; border-top: 3px solid var(--pink); }
   .a { --c: var(--pink); --tint: #fcecfd; } .b { --c: var(--violet); --tint: #f4f1ff; }
-  .c { --c: var(--orange); --tint: #fff4dc; } .d { --c: var(--gold); --tint: #f8f4d8; } .e { --c: var(--indigo); --tint: #ecebf7; }
-  .heads .a, .heads .b, .heads .c, .heads .d, .heads .e { background: var(--tint); color: var(--c); border-bottom: 3px solid var(--c); }
+  .c { --c: var(--orange); --tint: #fff4dc; } .d { --c: var(--teal); --tint: #e6f6f8; } .e { --c: var(--indigo); --tint: #ecebf7; } .f { --c: var(--gold); --tint: #f8f4d8; }
+  .heads .a, .heads .b, .heads .c, .heads .d, .heads .e, .heads .f { background: var(--tint); color: var(--c); border-bottom: 3px solid var(--c); }
 </style>
 </head>
 <body>
@@ -82,13 +82,13 @@
     MIKU 
     2027</h1>
     <h1><span>非公式カレンダー</span></h1>
-    <p class="date">2027.2.5 <small>FRI</small> – 2.7 <small>SUN</small></p>
-    <div class="tags"><span>本祭</span><span>LIVE</span><span>Digital Stars</span><span>市電いまどこ？</span></div>
+    <p class="date">2027.2.4 <small>THU</small> – 2.7 <small>SUN</small></p>
+    <div class="tags"><span>本祭</span><span>LIVE</span><span>Digital Stars</span><span>チ・カ・ホ</span><span>雪ミク電車</span></div>
   </div>
   <p class="foot">非公式ファンメイド / @realryo1 作成</p>
 
   <div class="board">
-    <div class="heads"><div></div><div class="a">A</div><div class="b">B</div><div class="c">C</div><div class="d">D</div><div class="e">E</div></div>
+    <div class="heads"><div></div><div class="a">A</div><div class="b">B</div><div class="c">C</div><div class="d">D</div><div class="e">E</div><div class="f">F</div></div>
     <p class="day">2/6 <small>SAT</small></p>
     <div class="cols">
       <div class="axis"><b style="top:0">6</b><b style="top:92px">10</b><b style="top:184px">14</b><b style="top:276px">18</b><b style="top:352px">22</b></div>
@@ -101,8 +101,9 @@
         <div class="ev" style="top:230px;height:69px"><i></i><u></u></div>
       </div>
       <div class="col c"><div class="ev" style="top:322px;height:46px"><i></i></div></div>
-      <div class="col d"><div class="ev" style="top:253px;height:69px"><i></i><u></u></div></div>
+      <div class="col d"><div class="ev" style="top:23px;height:322px"><i></i><u></u></div></div>
       <div class="col e"><div class="ev" style="top:23px;height:322px"><i></i><u></u></div></div>
+      <div class="col f"><div class="ev" style="top:23px;height:322px"><i></i></div></div>
       <div class="tl" style="top:290px;left:30px"></div>
     </div>
   </div>

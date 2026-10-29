@@ -1,6 +1,6 @@
 # SNOWMIKU2027非公式カレンダー
 
-SNOWMIKU2027（2027.2.5〜2.7）のメインイベント・LIVE・DigitalStars・ファンメイドライブ・雪ミク電車を、会場別にまとめた非公式カレンダーです。雪ミク電車の在線予測つき。
+SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars・チ・カ・ホ・ファンメイドライブ・雪ミク電車を、会場別にまとめた非公式カレンダーです。雪ミク電車の在線予測つき。
 
 公開URL:https://realryo1.github.io/sm27calendar/
 
@@ -26,7 +26,7 @@ SNOWMIKU2027（2027.2.5〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連|
 |`website/style.css`|スタイル|
 |`website/delay/`|姉妹プロジェクト（運行情報）への転送ページ（旧URL）|
-|`website/test_sm26goodsmap/`|グッズ・出展ブースマップの試験ページ（2026年のデータ。`noindex`、カレンダーからはリンクしていない）|
+|`website/test_sm26goodsmap/`|グッズ・出展ブースマップの試験ページ（既定は2027年の会場の略図＋チ・カ・ホのタブ。`?year=2026`で前年の見本。`noindex`、カレンダーからはリンクしていない）|
 |`document/`|実装メモ・進捗（グッズ・出展ブースマップは`goodsmapProgress.md`）|
 |`tools/`|アイコン・OGP画像の元になるHTML、ブースマップのエディタ（`goodsmap-editor.html`）、デプロイスクリプト（`deploy-pages.mjs`）|
 

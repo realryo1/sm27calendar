@@ -1,7 +1,8 @@
 <!doctype html>
 <!-- ブースマップのエディタ。website/test_sm26goodsmap/ のデータ（data-○○○○.js）の floors の配置（view・tile・areas・booths）を
      ドラッグで直し、そのファイルに書き戻す。書き戻すのは数字だけで、コメントや並びはそのまま残す。
-     手元専用（tools/ はデプロイしない）。Chrome・Edge で開く（file:// でも LiveServer でも可）。?data= でデータのパスを変えられる -->
+     手元専用（tools/ はデプロイしない）。Chrome・Edge で開く（file:// でも LiveServer でも可）。既定は27年（data-2027.js）。上のデータの選択（または ?data=）でデータを変えられる。
+     フロアが複数あるデータは、その隣の選択でフロアを切り替える（ウイングベイ・チ・カ・ホなど） -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -75,6 +76,11 @@
   .item rect { stroke-width: 1.5; }
   .item text { pointer-events: none; text-anchor: middle; fill: #3b3f45; font-weight: 700; }
   .item .nm { font-weight: 400; fill: #57606a; }
+  .k-store rect { fill: #fff; stroke: #cfc9ee; }
+  .k-street rect { fill: #ecebf7; stroke: #b9b2e8; }
+  .k-void rect { fill: #e8e8ee; stroke: #b5b8c2; stroke-dasharray: 4 3; }
+  .k-goods rect { fill: #fcecfd; stroke: #dd67e2; }
+  .k-marche rect { fill: #fff4dc; stroke: #d08100; }
   .k-exhibit rect { fill: #ece6fb; stroke: #9185de; }
   .k-market rect, .k-workshop rect { fill: #fde3f3; stroke: #dd67e2; }
   .k-facility rect { fill: #eef0f3; stroke: #9aa3ad; }
@@ -98,7 +104,8 @@
 <body>
 <header class="bar">
   <strong>ブースマップエディタ</strong>
-  <select id="floor" hidden></select>
+  <select id="data" title="データ（年）"></select>
+  <select id="floor" hidden title="フロア"></select>
   <label title="マップの単位。線の間隔とスナップの幅（0で線もスナップもなし）">グリッド<input type="number" id="grid" min="0" step="any" style="width:5em"></label>
   <label><input type="checkbox" id="snap">スナップ</label>
   <label><input type="checkbox" id="guides">辺・中央に吸着</label>
@@ -162,7 +169,7 @@
 </main>
 <script>
 (() => {
-  const DATA_SRC = new URLSearchParams(location.search).get("data") ?? "../website/test_sm26goodsmap/data-2026fix.js";
+  const DATA_SRC = new URLSearchParams(location.search).get("data") ?? "../website/test_sm26goodsmap/data-2027.js";
   // goodsmap.js と同じ値
   const INSET = 2.5;
   const GROW = 12;
@@ -1205,6 +1212,20 @@
   $("save").addEventListener("click", save);
   $("open").addEventListener("click", openFile);
   if (!window.showOpenFilePicker) $("open").hidden = true;
+
+  // データの選択。選ぶと、そのデータで読み込み直す（未保存の変更があれば確かめる）
+  {
+    const SRCS = [
+      ["../website/test_sm26goodsmap/data-2027.js", "2027"],
+      ["../website/test_sm26goodsmap/data-2026fix.js", "2026（前年の見本）"],
+    ];
+    if (!SRCS.some(([src]) => src === DATA_SRC)) SRCS.push([DATA_SRC, DATA_SRC.split("/").pop()]);
+    $("data").innerHTML = SRCS.map(([src, name]) => `<option value="${esc(src)}"${src === DATA_SRC ? " selected" : ""}>${esc(name)}</option>`).join("");
+    $("data").addEventListener("change", (ev) => {
+      if (M && JSON.stringify(M) !== JSON.stringify(base) && !confirm("未保存の変更を捨てて、別のデータを開きますか？")) return void ($("data").value = DATA_SRC);
+      location.search = `?data=${encodeURIComponent(ev.target.value)}`;
+    });
+  }
 
   const script = Object.assign(document.createElement("script"), { src: DATA_SRC });
   script.onload = () => window.GM_DATA ? loadData(window.GM_DATA) : ($("status").textContent = "データが読めません。「開く…」で選んでください");
