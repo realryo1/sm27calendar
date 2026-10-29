@@ -1,12 +1,14 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v16";
+const VERSION = "v17";
 const CACHE = `sm27-${VERSION}`;
 importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）
 const PRECACHE = self.PRECACHE;
-// フォント（Google Fonts）も保存してオフラインで使う
+// フォント（Google Fonts）も保存してオフラインで使う。大きくて変わらないので、版を付けない別のキャッシュに持ち、
+// 版の更新でも更新ボタン（app.js の hardRefresh）でも消さない
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
+const FONT_CACHE = "sm27-fonts";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -16,7 +18,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("sm27-") && k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("sm27-") && k !== CACHE && k !== FONT_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -35,7 +37,7 @@ self.addEventListener("fetch", (event) => {
   // index.html はデプロイのたびに自サイトのファイルへ ?v=（版）を付けて読み込む（deploy-pages.yml）。キャッシュは版を外した URL で持つ
   const plain = sameOrigin ? url.origin + url.pathname : req;
   event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
+    caches.open(sameOrigin ? CACHE : FONT_CACHE).then(async (cache) => {
       // マニフェストは常にネットワーク優先にする（古い内容を返すと、インストール済みアプリの表示設定などの更新が遅れるため）
       if (sameOrigin && url.pathname.endsWith(".webmanifest")) {
         try {

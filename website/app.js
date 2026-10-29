@@ -336,7 +336,8 @@
       ].filter((u) => new URL(u).origin === location.origin);
       const res = await Promise.all([...new Set(urls)].map((u) => fetch(u, { cache: "reload" })));
       if (res.some((r) => !r.ok)) throw new Error("fetch failed");
-      if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+      // フォントのキャッシュ（sw.js の FONT_CACHE）は大きくて変わらないので残す
+      if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k !== "sm27-fonts").map((k) => caches.delete(k)));
       if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
       // サイトのリセット：インストール案内を再び出し、2カラムの分割率（持ち手）を 1:1 に戻す
       try {
