@@ -646,10 +646,9 @@ button { font: inherit; color: inherit; }
   padding-right: var(--axis-bleed);
   /* 塗りつぶしはなし：横にスクロールすると列が下をくぐり、時刻だけが白い丸で浮かぶ */
 }
-/* 時刻軸は画面の幅に関係なく細く：時の数字だけを小さく出し、「00」と30分の表示は省く。
+/* 時刻軸は画面の幅に関係なく細く：時の数字だけを小さく出す。
    時刻は「画面端〜予定の列」の間の中央に置き、左右の余白を均等にする（8px は .tt の column-gap） */
-.tt-axis__hour,
-.tt-axis__half {
+.tt-axis__hour {
   position: absolute;
   left: 0;
   display: flex;
@@ -659,8 +658,6 @@ button { font: inherit; color: inherit; }
   transform: translateY(-50%);
   line-height: 1;
 }
-.tt-axis__half,
-.tt-axis__m { display: none; }
 /* 開始時刻と終了時刻は出さない（日付帯と重なって間隔も不揃いになるため） */
 .tt-axis__hour:first-child,
 .tt-axis__hour:last-child { display: none; }

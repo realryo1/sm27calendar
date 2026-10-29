@@ -221,13 +221,9 @@
 
     const axis = (row, extra = "") => `<div class="tt-axis${extra}" style="grid-row:${row}">${hours
       .map(
-        (h, i) => `<div class="tt-axis__hour" style="top:${pos(h)}">
-          <span class="tt-axis__h notranslate" translate="no">${h}</span><span class="tt-axis__m notranslate" translate="no">00</span>
-        </div>${
-          i < hours.length - 1
-            ? `<div class="tt-axis__half" style="top:${pos(h + 0.5)}"><span class="tt-axis__m notranslate" translate="no">30</span></div>`
-            : ""
-        }`
+        (h) => `<div class="tt-axis__hour" style="top:${pos(h)}">
+          <span class="tt-axis__h notranslate" translate="no">${h}</span>
+        </div>`
       )
       .join("")}</div>`;
 
