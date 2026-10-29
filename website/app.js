@@ -184,6 +184,9 @@
   // 1日目は「日付帯・会場見出し・本体」、2日目以降は「日付帯・本体」（会場見出しは一番上の1つだけ）
   const WEEK_EN = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const WEEK_JA = ["日", "月", "火", "水", "木", "金", "土"];
+  // 曜日の色分け（style.css の [data-wd]）：平日は weekday、土曜は sat、日曜は sun。id は "YYYY-MM-DD"
+  const WD = ["sun", "weekday", "weekday", "weekday", "weekday", "weekday", "sat"];
+  const wdOf = (id) => WD[new Date(`${id}T00:00:00Z`).getUTCDay()];
   const dayRow = (i) => (i === 0 ? 1 : 2 + i * 2);
   const bodyRow = (i) => 3 + i * 2;
 
@@ -215,7 +218,7 @@
     $dayNav.innerHTML = days
       .map(
         (d) => `<button class="day-chip" data-day="${d.id}">
-          <span class="day-chip__date notranslate" translate="no">${d.label}</span><span class="day-chip__week">${d.week}</span>
+          <span class="day-chip__date notranslate" translate="no">${Number(d.id.slice(8))}</span><span class="day-chip__week" data-wd="${wdOf(d.id)}">${d.week}</span>
         </button>`
       )
       .join("");
@@ -268,7 +271,7 @@
     // 最終日の次の日（2/8）は、最終日の日付帯を上端まで届かせるための埋め草。画面に収まる分だけ見せる（fitTail）
     const n = days.length;
     const next = new Date(Date.parse(days[n - 1].id) + 864e5);
-    const ghostDay = { label: `${next.getUTCMonth() + 1}/${next.getUTCDate()}`, week: WEEK_EN[next.getUTCDay()], weekJa: WEEK_JA[next.getUTCDay()] };
+    const ghostDay = { id: next.toISOString().slice(0, 10), label: `${next.getUTCMonth() + 1}/${next.getUTCDate()}`, week: WEEK_EN[next.getUTCDay()], weekJa: WEEK_JA[next.getUTCDay()] };
     const ghostCols = venues
       .map((v) => `<div class="tt-col tt-ghost theme-${v.theme}${v.fan ? " tt-fan" : ""} tt-col--round" style="grid-row:${bodyRow(n)}"></div>`)
       .join("");
@@ -285,8 +288,8 @@
 
   const dayBand = (d) => `<span class="tt-day__label">
       <span class="tt-day__date notranslate" translate="no">${d.label}</span>
-      <span class="tt-day__week">${d.week}</span>
-      <span class="tt-day__ja">（${d.weekJa}）</span>
+      <span class="tt-day__week" data-wd="${wdOf(d.id)}">${d.week}</span>
+      <span class="tt-day__ja" data-wd="${wdOf(d.id)}">（${d.weekJa}）</span>
       <span class="tt-day__sub">${br(site.subtitle)}</span>
     </span>`;
 
@@ -399,7 +402,7 @@
   const groupKey = (e) => [e.letter, e.title, e.sub, e.open, e.start, e.end].join("|");
   const dayLabel = (id) => {
     const d = days.find((x) => x.id === id);
-    return d ? `${d.label}<small>(${d.weekJa})</small>` : id;
+    return d ? `${d.label}<small data-wd="${wdOf(d.id)}">(${d.weekJa})</small>` : id;
   };
 
   function renderVenues() {

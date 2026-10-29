@@ -22,6 +22,10 @@
   /* ページの隙間（画面の端・時間割と会場一覧の間・時間割の上下・下のバーとの間など）。ここだけ変えればそろって変わる。
      グッズマップ（test_sm26goodsmap/）もこの style.css を読むので同じ値になる。持ち手の位置の計算（app.js・goodsmap.js）もこれを読む */
   --gap: 10px;
+  /* 曜日の色（app.js が曜日の文字に付ける [data-wd]。ファイルの最後で当てる） */
+  --col-weekday: #8a8799;
+  --col-sat: #3b78d4;
+  --col-sun: #d6455e;
 
   --font-base: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   --font-display: "Dela Gothic One", var(--font-base);
@@ -259,7 +263,6 @@ button { font: inherit; color: inherit; }
   color: var(--col-paper);
   background: var(--brand-gradient) border-box; /* 透明の枠の下でグラデーションが繰り返されて縁が浮かないよう、枠まで含めて塗る */
 }
-.day-chip.is-active .day-chip__week { color: var(--col-paper); }
 /* ブラウザの翻訳などで極端に長い文字列になっても、枠からはみ出さず … で省略する */
 .day-chip--train {
   max-width: 12em;
@@ -1734,3 +1737,14 @@ button { font: inherit; color: inherit; }
 @media (max-width: 640px) {
   .install { left: 8px; right: 8px; width: auto; bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
+
+
+/* ---------- 曜日の色（平日は灰色、土曜は青、日曜は赤。:root の --col-weekday・--col-sat・--col-sun） ---------- */
+[data-wd="weekday"] { color: var(--col-weekday); }
+[data-wd="sat"] { color: var(--col-sat); }
+[data-wd="sun"] { color: var(--col-sun); }
+.day-chip.is-active [data-wd] { color: var(--col-paper); } /* グラデーションで塗った今の日（サイドバーが無いとき）は白で読めるように */
+/* ガラスのバー（塗らずに板で示す）では、今の日も曜日の色のまま */
+.glass-bar .day-chip.is-active [data-wd="weekday"] { color: var(--col-weekday); }
+.glass-bar .day-chip.is-active [data-wd="sat"] { color: var(--col-sat); }
+.glass-bar .day-chip.is-active [data-wd="sun"] { color: var(--col-sun); }
