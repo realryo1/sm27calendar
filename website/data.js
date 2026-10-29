@@ -43,6 +43,8 @@ window.TT_DATA = {
     },
     // 雪ミク電車いまどこ（市電マップ）の文言。運行期間・時刻表などのデータは train.js
     train: {
+      // 日付ボタンの並びの「市電いまどこ」ボタン（会場一覧の市電の欄へ移る）。false で出さない（市電の欄は残る）
+      showChip: true,
       chip: "市電いまどこ",
       chipEn: "TRAM",
       title: "雪ミク<wbr>電車<wbr>いまどこ？",

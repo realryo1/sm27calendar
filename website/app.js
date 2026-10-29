@@ -194,7 +194,8 @@
   function renderStatic() {
     const set = (id, html) => (document.getElementById(id).innerHTML = html);
     set("siteTitle", `<span class="day-nav__brand">${br(site.name)}</span> <span class="day-nav__sub">${br(site.subtitle)}</span>`);
-    set("trainChip", `<span class="day-chip__label">${TR.chip}</span><span class="day-chip__week">${TR.chipEn}</span>`);
+    if (site.train.showChip === false) document.getElementById("trainChip").remove();
+    else set("trainChip", `<span class="day-chip__label">${TR.chip}</span><span class="day-chip__week">${TR.chipEn}</span>`);
     set("boardHint", br(site.boardHint));
     set("venuesTitle", br(site.venuesTitle));
     set("disclaimer", br(site.disclaimer));
