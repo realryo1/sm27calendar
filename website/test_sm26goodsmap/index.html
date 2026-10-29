@@ -7,7 +7,7 @@
   <script>
     if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
   </script>
-  <!-- 試験ページ：検索に載せない。カレンダーからはリンクしない。PWA の対象外（sw.js は test_ で始まるフォルダをキャッシュしない） -->
+  <!-- 試験ページ：検索に載せない。カレンダーからはサイドバー（nav.js、既定は無効）が有効なときだけ ?embed=1 の iframe で開く。PWA の対象外（sw.js は test_ で始まるフォルダをキャッシュしない） -->
   <meta name="robots" content="noindex">
   <title>グッズ・出展ブースマップ（試験版）</title>
   <meta name="description" content="ウイングベイ小樽の出展ブース・チ・カ・ホで売っているものを、会場マップと出展企業ごとにまとめた非公式ページの試験版。">

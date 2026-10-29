@@ -27,6 +27,14 @@
   --col-sat: #3b78d4;
   --col-sun: #d6455e;
 
+  /* すりガラス（スマホの下のバー。nav.js）。bg の最後の数字が濃さ（0〜1、大きいほど透けにくい）、blur がぼかし */
+  --glass-bg: rgb(244 241 255 / .9); /* バー・案内 */
+  --glass-dark-bg: rgb(79 69 143 / .9); /* 市電いまどこ */
+  --glass-blur: blur(14px) saturate(1.8);
+  --glass-knob-bg: rgb(255 255 255 / .7); /* 選んでいるボタンの下の板 */
+  --glass-knob-drag-bg: rgb(255 255 255 / .45); /* 押したまま動かしている間の板 */
+  --glass-knob-blur: blur(6px) saturate(1.8);
+
   --font-base: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   --font-display: "Dela Gothic One", var(--font-base);
 
@@ -1773,6 +1781,318 @@ button { font: inherit; color: inherit; }
   .install { left: 8px; right: 8px; width: auto; bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
 
+/* ---------- サイドバー（nav.js。data.js の nav.enabled のときだけ html に .has-nav が付く） ---------- */
+/* PCは左上に浮かぶ縦のバー、スマホは上に貼り付くヘッダー。切り替え先（.app-view）は iframe で、カレンダーの上に重ねる */
+.app-nav__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--col-ink);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, color .15s;
+}
+.app-nav__item:hover { background: var(--col-secondary-lighter); }
+.app-nav__item[aria-current="page"] {
+  color: var(--col-paper);
+  background: var(--brand-gradient);
+}
+.app-nav__icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* 隠している間も大きさを保つ（display: none で読み込むと、中のページが大きさ0で初期化される。nav.js） */
+.app-view {
+  position: fixed;
+  z-index: 25;
+  inset: 0 0 0 var(--nav-w);
+  background: var(--col-secondary-lighter);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s, visibility 0s .18s;
+}
+.app-view.is-open { z-index: 26; visibility: visible; opacity: 1; pointer-events: auto; transition: opacity .18s; }
+/* 次の表示がフェードインし終わるまで、不透明のまま下に残る（nav.js） */
+.app-view.is-behind { transition: opacity 0s .18s, visibility 0s .18s; }
+@media (prefers-reduced-motion: reduce) {
+  .app-view, .app-view.is-open { transition: none; }
+}
+.app-view__frame { display: block; width: 100%; height: 100%; border: 0; }
+.is-view-open { overflow: hidden; } /* 裏のカレンダーをスクロールさせない */
+/* バーの置き方は画面の幅だけで決める：
+   ・左に縦のバー：幅1024px以上
+   ・下に横のバー：それより狭いとき（スマホと、横幅が足りない2カラム。左に置くと幅を取りすぎる） */
+@media (min-width: 1024px) {
+  .has-nav {
+    --nav-w: calc(var(--gap) + 68px); /* 左の隙間＋バー（68px）。時間割の左の隙間が、バーとの間になる */
+    --glass-btn: 60px; /* バーの中のボタンの大きさ（正方形。バーの幅68px − 左右の余白4px×2） */
+    --glass-radius: 22px;
+  }
+  .has-nav body { padding-left: var(--nav-w); }
+  /* 切り替えボタンと日付ボタン（nav.js がここに移す）を、縦のガラスのバーにして並べる。
+     画面が低いときは、この中だけスクロールする（バーの影が切れないよう、外側の余白もこの中に含める） */
+  .app-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    width: calc(var(--nav-w) + var(--gap));
+    max-height: 100dvh;
+    padding: var(--gap);
+    overflow-y: auto;
+    scrollbar-width: none;
+    pointer-events: none; /* 右の余白（時間割の上）は押せるように */
+  }
+  .app-nav::-webkit-scrollbar { display: none; }
+  /* 日付ボタンの枠：時間割の右下に浮かぶときの枠を外し、日付のバーと「市電いまどこ」を縦に並べる */
+  .app-nav .day-nav {
+    position: static;
+    flex-direction: column;
+    gap: var(--gap);
+    width: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .glass-bar { flex-direction: column; }
+  .glass-bar > :not(.glass-glider) { flex: none; height: var(--glass-btn); }
+  .app-nav__item { flex-direction: column; gap: 3px; font-size: .6rem; }
+  .app-nav__icon { width: 24px; height: 24px; }
+  /* 板は縦に動く */
+  .glass-glider {
+    right: 4px;
+    height: calc((100% - 8px) / var(--n, 1));
+    transform: translateY(calc(var(--i, 0) * 100%));
+  }
+  .is-pressed > .glass-glider { scale: 1.12 1.06; }
+  .is-dragging > .glass-glider { scale: 1.22 1.12; }
+  .has-nav .day-nav .day-chip--train { height: var(--glass-btn); padding: 0 2px; font-size: .66rem; }
+  .has-nav .day-chip--train .day-chip__label { white-space: normal; text-overflow: clip; } /* 幅が狭いので2行に折り返す */
+}
+@media (min-width: 1024px) and (max-height: 500px) {
+  .app-nav { padding-block: calc(var(--gap) / 2); }
+}
+/* 下に横のバー（スマホと、幅が1023px以下の2カラム）で共通 */
+@media (max-width: 1023px) {
+  .has-nav {
+    --nav-w: 0px;
+    /* ガラスのバーの高さと、バーどうし・画面の下端との間隔。ここを変えれば、下のバーの高さ・日付のバーの位置・
+       市電いまどこの大きさ・時間割の最後の余白なども合わせて変わる */
+    --glass-h: 50px;
+    --glass-gap: var(--gap); /* バーどうし・画面の下端・時間割との間 */
+    --glass-radius: 999px;
+    --nav-h: calc(var(--glass-h) + var(--glass-gap) * 2 + env(safe-area-inset-bottom));
+  }
+  /* 切り替えボタンが無いとき（data.js の nav.enabled が false）は、日付のバーを画面の下端の近くまで下げる */
+  .has-nav:not(.has-views) { --nav-h: calc(var(--glass-gap) + env(safe-area-inset-bottom)); }
+  /* 切り替えボタンは画面の一番下（日付ボタンのバーの下）に固定する。会場一覧までスクロールしても残る。
+     背景は持たず、ガラスのバーだけを時間割・会場一覧・マップなどの上に直接重ねる（バーの外は下を押せる） */
+  .app-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    gap: var(--gap);
+    height: var(--nav-h);
+    padding: var(--glass-gap) var(--gap) calc(var(--glass-gap) + env(safe-area-inset-bottom));
+    pointer-events: none;
+  }
+  .glass-bar { flex: 1; min-width: 0; height: var(--glass-h); }
+  .glass-bar > :not(.glass-glider) { flex: 1 1 0; }
+  .app-nav__item { gap: 6px; font-size: .8rem; }
+  .app-nav__icon { width: 18px; height: 18px; }
+  /* 切り替えバーが狭いとき（2カラムに切り替わる幅のすぐ上や、小さいスマホ）は、アイコンを上・文字を下にして収める */
+  .app-nav__views { container: views / inline-size; }
+  @container views (max-width: 300px) {
+    .app-nav__item { flex-direction: column; gap: 1px; font-size: .62rem; }
+  }
+  /* 板は横に動く */
+  .glass-glider {
+    bottom: 4px;
+    width: calc((100% - 8px) / var(--n, 1));
+    transform: translateX(calc(var(--i, 0) * 100%));
+  }
+  .is-pressed > .glass-glider { scale: 1.06 1.12; }
+  .is-dragging > .glass-glider { scale: 1.12 1.22; }
+  /* 日付ボタンのバーは時間割の下端に重ねる（枠・白い背景は持たない）。「市電いまどこ」は日付のバーの右に置く */
+  .has-nav .day-nav {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--glass-gap);
+    z-index: 20;
+    width: auto;
+    padding: 0 var(--gap);
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    pointer-events: none; /* バーの外は時間割を押せる */
+  }
+  .has-nav .day-nav .day-chip--train {
+    flex: none;
+    height: var(--glass-h);
+    padding: 0 calc(var(--glass-h) * .28); /* 高さに合わせて左右の余白も変える */
+  }
+  .has-nav .day-chip--train .day-chip__label { overflow: visible; text-overflow: clip; }
+  .has-nav body { padding-bottom: var(--nav-h); } /* フッターの最後が隠れないように */
+}
+/* スマホ（1カラム） */
+@media (max-width: 640px) {
+  /* 時間割は下のバー（切り替えボタン）のすぐ上までにし、日付ボタンのバーと案内（.board__hint）は時間割の下端に重ねる。
+     下のバーの裏まで時間割を伸ばすと、ページをスクロールしたときに、裏に隠れていた時間割の下端が日付のバーの下に空白として見えるため */
+  .has-nav .board { height: calc(100svh - var(--nav-h) + var(--glass-gap)); }
+  .has-nav .board__hint {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--glass-h) + var(--glass-gap) * 2);
+    z-index: 20;
+    margin: 0;
+    padding: 2px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    translate: -50% 0;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    pointer-events: none;
+  }
+  /* 重ねたバーの裏に隠れる分だけ、時間割の最後をさらに送れるようにする */
+  .has-nav .tt-scroll { padding-bottom: calc(var(--glass-h) + var(--glass-gap) + 32px); } /* 日付のバー・案内の分 */
+  .has-nav .install { left: var(--gap); right: var(--gap); width: auto; bottom: calc(var(--nav-h) + var(--glass-h) + var(--glass-gap)); } /* 日付のバーのすぐ上（「二本指で〜」の案内には重ねる） */
+  /* 「▲ カレンダーへ」は、画面の一番上で「市電いまどこ」がある位置・大きさにそろえる（色はいつものグラデーションのまま） */
+  .has-nav .to-board {
+    right: var(--gap);
+    bottom: var(--nav-h);
+    display: flex;
+    align-items: center;
+    height: var(--glass-h);
+    padding: 0 calc(var(--glass-h) * .28);
+    font-size: .78rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .has-nav .to-board[hidden] { display: flex; }
+  /* マップ・運行情報も画面の下端まで出し、下のバーを重ねる（向こうのページは ?embed=1 で下に余白を足す） */
+  .app-view { inset: 0; }
+}
+/* 幅が1023px以下の2カラム（横向きのスマホ・開いた折りたたみスマホ・縦向きのタブレット）：2カラムのまま、日付のバー・市電いまどこ・切り替えバーを
+   画面の下に横一列に並べる（日付のボタンは nav.js がバーの中に移す。日付は左の時間割に関わるので左）。
+   バーは内容に重ねず、時間割・会場一覧の下に置く（重ねると、横に長いバーが両方の列の下端を広く隠すため） */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .app-nav .day-nav {
+    position: static;
+    order: -1;
+    flex: 4.6 1 0; /* 日付4つ＋市電いまどこ と、切り替え3つ の幅の割合 */
+    min-width: 0;
+    gap: var(--gap);
+    padding: 0;
+  }
+  .app-nav__views { flex: 3 1 0; }
+  /* バーの帯はページの背景と同じ色で塗り、スクロールする会場一覧が裏に透けないようにする */
+  .app-nav { background: var(--col-secondary-lighter); }
+  /* 時間割（と持ち手）は、バーの帯の上端まで（バーとの間は帯の上の余白） */
+  .has-nav .board,
+  .has-nav .split { height: calc(var(--app-h, 100dvh) - var(--gap) - var(--nav-h)); }
+  .has-nav .install { bottom: calc(var(--nav-h) + var(--gap)); }
+  /* マップ・運行情報もバーの帯の上まで。ただし向こうのページの下の隙間（2カラムで --gap。カレンダーの .board と同じ）は帯の裏に入れ、
+     内容の下端を時間割の下端とそろえる */
+  .app-view { inset: 0 0 calc(var(--nav-h) - var(--gap)) 0; }
+}
+/* iOS のタブバー（Liquid Glass）風のバー（nav.js の glassBar が .glass-bar を付ける。切り替えボタンと、日付のボタン。PCは縦、スマホは横）：
+   ボタンは枠なしで1本の丸いバーに並べ、選んでいるボタンの下にガラスの板（.glass-glider）を敷く。
+   押すと板が膨らんでそのボタンまで動き、押したまま動かすと板が指（マウス）について動く。板の向きと大きさは上の PC・スマホそれぞれで決める */
+.glass-bar {
+  position: relative;
+  display: flex !important; /* 日付のボタンの枠（#dayNav）は、index.html で display: contents にしている */
+  padding: 4px;
+  border-radius: var(--glass-radius);
+  /* すりガラス：下の内容をぼかして透かす。縁の白い線と、浮いて見える影 */
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / .55),
+    inset 0 1px 1px rgb(255 255 255 / .8),
+    0 6px 20px rgb(79 69 143 / .18);
+  pointer-events: auto;
+  touch-action: none; /* 押したまま動かすのに使う */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.glass-bar > :not(.glass-glider) {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  -webkit-touch-callout: none; /* 長押しでリンクのメニューを出さない */
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: transparent; /* 押したときにブラウザが出す色付きの四角を消す */
+  transition: color .2s;
+}
+.glass-glider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: block;
+  border-radius: calc(var(--glass-radius) - 4px);
+  background: var(--glass-knob-bg);
+  -webkit-backdrop-filter: var(--glass-knob-blur);
+  backdrop-filter: var(--glass-knob-blur);
+  /* 上の縁の照り返しと、下の淡い影でガラスの厚みを出す */
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / .95),
+    inset 0 -1px 2px rgb(79 69 143 / .08),
+    0 2px 10px rgb(79 69 143 / .16);
+  transition: transform .5s cubic-bezier(.3, 1.35, .5, 1), scale .25s cubic-bezier(.3, 1.35, .5, 1), background-color .2s;
+}
+.is-dragging > .glass-glider { background-color: var(--glass-knob-drag-bg); transition: scale .25s cubic-bezier(.3, 1.35, .5, 1), background-color .2s; }
+@media (prefers-reduced-motion: reduce) {
+  .glass-glider { transition: none; }
+}
+/* 切り替えボタン（ガラスのバーの中）。選んでいるボタンは塗らず、文字の色と板で示す */
+.glass-bar .app-nav__item { border-radius: calc(var(--glass-radius) - 4px); }
+.glass-bar .app-nav__item:hover,
+.glass-bar .app-nav__item[aria-current="page"] { background: none; }
+.glass-bar .app-nav__item[aria-current="page"],
+.glass-bar .app-nav__item.is-hover { color: var(--col-ink-primary); }
+.is-dragging .app-nav__item[aria-current="page"]:not(.is-hover) { color: var(--col-ink); }
+.glass-bar .app-nav__item:focus-visible { outline: 2px solid var(--col-ink-primary); outline-offset: -2px; }
+/* 日付のボタン（ガラスのバーの中）。今見ている日（.is-active）も塗らず、文字の色と板で示す */
+.glass-bar .day-chip { width: auto; min-height: 0; padding: 0; border: 0; border-radius: calc(var(--glass-radius) - 4px); background: none; }
+.glass-bar .day-chip:hover { background: none; }
+.glass-bar .day-chip.is-active,
+.glass-bar .day-chip.is-hover { color: var(--col-ink-primary); background: none; }
+.is-dragging .day-chip.is-active:not(.is-hover) { color: var(--col-ink); }
+.glass-bar .day-chip:focus-visible { outline: 2px solid var(--col-ink-primary); outline-offset: -2px; }
+/* 「市電いまどこ」はガラスのバーの外の、独立したボタン（濃い色のすりガラス） */
+.has-nav .day-nav .day-chip--train {
+  flex: none;
+  border: 0;
+  border-radius: var(--glass-radius);
+  background: var(--glass-dark-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / .25), 0 6px 20px rgb(79 69 143 / .25);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* ---------- 曜日の色（平日は灰色、土曜は青、日曜は赤。:root の --col-weekday・--col-sat・--col-sun） ---------- */
 [data-wd="weekday"] { color: var(--col-weekday); }
