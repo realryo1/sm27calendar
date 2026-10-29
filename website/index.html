@@ -48,6 +48,7 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
   <link rel="stylesheet" href="style.css">
   <script src="precache.js" defer></script>
+  <script src="util.js" defer></script>
   <script src="data.js" defer></script>
   <!-- サイドバー（data.js の nav）。時間割の大きさを変えるので、app.js より先に読み込む -->
   <script src="nav.js" defer></script>
@@ -63,7 +64,6 @@
       <nav class="day-nav" aria-label="日付へ移動">
         <span id="dayNav" style="display:contents"></span>
         <a class="day-chip day-chip--train" id="trainChip" href="#train-live"></a>
-        <span class="day-nav__break" aria-hidden="true"></span>
       </nav>
       <div class="tt-scroll" id="ttScroll">
         <div class="tt" id="tt"></div>

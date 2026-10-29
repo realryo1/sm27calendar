@@ -313,16 +313,24 @@
 .gm-area rect { stroke-width: 2; transition: stroke .15s, opacity .15s; }
 .gm-area text { font-weight: 700; fill: var(--col-ink); text-anchor: middle; pointer-events: none; }
 .gm-area--exhibit rect { fill: url(#gmStripe); stroke: var(--col-secondary-light); }
-.gm-area--exhibit text { font-weight: 900; fill: var(--col-secondary-dark); stroke: var(--col-paper); stroke-width: 4px; stroke-linejoin: round; paint-order: stroke; }
 .gm-area--void rect { fill: url(#gmHatch); stroke: none; }
+.gm-area--exhibit text,
 .gm-area--void text { font-weight: 900; fill: var(--col-secondary-dark); stroke: var(--col-paper); stroke-width: 4px; stroke-linejoin: round; paint-order: stroke; }
 .gm-area--facility rect { fill: var(--col-paper-muted); stroke: #dcd7f3; }
+/* マーケット・ワークショップと、チ・カ・ホのマルシェ（オレンジ） */
 .gm-area--market rect,
-.gm-area--workshop rect { fill: #fff4dc; stroke: var(--col-link-light); }
+.gm-area--workshop rect,
+.gm-area--marche rect { fill: #fff4dc; stroke: var(--col-link-light); }
 .gm-area--market text,
-.gm-area--workshop text { fill: #8f5900; }
-.gm-area--gacha rect { fill: #fcecfd; stroke: #DD67E2; stroke-width: 2.5; }
-.gm-area--gacha text { font-weight: 900; fill: #873890; }
+.gm-area--workshop text,
+.gm-area--marche text { fill: #8f5900; }
+.gm-area--marche rect { stroke-width: 2.5; }
+.gm-area--marche text { font-weight: 900; }
+/* ガチャコーナーと、チ・カ・ホのグッズ販売・展示など（ピンク） */
+.gm-area--gacha rect,
+.gm-area--goods rect { fill: #fcecfd; stroke: #DD67E2; stroke-width: 2.5; }
+.gm-area--gacha text,
+.gm-area--goods text { font-weight: 900; fill: #873890; }
 .gm-area--official rect { fill: #f8f4d8; stroke: #b5a43a; stroke-width: 3; }
 .gm-area--official text { font-weight: 900; fill: var(--col-gold-dark); letter-spacing: .1em; }
 .gm-area--shop rect { fill: #ecebf7; stroke: var(--col-secondary); }
@@ -331,11 +339,6 @@
 .gm-area--store text { font-weight: 500; fill: var(--col-secondary); }
 .gm-area--street rect { fill: #ecebf7; stroke: none; }
 .gm-area--street text { font-weight: 900; letter-spacing: .3em; fill: var(--col-secondary-dark); }
-/* チ・カ・ホ：グッズ販売・展示など（ピンク）とマルシェ（オレンジ）の場所 */
-.gm-area--goods rect { fill: #fcecfd; stroke: #DD67E2; stroke-width: 2.5; }
-.gm-area--goods text { font-weight: 900; fill: #873890; }
-.gm-area--marche rect { fill: #fff4dc; stroke: var(--col-link-light); stroke-width: 2.5; }
-.gm-area--marche text { font-weight: 900; fill: #8f5900; }
 .gm-area--entrance rect { fill: var(--col-paper); stroke: var(--col-ink-primary); stroke-dasharray: 6 4; }
 .gm-area--entrance text { font-weight: 900; fill: var(--col-ink-primary); }
 .gm-area.is-link { cursor: pointer; }

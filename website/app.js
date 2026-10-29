@@ -1,13 +1,24 @@
 (() => {
-  const { site, range, days, updatedAt } = window.TT_DATA;
+  const { site, range, updatedAt } = window.TT_DATA;
+  const { esc, nl, toMin, nowJST, weekday } = window.TT_UTIL;
   // sessions を持つ予定は、共通項目に公演ごとの項目を重ねて、公演ごとの予定に展開する
   const events = window.TT_DATA.events.flatMap(({ sessions, ...common }) => (sessions ? sessions.map((s) => ({ ...common, ...s })) : [common]));
   // データ中の文字列に "\n" を入れると改行（<br>）になる。本文は br（エスケープ＋改行）、属性は esc を使う
-  const nl = (s) => String(s).replace(/\n/g, "<br>");
   const nlAll = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, nl(v)]));
   const B = nlAll(site.badges);
   const L = nlAll(site.labels);
   const TR = nlAll(site.train);
+  // 日付は data.js に id（"YYYY-MM-DD"）だけを書き、表示する日付・曜日はここで作る
+  const WEEK_EN = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const WEEK_JA = ["日", "月", "火", "水", "木", "金", "土"];
+  // 曜日の色分け（style.css の [data-wd]）：平日は weekday、土曜は sat、日曜は sun
+  const WD = ["sun", "weekday", "weekday", "weekday", "weekday", "weekday", "sat"];
+  const dayOf = (id) => {
+    const w = weekday(id);
+    return { id, label: `${Number(id.slice(5, 7))}/${Number(id.slice(8))}`, week: WEEK_EN[w], weekJa: WEEK_JA[w], wd: WD[w] };
+  };
+  const days = window.TT_DATA.days.map(dayOf);
+  const dayIndex = (id) => days.findIndex((d) => d.id === id);
   // 会場は各イベントの会場フィールドから重複を除いて集め、letter 順に並べる
   const venues = [...new Map(events.map((e) => [e.letter, e])).values()].sort((x, y) => x.letter.localeCompare(y.letter));
 
@@ -138,15 +149,9 @@
     });
   }
 
-  const toHour = (hhmm) => {
-    const [h, m] = hhmm.split(":").map(Number);
-    return h + m / 60;
-  };
+  const toHour = (hhmm) => toMin(hhmm) / 60;
   const pos = (hour) => `calc(${hour - range.start} * var(--hour))`;
   const span = (from, to) => `calc(${to - from} * var(--hour))`;
-  const esc = (s) =>
-    String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
   // エスケープ後に、許可タグ（<strong> と <br>）だけ復活させる
   const br = (s) =>
     nl(esc(s)).replace(/&lt;(\/?strong|br\s*\/?|wbr\s*\/?)&gt;/gi, "<$1>");
@@ -169,24 +174,9 @@
 
   const timeText = (ev) => (ev.allDay ? L.allDayUnannounced : `${hm(ev.start)} – ${hm(ev.end)}`);
 
-  const nowJST = () => {
-    const now = new Date();
-    const dateId = now.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
-    const [h, m] = now
-      .toLocaleTimeString("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" })
-      .split(":")
-      .map(Number);
-    return { dateId, hour: h + m / 60 };
-  };
-
   // 行構成: 1行目=会場見出し、以降は日ごとに [日付帯, カレンダー本体]
   // 行の並び：1日目の日付帯 → 会場見出し（2行目・style.css） → 1日目の本体 → 2日目の日付帯 → 2日目の本体 …（日付帯が会場見出しの上に来る）
   // 1日目は「日付帯・会場見出し・本体」、2日目以降は「日付帯・本体」（会場見出しは一番上の1つだけ）
-  const WEEK_EN = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-  const WEEK_JA = ["日", "月", "火", "水", "木", "金", "土"];
-  // 曜日の色分け（style.css の [data-wd]）：平日は weekday、土曜は sat、日曜は sun。id は "YYYY-MM-DD"
-  const WD = ["sun", "weekday", "weekday", "weekday", "weekday", "weekday", "sat"];
-  const wdOf = (id) => WD[new Date(`${id}T00:00:00Z`).getUTCDay()];
   const dayRow = (i) => (i === 0 ? 1 : 2 + i * 2);
   const bodyRow = (i) => 3 + i * 2;
 
@@ -210,7 +200,7 @@
     set(
       "legend",
       site.legend
-        .map(({ mark: m, text }) => `<li>${mark[m] ?? badge(m.startsWith("tentative") ? "tentative" : m, B[m])}${br(text)}</li>`)
+        .map(({ mark: m, text }) => `<li>${mark[m] ?? badge(m, B[m])}${br(text)}</li>`)
         .join("")
     );
   }
@@ -219,7 +209,7 @@
     $dayNav.innerHTML = days
       .map(
         (d) => `<button class="day-chip" data-day="${d.id}">
-          <span class="day-chip__date notranslate" translate="no">${Number(d.id.slice(8))}</span><span class="day-chip__week" data-wd="${wdOf(d.id)}">${d.week}</span>
+          <span class="day-chip__date notranslate" translate="no">${Number(d.id.slice(8))}</span><span class="day-chip__week" data-wd="${d.wd}">${d.week}</span>
         </button>`
       )
       .join("");
@@ -271,8 +261,7 @@
 
     // 最終日の次の日（2/8）は、最終日の日付帯を上端まで届かせるための埋め草。画面に収まる分だけ見せる（fitTail）
     const n = days.length;
-    const next = new Date(Date.parse(days[n - 1].id) + 864e5);
-    const ghostDay = { id: next.toISOString().slice(0, 10), label: `${next.getUTCMonth() + 1}/${next.getUTCDate()}`, week: WEEK_EN[next.getUTCDay()], weekJa: WEEK_JA[next.getUTCDay()] };
+    const ghostDay = dayOf(new Date(Date.parse(days[n - 1].id) + 864e5).toISOString().slice(0, 10));
     const ghostCols = venues
       .map((v) => `<div class="tt-col tt-ghost theme-${v.theme}${v.fan ? " tt-fan" : ""} tt-col--round" style="grid-row:${bodyRow(n)}"></div>`)
       .join("");
@@ -289,8 +278,8 @@
 
   const dayBand = (d) => `<span class="tt-day__label">
       <span class="tt-day__date notranslate" translate="no">${d.label}</span>
-      <span class="tt-day__week" data-wd="${wdOf(d.id)}">${d.week}</span>
-      <span class="tt-day__ja" data-wd="${wdOf(d.id)}">（${d.weekJa}）</span>
+      <span class="tt-day__week" data-wd="${d.wd}">${d.week}</span>
+      <span class="tt-day__ja" data-wd="${d.wd}">（${d.weekJa}）</span>
       <span class="tt-day__sub">${br(site.subtitle)}</span>
     </span>`;
 
@@ -358,7 +347,7 @@
         <span class="ev__inner">
           <span class="ev__meta">
             <span class="ev__time">${timeText(e)}</span>
-            <span class="ev__badges">${badges(e)}</span>
+            ${e.official ? `<span class="ev__badges">${badges(e)}</span>` : ""}
           </span>
           <span class="ev__title">${e.official ? "" : `<span class="ev__fan-label">${B.fan}</span>`}${br(e.title)}</span>
         </span>
@@ -391,7 +380,7 @@
       <span class="ev__inner">
         <span class="ev__meta">
           <span class="ev__time">${e.live || e.range ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
-          <span class="ev__badges">${badges(e)}</span>
+          ${e.official ? `<span class="ev__badges">${badges(e)}</span>` : ""}
         </span>
         <span class="ev__title">${e.official ? "" : `<span class="ev__fan-label">${B.fan}</span>`}${br(e.title)}</span>
         ${e.sub ? `<span class="ev__sub">${br(e.sub)}</span>` : ""}
@@ -403,9 +392,11 @@
   // 同じ内容で日付だけ違うイベント（LIVE の各日公演など）は1件にまとめて表示する
   const groupKey = (e) => [e.letter, e.title, e.sub, e.open, e.start, e.end].join("|");
   const dayLabel = (id) => {
-    const d = days.find((x) => x.id === id);
-    return d ? `${d.label}<small data-wd="${wdOf(d.id)}">(${d.weekJa})</small>` : id;
+    const d = days[dayIndex(id)];
+    return d ? `${d.label}<small data-wd="${d.wd}">(${d.weekJa})</small>` : id;
   };
+  // 予定の日付の並び（重複を除き、日付順）
+  const daysText = (ds) => [...new Set(ds)].sort().map(dayLabel).join(" ・ ");
 
   function renderVenues() {
     $venueList.innerHTML = venues
@@ -431,7 +422,7 @@
         // 複数公演が並ぶカード：イベント名が共通なら見出しに出し、日付が共通なら見出しの下に1行で出す（各枠はシンプルに）
         const multi = !live && !single && groups.length > 1;
         const commonTitle = multi && groups.every((g) => g.e.title === groups[0].e.title) ? groups[0].e.title : "";
-        const dayText = (g) => [...new Set(g.days)].sort().map(dayLabel).join(" ・ ");
+        const dayText = (g) => daysText(g.days);
         // 1件だけでも、イベント名が会場の見出しと違うとき（メインイベントなど）は、見出しをイベント名にして会場名を小さく添える
         const singleTitle = single && single.e.title !== (v.short ?? v.name) ? single.e.title : "";
         const cardTitle = (commonTitle || singleTitle).replace(/\n/g, " ");
@@ -530,9 +521,9 @@
     const head = opts.simple
       ? opts.commonDays
         ? ""
-        : `<div class="vc-ev__head"><span class="vc-ev__days">${[...new Set(ds)].sort().map(dayLabel).join(" ・ ")}</span></div>`
+        : `<div class="vc-ev__head"><span class="vc-ev__days">${daysText(ds)}</span></div>`
       : `<div class="vc-ev__head">
-        <span class="vc-ev__days">${[...new Set(ds)].sort().map(dayLabel).join(" ・ ")}</span>
+        <span class="vc-ev__days">${daysText(ds)}</span>
         <span class="ev__badges">${badges(e)}</span>
       </div>`;
     const title = opts.commonTitle ? br(e.sub ?? "") : `${br(e.title)}${e.sub ? ` <small>${br(e.sub)}</small>` : ""}`;
@@ -570,8 +561,9 @@
   // 現在時刻ライン（イベント期間中のみ表示）
   function updateNow() {
     const $now = $tt.querySelector(".tt-now");
-    const { dateId, hour } = nowJST();
-    const i = days.findIndex((d) => d.id === dateId);
+    const { dateId, min } = nowJST();
+    const hour = min / 60;
+    const i = dayIndex(dateId);
     const visible = i >= 0 && hour >= range.start && hour <= range.end;
     $now.hidden = !visible;
     if (visible) {
@@ -581,12 +573,13 @@
   }
 
   // 日付ジャンプ: 該当日の本体の先頭が日付帯の直下に来るようにスクロール
+  // 各日の時刻軸（埋め草の日を除く）
+  const axes = () => [...$tt.querySelectorAll(".tt-axis:not(.tt-ghost)")];
   const stickyOffset = () =>
     $tt.querySelector(".tt-head-cell").offsetHeight + $tt.querySelector(".tt-day").offsetHeight;
 
   function scrollToDay(id, hour, behavior = "smooth") {
-    const i = days.findIndex((d) => d.id === id);
-    const col = $tt.querySelectorAll(".tt-axis:not(.tt-ghost)")[i];
+    const col = axes()[dayIndex(id)];
     const hourPx = col.offsetHeight / (range.end - range.start);
     const offset = hour ? (hour - range.start) * hourPx : 0;
     const top = col.offsetTop - stickyOffset() + offset;
@@ -638,13 +631,13 @@
 
   function updateActiveChip() {
     const top = $scroll.scrollTop;
-    const axes = [...$tt.querySelectorAll(".tt-axis:not(.tt-ghost)")];
+    const list = axes();
     let active = 0;
-    axes.forEach((a, i) => {
+    list.forEach((a, i) => {
       if (a.offsetTop - stickyOffset() <= top + 1) active = i;
     });
     // 下端まで来ていれば最後の日
-    if ($scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 2) active = axes.length - 1;
+    if ($scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 2) active = list.length - 1;
     if (pinnedDay != null) active = pinnedDay; // 日付ボタンで移動中は、着いてからではなく押した時点から日付バーを動かす
     setLabelDay(active);
     $dayNav.querySelectorAll(".day-chip").forEach((c, i) => c.classList.toggle("is-active", i === active));
@@ -654,7 +647,7 @@
   $dayNav.addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-day]");
     if (!btn) return;
-    pinnedDay = days.findIndex((d) => d.id === btn.dataset.day);
+    pinnedDay = dayIndex(btn.dataset.day);
     scrollToDay(btn.dataset.day);
     updateActiveChip();
   });
@@ -700,7 +693,7 @@
   // 最後の日が画面より短いと、下端で止まって日付帯が上端まで届かない。
   // 最後の日の先頭を上端に出せるだけ、次の日（ghost）で下を埋める。1日分でも足りない高い画面では、残りを余白にする
   const fitTail = () => {
-    const last = [...$tt.querySelectorAll(".tt-axis:not(.tt-ghost)")].pop();
+    const last = axes().at(-1);
     const bandH = $tt.querySelector(".tt-day").offsetHeight;
     const fill = Math.ceil($scroll.clientHeight - stickyOffset() - last.offsetHeight - bandH);
     const show = fill > 0;
@@ -763,7 +756,7 @@
     $tt.style.setProperty("--colmin", `${col.toFixed(1)}px`);
     fitTail(); // スクロール位置を入れる前に余白を直す（足りないと下端で切られる）
     const ry = hour / base.hour;
-    const rx = colWidth() / base.colW;
+    const rx = colWidth() / base.col;
     $scroll.scrollTop = (base.top + ay) * ry - ay;
     $scroll.scrollLeft = (base.left + ax) * rx - ax;
     updateDensity();
@@ -772,7 +765,6 @@
   const zoomBase = () => ({
     hour: hourPx(),
     col: colWidth(),
-    colW: colWidth(),
     top: $scroll.scrollTop,
     left: $scroll.scrollLeft,
   });
@@ -1008,9 +1000,9 @@
 
   // URL の #日付、またはイベント当日なら現在時刻付近を初期表示
   const hashId = location.hash.slice(1);
-  const { dateId, hour } = nowJST();
-  if (days.some((d) => d.id === hashId)) scrollToDay(hashId, null, "instant");
-  else if (days.some((d) => d.id === dateId)) scrollToDay(dateId, Math.max(range.start, hour - 1), "instant");
+  const { dateId, min } = nowJST();
+  if (dayIndex(hashId) >= 0) scrollToDay(hashId, null, "instant");
+  else if (dayIndex(dateId) >= 0) scrollToDay(dateId, Math.max(range.start, min / 60 - 1), "instant");
   updateActiveChip();
 
   setInterval(updateNow, 60 * 1000);

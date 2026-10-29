@@ -49,8 +49,7 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const esc = (s) =>
-    String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const { esc } = window.TT_UTIL; // カレンダーの ../util.js
   const br = (s) => esc(s).replace(/\n/g, "<br>");
   const yen = (n) => `¥${n.toLocaleString("ja-JP")}`;
   const r1 = (n) => Math.round(n * 10) / 10;

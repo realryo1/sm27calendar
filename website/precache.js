@@ -5,6 +5,7 @@ self.PRECACHE = [
   "index.html",
   "style.css",
   "precache.js",
+  "util.js",
   "data.js",
   "nav.js",
   "app.js",

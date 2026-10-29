@@ -22,6 +22,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/index.html`|ページ本体（title/description/OGPはここに静的に記述）|
 |`website/data.js`|イベント・会場・日付・画面の文言、最終更新日時|
 |`website/app.js`|カレンダー描画|
+|`website/util.js`|共通の小さな関数（エスケープ・改行・時刻・曜日）。グッズマップも`../util.js`を読む|
 |`website/nav.js`|サイドバー（マップ・運行情報への切り替え。仮実装で既定は無効。下の「サイドバー」）|
 |`website/train.js`/`train-view.js`|雪ミク電車の時刻表と在線予測|
 |`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連|

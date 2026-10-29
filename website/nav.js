@@ -8,8 +8,7 @@
   const enabled = !!nav.enabled;
   const items = enabled ? nav.items : [];
   const home = items[0];
-  const esc = (s) =>
-    String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const { esc } = window.TT_UTIL;
 
   // 線で描くアイコン（24×24。色は文字色）
   const ICONS = {

@@ -8,25 +8,16 @@
   const $root = document.getElementById("trainLive");
   if (!$root) return;
 
-  const toMin = (hhmm) => {
-    const [h, m] = hhmm.split(":").map(Number);
-    return h * 60 + m;
-  };
+  const { nl, toMin, nowJST, weekday } = window.TT_UTIL;
   const fmt = (min) => {
     const r = Math.round(min);
     return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}`;
   };
-  const weekOf = (dateId) => {
-    const [y, m, d] = dateId.split("-").map(Number);
-    return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  };
-  const nl = (s) => String(s).replace(/\n/g, "<br>");
   const ymd = (id) => id.replace(/-0?/g, "/");
-  const nameAt = (pos) => T.stations[pos % N].name;
 
   function dayType(dateId) {
     if (dateId < T.period.start || dateId > T.period.end) return null;
-    const w = weekOf(dateId);
+    const w = weekday(dateId);
     return w === 0 || w === 6 || T.holidays.includes(dateId) ? "holiday" : "weekday";
   }
 
@@ -100,16 +91,6 @@
   }
 
   // ---------- 状態 ----------
-  const nowJST = () => {
-    const now = new Date();
-    const dateId = now.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
-    const [h, m, s] = now
-      .toLocaleTimeString("en-GB", { timeZone: "Asia/Tokyo", hour12: false })
-      .split(":")
-      .map(Number);
-    return { dateId, min: h * 60 + m + s / 60 };
-  };
-
   const init = nowJST();
   const inPeriod = !!dayType(init.dateId);
   // 運行期間外は 2/6 12:45 を表示しておく
@@ -137,29 +118,26 @@
     return [v[1] / l, -v[0] / l];
   };
 
-  let layout, MAP_ST, pts, P, miter, cum, TOTAL, stDist;
-  function setLayout() {
-    layout = LAYOUT;
-    MAP_ST = layout.st;
-    pts = [];
-    const stIdx = [];
-    MAP_ST.forEach(([x, y], i) => {
-      stIdx[i] = pts.length;
-      pts.push([x, y]);
-      (layout.corners[i] ?? []).forEach((c) => pts.push(c));
-    });
-    P = pts.length;
-    miter = pts.map((p, k) => {
-      const n1 = normal(pts[(k - 1 + P) % P], p);
-      const n2 = normal(p, pts[(k + 1) % P]);
-      const dot = n1[0] * n2[0] + n1[1] * n2[1];
-      return [(n1[0] + n2[0]) / (1 + dot), (n1[1] + n2[1]) / (1 + dot)];
-    });
-    cum = [0];
-    for (let k = 0; k < P; k++) cum.push(cum[k] + len(sub(pts[(k + 1) % P], pts[k])));
-    TOTAL = cum[P];
-    stDist = [...stIdx.map((k) => cum[k]), TOTAL];
-  }
+  // 線路の折れ線（停留場と角の点）、各点の外側へのずらし方向、始点からの距離
+  const MAP_ST = LAYOUT.st;
+  const pts = [];
+  const stIdx = [];
+  MAP_ST.forEach(([x, y], i) => {
+    stIdx[i] = pts.length;
+    pts.push([x, y]);
+    (LAYOUT.corners[i] ?? []).forEach((c) => pts.push(c));
+  });
+  const P = pts.length;
+  const miter = pts.map((p, k) => {
+    const n1 = normal(pts[(k - 1 + P) % P], p);
+    const n2 = normal(p, pts[(k + 1) % P]);
+    const dot = n1[0] * n2[0] + n1[1] * n2[1];
+    return [(n1[0] + n2[0]) / (1 + dot), (n1[1] + n2[1]) / (1 + dot)];
+  });
+  const cum = [0];
+  for (let k = 0; k < P; k++) cum.push(cum[k] + len(sub(pts[(k + 1) % P], pts[k])));
+  const TOTAL = cum[P];
+  const stDist = [...stIdx.map((k) => cum[k]), TOTAL];
   const offPt = (k, d) => [pts[k % P][0] + miter[k % P][0] * d, pts[k % P][1] + miter[k % P][1] * d];
 
   function pointAt(dist, d) {
@@ -186,18 +164,27 @@
       return `<path d="M-5,-10L5,0L-5,10" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${p.angle + (reverse ? 180 : 0)})"/>`;
     }).join("");
 
+  // 停留場名と次の時刻。side（right / left / below / それ以外＝上）で丸のどちら側に置くか
   const label = ([x, y, side], st, i) => {
-    if (side === "right")
-      return `<text x="${x + 22}" y="${y - 1}"><tspan>${st.name}</tspan><tspan x="${x + 22}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
-    if (side === "left")
-      return `<text x="${x - 22}" y="${y - 1}" text-anchor="end"><tspan>${st.name}</tspan><tspan x="${x - 22}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
-    const y0 = side === "below" ? y + 32 : y - 36;
-    return `<text x="${x}" y="${y0}" text-anchor="middle"><tspan>${st.name}</tspan><tspan x="${x}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
+    const [tx, ty, anchor] =
+      side === "right" ? [x + 22, y - 1, "start"] : side === "left" ? [x - 22, y - 1, "end"] : [x, side === "below" ? y + 32 : y - 36, "middle"];
+    return `<text x="${tx}" y="${ty}" text-anchor="${anchor}"><tspan>${st.name}</tspan><tspan x="${tx}" dy="1.2em" class="tl-map__time" data-time="${i}"></tspan></text>`;
   };
+
+  // 場所のピン。名前は2行（[1行目, 2行目]）で、beside なら右横、そうでなければ下に置く
+  const pin = (cls, [x, y], [a, b], beside = false) => `<g class="tl-zepp${cls}" transform="translate(${x},${y})">
+        <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
+        <circle cx="0" cy="-18" r="4"/>
+        ${
+          beside
+            ? `<text x="14" y="-22">${a}</text><text x="14" y="-10">${b}</text>`
+            : `<text y="14" text-anchor="middle">${a}</text><text y="27" text-anchor="middle">${b}</text>`
+        }
+      </g>`;
 
   // 地下鉄（目安）と Zepp Sapporo の位置。市電の線より下に薄く描く
   function subwaySvg() {
-    const { tozai, nanboku, toho, links, zepp, sync, snowStatue } = layout.subway;
+    const { tozai, nanboku, toho, links, zepp, sync, snowStatue } = LAYOUT.subway;
     const vLabel = (x, y, text) => `<text class="tl-sub__st" x="${x + 15}" y="${y - 4}" writing-mode="vertical-rl">${text}</text>`;
     const dot = (x, y) => `<circle cx="${x}" cy="${y}" r="4.5"/>`;
     return `<g class="tl-sub" aria-hidden="true">
@@ -218,7 +205,7 @@
         <text class="tl-sub__name" x="${nanboku.x}" y="${nanboku.y2 + 14}" text-anchor="middle">南北線</text>
       </g>
       <g class="tl-sub__line tl-sub__line--toho">
-        <polyline points="${toho.x},${toho.y1} ${toho.x},${toho.y2} ${layout.width},${toho.y2 + 8}"/>
+        <polyline points="${toho.x},${toho.y1} ${toho.x},${toho.y2} ${LAYOUT.width},${toho.y2 + 8}"/>
         ${toho.st.map(([n, y]) => dot(toho.x, y) + vLabel(toho.x, y, n)).join("")}
         <text class="tl-sub__name" x="${toho.x}" y="${toho.y2 + 20}" text-anchor="middle">東豊線</text>
       </g>
@@ -226,24 +213,9 @@
         <rect x="${nanboku.x - 8}" y="${tozai.y - 8}" width="${toho.x - nanboku.x + 16}" height="16" rx="8"/>
         <text x="${(nanboku.x + toho.x) / 2}" y="${tozai.y}" text-anchor="middle" dominant-baseline="central">大通</text>
       </g>
-      <g class="tl-zepp" transform="translate(${zepp[0]},${zepp[1]})">
-        <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
-        <circle cx="0" cy="-18" r="4"/>
-        <text y="14" text-anchor="middle">Zepp</text>
-        <text y="27" text-anchor="middle">Sapporo</text>
-      </g>
-      <g class="tl-zepp tl-sync" transform="translate(${sync[0]},${sync[1]})">
-        <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
-        <circle cx="0" cy="-18" r="4"/>
-        <text y="14" text-anchor="middle">SYNC</text>
-        <text y="27" text-anchor="middle">north</text>
-      </g>
-      <g class="tl-zepp tl-statue" transform="translate(${snowStatue[0]},${snowStatue[1]})">
-        <path d="M0,0C-7,-9 -10,-13 -10,-18A10,10 0 1 1 10,-18C10,-13 7,-9 0,0Z"/>
-        <circle cx="0" cy="-18" r="4"/>
-        <text x="14" y="-22">26年に雪ミク雪像があった場所</text>
-        <text x="14" y="-10">（大通会場11丁目）</text>
-      </g>
+      ${pin("", zepp, ["Zepp", "Sapporo"])}
+      ${pin(" tl-sync", sync, ["SYNC", "north"])}
+      ${pin(" tl-statue", snowStatue, ["26年に雪ミク雪像があった場所", "（大通会場11丁目）"], true)}
     </g>`;
   }
 
@@ -260,7 +232,7 @@
         </g>`;
 
   const buildMapSvg = () => `
-    <svg class="tl-map" id="tlMap" viewBox="0 ${-TOP_PAD} ${layout.width} ${layout.height + TOP_PAD}" role="img" aria-label="${TEXT.mapLabel}">
+    <svg class="tl-map" id="tlMap" viewBox="0 ${-TOP_PAD} ${LAYOUT.width} ${LAYOUT.height + TOP_PAD}" role="img" aria-label="${TEXT.mapLabel}">
       ${subwaySvg()}
       <g class="tl-map__track tl-map__track--outer">
         <path d="${trackPath(GAP)}"/>
@@ -281,6 +253,13 @@
       <g class="tl-map__train" id="tlTrain">${trainMark(true)}</g>
     </svg>`;
 
+  // 時刻のホイールと30分送りの範囲（時）。分のリストは 00〜59 を3周ぶん並べる
+  const FIRST_H = 6;
+  const LAST_H = 22;
+  const HOUR_ITEMS = LAST_H - FIRST_H + 1;
+  const MIN_ITEMS = 180;
+  const clampMin = (min) => Math.min(LAST_H * 60, Math.max(FIRST_H * 60, min));
+
   // ---------- 描画 ----------
   $root.innerHTML = `
     <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tlBrandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9185de"/><stop offset="1" stop-color="#e9a1eb"/></linearGradient></defs></svg>
@@ -296,17 +275,15 @@
       <button type="button" class="tl-step" data-step="-30" aria-label="30分前">- 30</button>
       <div class="tl-wheel" role="group" aria-label="${TEXT.timeLabel}">
         <div class="tl-wheel__band" aria-hidden="true"></div>
-        <div class="tl-wheel__col" id="tlHour" role="listbox" tabindex="0" aria-label="時">${Array.from({ length: 17 }, (_, i) => `<div class="tl-wheel__item" role="option">${6 + i}</div>`).join("")}</div>
+        <div class="tl-wheel__col" id="tlHour" role="listbox" tabindex="0" aria-label="時">${Array.from({ length: HOUR_ITEMS }, (_, i) => `<div class="tl-wheel__item" role="option">${FIRST_H + i}</div>`).join("")}</div>
         <span class="tl-wheel__colon" aria-hidden="true">:</span>
-        <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: 180 }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i % 60).padStart(2, "0")}</div>`).join("")}</div>
+        <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: MIN_ITEMS }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i % 60).padStart(2, "0")}</div>`).join("")}</div>
       </div>
       <button type="button" class="tl-step" data-step="30" aria-label="30分後">+ 30</button>
     </div>
       <div class="tl-status" id="tlStatus"></div>
     </div>
-      <div class="tl-map-wrap">
-        <div id="tlMapHost"></div>
-      </div>
+      <div class="tl-map-wrap">${buildMapSvg()}</div>
     </div>
     <details class="tl-trips">
       <summary>${nl(TEXT.tripsSummary)}</summary>
@@ -319,7 +296,11 @@
   const $hour = document.getElementById("tlHour");
   const $min = document.getElementById("tlMin");
   const $status = document.getElementById("tlStatus");
-  let $map, $train, $heading, $times, $sts;
+  const $map = document.getElementById("tlMap");
+  const $train = document.getElementById("tlTrain");
+  const $heading = document.getElementById("tlHeading");
+  const $times = [...$map.querySelectorAll("[data-time]")];
+  const $sts = [...$map.querySelectorAll("[data-st]")];
   const $trips = document.getElementById("tlTrips");
 
   // 電車マーカーは線路に沿ってアニメーション（直線補間だと角で線路から外れるため）
@@ -354,20 +335,6 @@
     };
     anim.raf = requestAnimationFrame(step);
   }
-
-  const $mapHost = document.getElementById("tlMapHost");
-  function mountMap() {
-    setLayout();
-    $mapHost.innerHTML = buildMapSvg();
-    $map = document.getElementById("tlMap");
-    $train = document.getElementById("tlTrain");
-    $heading = document.getElementById("tlHeading");
-    $times = [...$map.querySelectorAll("[data-time]")];
-    $sts = [...$map.querySelectorAll("[data-st]")];
-    cancelAnimationFrame(anim.raf);
-    anim.dist = null;
-  }
-
 
   const cache = {};
   const keypoints = (type) => (cache[type] ??= buildKeypoints(type));
@@ -519,7 +486,7 @@
   let dragMoved = false;
   const wheelIndex = ($col, max) => Math.min(max, Math.max(0, Math.round($col.scrollTop / wheelItem())));
   const markSelected = () => {
-    [[$hour, 16], [$min, 179]].forEach(([$col, max]) => {
+    [[$hour, HOUR_ITEMS - 1], [$min, MIN_ITEMS - 1]].forEach(([$col, max]) => {
       const sel = wheelIndex($col, max);
       [...$col.children].forEach(($i, k) => $i.classList.toggle("is-sel", k === sel));
     });
@@ -528,7 +495,7 @@
     if (performance.now() < userUntil) return;
     const item = wheelItem();
     ignoreScroll = performance.now() + 150;
-    $hour.scrollTop = (Math.floor(min / 60) - 6) * item;
+    $hour.scrollTop = (Math.floor(min / 60) - FIRST_H) * item;
     $min.scrollTop = (60 + (min % 60)) * item; // 分は 00〜59 を3周ぶん並べ、真ん中の周に置く
     markSelected();
   }
@@ -539,8 +506,8 @@
     wheelRaf = requestAnimationFrame(() => {
       markSelected();
       // 分のリストは3周ぶんあり、前後の周に入った分は時に繰り上げ／繰り下げる（13:00 から 12:59 へ回せる）
-      const mi = wheelIndex($min, 179);
-      const min = Math.min(22 * 60, Math.max(6 * 60, (6 + wheelIndex($hour, 16)) * 60 + (mi % 60) + (Math.floor(mi / 60) - 1) * 60));
+      const mi = wheelIndex($min, MIN_ITEMS - 1);
+      const min = clampMin((FIRST_H + wheelIndex($hour, HOUR_ITEMS - 1)) * 60 + (mi % 60) + (Math.floor(mi / 60) - 1) * 60);
       if (min === Math.floor(state.min)) return; // 位置合わせで起きた scroll（時刻が変わっていない）では、「いま」の追従を止めない
       state.live = false;
       state.min = min;
@@ -554,11 +521,11 @@
       setWheel(Math.floor(state.min));
     }, 180);
   };
-  // 30分前／30分後ボタン（範囲は 6:00〜22:00）
+  // 30分前／30分後ボタン（範囲は FIRST_H〜LAST_H 時）
   $root.querySelectorAll(".tl-step").forEach(($b) =>
     $b.addEventListener("click", () => {
       state.live = false;
-      state.min = Math.min(22 * 60, Math.max(6 * 60, Math.floor(state.min) + Number($b.dataset.step)));
+      state.min = clampMin(Math.floor(state.min) + Number($b.dataset.step));
       render();
     })
   );
@@ -602,7 +569,6 @@
     ["pointerup", "pointercancel"].forEach((t) => $col.addEventListener(t, endDrag));
   });
 
-  mountMap();
   render();
   setInterval(() => state.live && render(), 15 * 1000);
 })();

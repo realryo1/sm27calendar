@@ -77,12 +77,8 @@ window.TT_DATA = {
   // 表示する時間帯（時）
   range: { start: 6, end: 23 },
 
-  days: [
-    { id: "2027-02-04", label: "2/4", week: "THU", weekJa: "木" },
-    { id: "2027-02-05", label: "2/5", week: "FRI", weekJa: "金" },
-    { id: "2027-02-06", label: "2/6", week: "SAT", weekJa: "土" },
-    { id: "2027-02-07", label: "2/7", week: "SUN", weekJa: "日" },
-  ],
+  // 表示する日（"YYYY-MM-DD"）。日付・曜日の表記は app.js が作る
+  days: ["2027-02-04", "2027-02-05", "2027-02-06", "2027-02-07"],
 
   // 会場情報（letter / name / short / area / address / station / theme / fan）も各予定に直接書く。
   // letter は会場の識別・並び順・記号で、同じ会場の予定は letter を揃える。short は会場見出しに出す名前（省略時は name）、area は見出しの補足
