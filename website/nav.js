@@ -37,13 +37,15 @@
   // 切り替え先の枠（iframe）。最初に要るときに作り、以降は閉じても残す（中のスクロール位置などを保つ）。
   // 隠している間も display: none にはしない（大きさ0で読み込むと、マップの初期の拡大率などが狂うため。style.css の .app-view）
   const views = new Map();
+  // 手元で開いたときは localUrl（data.js）を開く。LiveServer はリポジトリのフォルダごと配信するので、手元の hokkaido_delay/ が見える
+  const local = ["localhost", "127.0.0.1"].includes(location.hostname);
   const viewFor = (it) => {
     if (!it?.url) return null;
     let $v = views.get(it.id);
     if ($v) return $v;
     $v = document.createElement("div");
     $v.className = "app-view";
-    $v.innerHTML = `<iframe class="app-view__frame" src="${esc(it.url)}" title="${esc(it.label)}"></iframe>`;
+    $v.innerHTML = `<iframe class="app-view__frame" src="${esc((local && it.localUrl) || it.url)}" title="${esc(it.label)}"></iframe>`;
     document.body.append($v);
     views.set(it.id, $v);
     return $v;

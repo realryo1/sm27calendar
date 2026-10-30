@@ -13,7 +13,7 @@
 
 姉妹プロジェクト（hokkaido_delay/）
 ・運行情報はhokkaido_delay/の別リポジトリ。作業するときはhokkaido_delay/AGENTS.mdに従う。
-・このリポジトリから運行情報のファイルを参照・読み込みしない（リンクと、サイドバーから公開URLをiframeで開くことと、.vscode/launch.jsonの一括デプロイは可）。
+・このリポジトリから運行情報のファイルを参照・読み込みしない（リンクと、サイドバーから公開URLをiframeで開くことと、手元（localhost・127.0.0.1）で開いたときだけ手元のhokkaido_delay/website/をiframeで開くことと、.vscode/launch.jsonの一括デプロイは可）。
 ・style.cssの配色・フォント・背景・フッターを変えたら、hokkaido_delay/website/base.cssも合わせる。
 
 PWA・キャッシュ
