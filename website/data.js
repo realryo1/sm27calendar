@@ -62,8 +62,8 @@ window.TT_DATA = {
     updatedPrefix: "最終情報更新：",
   },
 
-  // サイドバー（スマホは画面の下のバー）で、カレンダーからマップ・運行情報に切り替える（nav.js）。
-  // マップ・運行情報は仮実装のため、enabled: false で切り替えボタンを出さない（日付のガラスのバーは出す）。先頭の項目（url なし）がカレンダー。
+  // サイドバー（スマホは画面の下のバー）で、カレンダーからマップ・グッズ・運行情報に切り替える（nav.js）。
+  // マップ・グッズ・運行情報は仮実装のため、enabled: false で切り替えボタンを出さない（日付のガラスのバーは出す）。先頭の項目（url なし）がカレンダー。
   // url のページは iframe で重ねて表示する（?embed=1 で、向こうのページのカレンダーへ戻るリンクなどを隠す）。
   // localUrl は、手元（localhost・127.0.0.1）で開いたときに url の代わりに開くページ（運行情報は、公開前の変更を手元の hokkaido_delay/ で確かめるため）。
   // preload: true は、開く前に裏で読み込んでおく（運行情報は1分ごとに取得し続けるので、押そうとしたときだけ読み込む）
@@ -73,6 +73,7 @@ window.TT_DATA = {
     items: [
       { id: "calendar", label: "カレンダー", icon: "calendar" },
       { id: "map", label: "マップ", icon: "map", url: "test_sm26goodsmap/?embed=1", preload: true },
+      { id: "goods", label: "グッズ", icon: "bag", url: "test_sm26goodsmap/?embed=1&page=goods", preload: true },
       { id: "delay", label: "運行情報", icon: "train", url: "https://realryo1.github.io/hokkaido_delay/?embed=1", localUrl: "/hokkaido_delay/website/?embed=1" },
     ],
   },

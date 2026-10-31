@@ -30,7 +30,19 @@ window.GM_DATA = {
     { label: "チ・カ・ホの広場マップ", url: "https://www.sapporo-chikamichi.jp/guide/" },
   ],
 
-  places: { hmv: "HMV", skytown: "スカイタウン" },
+  // グッズの情報元（お品書き・告知）。書き方は data-2026fix.js と同じ。企業のお品書きが出たら maker を足す。
+  // 公式のグッズ一覧は、2026-10-31時点では404（26年と同じ場所に出ると見込んで置いておく）
+  notices: [{ id: "official", kind: "official", label: "公式のグッズ一覧", url: "https://snowmiku.com/2027/goods.html" }],
+
+  // ライブ（SNOW MIKU LIVE! 2027）のグッズ。グッズは goods に floor: "ライブ物販"、places: ["live"] で入れる。
+  // status は、分かっていないこと（売り場・販売方法）を書く。分かったら直す
+  live: {
+    title: "SNOW MIKU LIVE! 2027",
+    lines: ["会場はZepp Sapporo（2/5〜2/7）"],
+    status: ["グッズの内容・売り場・販売方法（ライブ会場での物販か、ウイングベイ・チ・カ・ホでも売るか、通販か）は未発表"],
+  },
+
+  places: { hmv: "HMV", skytown: "スカイタウン", chikaho: "チ・カ・ホ", live: "ライブ会場" },
 
   floors: [
     {

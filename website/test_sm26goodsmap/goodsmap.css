@@ -678,22 +678,27 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-price { font-family: var(--font-display); font-size: .98rem; white-space: nowrap; color: var(--c-dark); }
 .gm-price small { margin-right: 2px; font-family: var(--font-base); font-size: .7rem; font-weight: 700; }
 .gm-price--none { font-family: var(--font-base); font-size: .68rem; font-weight: 700; color: #8b8b96; }
-/* ほかの売り場・補足の札 */
-.gm-also {
+/* タグ（goodslist.js。マップとグッズ一覧で共通）。どれも同じ大きさで、品名の前に 限定＞企業＞公式＞HMV＞スカイタウン＞先行＞受注 の順 */
+.gm-tag {
   display: inline-block;
-  margin-left: 6px;
-  padding: 0 6px;
+  margin-right: 6px;
+  padding: 0 7px;
   vertical-align: .08em;
   border-radius: 4px;
-  font-size: .64rem;
-  font-weight: 700;
-  line-height: 1.7;
+  font-size: .68rem;
+  font-weight: 900;
+  line-height: 1.75;
   white-space: nowrap;
   color: var(--col-secondary-dark);
-  background: var(--col-secondary-lighter);
+  background: var(--col-secondary-lighter); /* 色の決まっていない売り場（チ・カ・ホ・ライブ会場など） */
 }
-.gm-also--no { color: #5c5c66; background: #f0f0f3; }
-.gm-also--note { color: #8f5900; background: #fff4dc; }
+.gm-tag--official { color: var(--col-gold-dark); background: #f8f4d8; } /* 公式：.theme-gold の色 */
+.gm-tag--maker { color: #873890; background: #fcecfd; } /* 企業（お品書き）：.theme-pink の色 */
+.gm-tag--hmv { color: #b02a63; background: #ffe2ee; } /* HMV：ピンク（企業の紫寄りのピンクと見分けるため、赤寄り） */
+.gm-tag--skytown { color: #1a6f9a; background: #ddf2fc; } /* 雪ミク スカイタウン：スカイブルー */
+.gm-tag--no { color: #5c5c66; background: #f0f0f3; } /* 展示だけの品の「会場では販売なし」など */
+.gm-tag--note { color: #8f5900; background: #fff4dc; } /* 限定・先行・受注など（データの note） */
+.gm-block[hidden] { display: none; }
 .gm-note { margin: 10px 0 0; padding-left: 10px; font-size: .78rem; border-left: 3px solid var(--col-gold); }
 .gm-note a { margin-left: .4em; color: var(--col-link); font-weight: 700; }
 .gm-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
@@ -707,6 +712,30 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   background: var(--c);
 }
 .gm-links a:hover { filter: brightness(1.1); }
+
+/* 開け閉めできるカード（details.gm-fold。マップとグッズ一覧（?page=goods）で共通）。初めは閉じていて、選んだ・さがした・しぼり込んだときに開く（各ページの JS）。
+   見出しの行（summary.gm-card__head）を押すと開閉し、右端に件数（.gm-fold__n）と矢印（開いているときは下向き、閉じているときは右向き）。
+   見出しの中のブースの番号（ボタン・リンク）は、押しても開け閉めしない（summary の中の操作できる部品は、それ自体として働くため） */
+.gm-fold > summary { list-style: none; cursor: pointer; align-items: center; }
+.gm-fold > summary::-webkit-details-marker { display: none; }
+.gm-fold > summary::after {
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin: 0 4px 0 2px;
+  border-right: 2.5px solid var(--c);
+  border-bottom: 2.5px solid var(--c);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform .2s;
+}
+.gm-fold:not([open]) > summary::after { transform: rotate(-45deg); }
+.gm-fold > summary:focus-visible { outline: 2px solid var(--c); outline-offset: 4px; border-radius: 8px; }
+.gm-fold[open] > summary { margin-bottom: 4px; }
+.gm-fold__n { flex: none; margin-left: auto; font-family: var(--font-display); font-size: .85rem; color: var(--c); }
+@media (prefers-reduced-motion: reduce) {
+  .gm-fold > summary::after { transition: none; }
+}
 
 /* 公式物販：見出しは公式2027のチケット欄と同じ向きのグラデーション、中は淡い紫 */
 .gm-official { padding: 0; overflow: hidden; border-top: none; }
@@ -747,7 +776,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-official__body { padding: 2px 16px 16px; background: var(--col-secondary-lighter); }
 .gm-official__maker { margin: 14px 0 0; font-size: .76rem; font-weight: 900; color: var(--col-gold-dark); }
 .gm-official .gm-item { border-bottom-color: #ddd6ff; }
-.gm-official .gm-also:not(.gm-also--no, .gm-also--note) { background: var(--col-paper); } /* 淡い紫の地の上でも札が見えるように */
+.gm-official .gm-tag:not([class*="--"]) { background: var(--col-paper); } /* 淡い紫の地の上でも、色の決まっていないタグが見えるように */
 .gm-loose .gm-card__name { font-size: .92rem; }
 
 /* スマホ（1カラム）のマップ：画面の上に貼り付け、ページを下へスクロールするほど低くし、最後は検索欄の上の細いプレビューにする（goodsmap.js の shrink）。

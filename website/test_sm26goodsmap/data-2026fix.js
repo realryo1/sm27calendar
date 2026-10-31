@@ -2,15 +2,16 @@
 // 公式の画像（商品写真・会場マップ）は使わない。マップは公式の会場マップのブースの位置をもとに、goodsmap.js が SVG で描く。
 // 27年の情報が出たら、このファイルを写して data-2027.js を作り、index.html の読み込みを差し替える（goodsmap.js は年に関係なく使える）。
 //
-// goods: 公式のグッズ一覧の1件＝1行。ウイングベイで売るもの（出展ブース・ガチャコーナー・公式物販）と、ブースで展示だけするものを載せる。
+// goods: グッズの1件＝1行。公式のグッズ一覧のうちウイングベイで売るもの（出展ブース・ガチャコーナー・公式物販）とブースで展示だけするもの、
+//   公式の一覧に無く企業のお品書きにだけあるもの（src。下の notices）を載せる。グッズマップとグッズ一覧（?page=goods）の両方が読む。
 //   booth: ウイングベイで売る（展示する）ブースの番号。公式の一覧は売り場が「出展ブース」までしか書いていないので、販売元からブースを決めて入れる。
-//          1つのグッズは1つのブースにだけ入る（ブースの紹介文に同じ商品が出てきても、ここに無い名前だけを booths の more に書く）。
+//          1つのグッズは1行・1つのブースにだけ入る（公式の一覧と企業のお品書きの両方に出る品は、1行の src に両方を書く）。
 //   places: 公式の一覧の取り扱い場所（wingbay: ウイングベイ小樽、hmv: HMV、skytown: 雪ミク スカイタウン）。wingbay が無いものは「会場では販売なし」と出る。
 //   floor: ウイングベイでの売り場（公式の一覧の表記のまま）。「公式物販」は booth を入れず、公式物販のカードにまとめる。
 //   price: 税込の円。unit は「1回」など値段の前に付ける語、note は値段の横に出す補足。
 // booths: 出展ブース（公式の「出展ブース」の一覧の順）。no はマップの番号（ガチャコーナーの2社は g1・g2）。
 //   short: マップの上に出す短い名前（長い名前だけ。無ければ name から「株式会社」などを省いたもの）。
-//   more: 公式のグッズ一覧に無いが、ブースの紹介で販売すると書かれているもの（値段は未掲載）。shows: 展示・体験。gifts: 配布・特典。notes: 補足。
+//   more: 公式のブース紹介に販売するとあるが、品名・価格が分からないもの（分かったら goods に移す）。shows: 展示・体験。gifts: 配布・特典。notes: 補足。
 //   文章は書き写さず、品名などの事実を短くまとめる。links のラベルも自分で付ける。
 // floors: 会場のフロア。1フロアなら切り替えは出ない。座標は公式の会場マップをもとに、位置関係だけを保ってブースを大きくした配置。
 window.GM_DATA = {
@@ -42,6 +43,15 @@ window.GM_DATA = {
   ],
   officialMap: "https://snowmiku.com/2026/images/location/wingbay/map_wingbay_floor.png",
   officialGoods: "https://snowmiku.com/2026/goods.html",
+
+  // グッズの情報元（お品書き・告知）。goods の src に id を書く（src が無いグッズは official だけ）。
+  //   official: 公式のグッズ一覧。maker: 出展企業が自社サイト・X などで出したお品書き（booth はそのブース、date は出た日）。
+  //   公式の一覧に載らず、企業のお品書きにだけある品も goods に入れる（src: ["企業のお品書きの id"]。url が無ければお品書きへリンクする）。
+  notices: [
+    { id: "official", kind: "official", label: "公式のグッズ一覧", url: "https://snowmiku.com/2026/goods.html" },
+    { id: "cospa-site", kind: "maker", booth: "11", label: "コスパの販売情報", url: "https://www.cospa.com/cospa/event/id/27134", date: "2026-01-15" },
+    { id: "cospa-x", kind: "maker", booth: "11", label: "コスパの告知（X）", url: "https://x.com/cospa_inc/status/2019703863344087114", date: "2026-02-06" },
+  ],
 
   // ほかの売り場の略称（「HMVでも」などの表示に使う）
   places: { hmv: "HMV", skytown: "スカイタウン" },
@@ -374,9 +384,9 @@ window.GM_DATA = {
     { id: "movic-cheki", booth: "8", maker: "ムービック", name: "SNOW MIKU 2026 チェキプリント", price: 600, places: ["wingbay", "hmv"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_movic_instax-print.html" },
     { id: "gift-plush", booth: "9", maker: "株式会社Gift", name: "雪ミクぬいぐるみ Sweet Snow Ver.", price: 7000, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_gift_nuigurumi.html" },
     { id: "hs-case", booth: "10", maker: "株式会社ホビーストック", name: "SNOW MIKU 2026 オーロラマルチケース（全2種）", price: 1700, places: ["wingbay", "hmv"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_hs_aurora-multi-case.html" },
-    { id: "cospa-tsumamare", booth: "11", maker: "株式会社コスパ", name: "初音ミク つままれ SNOW MIKU 2026 Ver.＋ステッカーセット", price: 1100, places: ["wingbay", "skytown"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_cospa_tsumamare.html" },
-    { id: "cospa-mug", booth: "11", maker: "株式会社コスパ", name: "SNOW MIKU 2026 フタ付きフルカラーマグカップ＋ステッカーセット", price: 2600, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_cospa_mug-sticker.html" },
-    { id: "cospa-cutlery", booth: "11", maker: "株式会社コスパ", name: "SNOW MIKU 2026 スプーン＆フォーク＋ステッカーセット", price: 3000, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_cospa_cutlery-sticker.html" },
+    { id: "cospa-tsumamare", booth: "11", src: ["official", "cospa-site"], maker: "株式会社コスパ", name: "初音ミク つままれ SNOW MIKU 2026 Ver.＋ステッカーセット", price: 1100, places: ["wingbay", "skytown"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_cospa_tsumamare.html" },
+    { id: "cospa-mug", booth: "11", src: ["official", "cospa-site"], maker: "株式会社コスパ", name: "SNOW MIKU 2026 フタ付きフルカラーマグカップ＋ステッカーセット", price: 2600, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_cospa_mug-sticker.html" },
+    { id: "cospa-cutlery", booth: "11", src: ["official", "cospa-site"], maker: "株式会社コスパ", name: "SNOW MIKU 2026 スプーン＆フォーク＋ステッカーセット", price: 3000, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_cospa_cutlery-sticker.html" },
     { id: "hashimoto-plate", booth: "13", maker: "有限会社 橋本漆芸", name: "SNOW MIKU 2026 デザートプレート", price: 2500, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_hashimoto_dessert-plate.html" },
     { id: "washin-case", booth: "15", maker: "株式会社和真", name: "SNOW MIKU 2026 ファスナーメガネケース（全2種）", price: 2200, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_washin_eyeglass-case.html" },
     { id: "ensky-sleeve", booth: "16", maker: "株式会社エンスカイ", name: "SNOW MIKU 2026 キャラクタースリーブセット 雪ミク2026（A／B）", price: 1800, places: ["wingbay", "hmv"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_ensky_chara-sleeve.html" },
@@ -386,6 +396,46 @@ window.GM_DATA = {
     // 公式の一覧の表記は「ぬいくるみバッジ」だが、ブースの紹介と商品名に合わせて「ぬいぐるみ」にした
     { id: "bilibili-badge", booth: "25", maker: "bilibiliGoods", name: "雪ミク PATCHシリーズ ぬいぐるみバッジ（SNOW MIKU 2026 Ver.）", price: 2600, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_bilibili_patch-nuigurumi-badge.html" },
     { id: "dbc-plate", booth: "29", maker: "株式会社ダイハツビジネスサポートセンター", name: "雪ミク ナンバープレート（SNOWMIKU 2026ver.）", price: 3800, places: ["wingbay"], floor: "出展ブース", url: "https://snowmiku.com/2026/goods_dbc_number-plate.html" },
+    // 出展ブースで売るが、公式のグッズ一覧には無いもの（企業のお品書きにだけある。src はお品書きの id）
+    // コスパ（ブース11）：販売情報のページの「先行販売商品」（note: "先行"）と「販売商品」。公式の一覧にもある3点は、上の出展ブースの行に src を足した
+    { id: "cospa-s01", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク 袖リブロングスリーブTシャツ 湊しおり Ver.", price: 4290, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s02", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク Tシャツ RIA Ver.", price: 3300, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s03", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク ラージトート 波風ぼん Ver.", price: 1980, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s04", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク アクリルスタンド 淡井 ウタ Ver.", price: 1650, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s05", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク クリーナークロス 大和 Ver.", price: 660, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s06", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "鏡音リン ショルダートート うにう Ver.", price: 2200, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s07", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "鏡音リン ショルダートート もく かれん Ver.", price: 2200, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s08", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "鏡音リン アクリルスタンド うにう Ver.", price: 1650, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s09", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "鏡音リン アクリルスタンド もく かれん Ver.", price: 1650, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s10", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "鏡音レン Tシャツ 片栗いと Ver.", price: 3300, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s11", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "鏡音レン ショルダートート 片栗いと Ver.", price: 2200, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s12", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "鏡音レン アクリルアートスタンド 二足類 Ver.", price: 2420, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s13", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "巡音ルカ Tシャツ ひなた水色 Ver.", price: 3300, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s14", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "巡音ルカ Tシャツ 。 Ver.", price: 3300, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s15", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "巡音ルカ ショルダートート ひなた水色 Ver.", price: 2200, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s16", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "巡音ルカ ラージトート 畔蒜いづも Ver.", price: 1980, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s17", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "KAITO Tシャツ 畔蒜いづも Ver.", price: 3300, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s18", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "KAITO アクリルアートスタンド Linch Ver.", price: 2420, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s19", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "KAITO アクリルマルチキーホルダー ナガシロ Ver.", price: 880, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s20", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "MEIKO Tシャツ 夜明ほしこ Ver.", price: 3300, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s21", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "MEIKO アクリルスタンド さくま Ver.", price: 1650, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s22", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "MEIKO アクリルスタンド nAmu Ver.", price: 1650, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-s23", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "MEIKO アクリルマルチキーホルダー ナガシロ Ver.", price: 880, note: "先行", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h01", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "雪ミク コスチュームセット", price: 22000, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h02", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク コスチュームセット", price: 19800, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h03", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "マジカルミライ 2025 イメージライトブルゾン", price: 19800, note: "限定", places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h04", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク V4X フルグラフィックTシャツ", price: 6930, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h05", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク Tシャツ Sugerもなか Ver.", price: 3190, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h06", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク Tシャツ 回る酸素 Ver.", price: 3300, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h07", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク Tシャツ チェリ藻 Ver.", price: 3300, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h08", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク Tシャツ 苺紅茶 Ver.", price: 3300, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h09", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク Tシャツ 87*saku Ver.", price: 3300, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h10", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク アクリルスタンド 苺紅茶 Ver.", price: 1650, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h11", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク セリフアクリルスタンド 87*saku Ver.", price: 1650, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h12", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク V3 アクリルスタンド", price: 1650, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h13", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク アクリルスタンド（大） oohhya Ver.", price: 2420, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h14", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク フルカラーパスケース 87*saku Ver.", price: 1430, places: ["wingbay"], floor: "出展ブース" },
+    { id: "cospa-h15", booth: "11", src: ["cospa-site"], maker: "株式会社コスパ", name: "初音ミク 100cmタペストリー 安夏 Ver.", price: 6050, places: ["wingbay"], floor: "出展ブース" },
 
     // ガチャコーナー
     { id: "bandai-assort", booth: "g1", maker: "株式会社バンダイ", name: "初音ミク 雪ミクあそーと ～SNOW MIKU 2026～", price: 500, unit: "1回", places: ["wingbay"], floor: "ガチャコーナー", url: "https://snowmiku.com/2026/goods_bandai_assort.html" },
@@ -394,7 +444,7 @@ window.GM_DATA = {
 
     // ブースで展示だけするもの（ウイングベイでは売らない）
     { id: "sega-stand", booth: "26", maker: "株式会社セガ フェイブ", name: "初音ミクシリーズ プラチナムザッカ ビッグアクリルスタンド SNOW MIKU 2026", price: null, note: "非売品（アミューズメント景品）", places: [], url: "https://snowmiku.com/2026/goods_sega_platinum-acrylic-stand.html" },
-    { id: "sega-dodeka", booth: "26", maker: "株式会社セガ フェイブ", name: "雪ミク 2026 ふわぷち どでかジャンボぬいぐるみ", price: 13200, note: "完全受注生産", places: [], url: "https://snowmiku.com/2026/goods_sega_dodeka-nuigurumi.html" },
+    { id: "sega-dodeka", booth: "26", maker: "株式会社セガ フェイブ", name: "雪ミク 2026 ふわぷち どでかジャンボぬいぐるみ", price: 13200, note: "受注", places: [], url: "https://snowmiku.com/2026/goods_sega_dodeka-nuigurumi.html" },
     { id: "spirits-kuji", booth: "27", maker: "株式会社BANDAI SPIRITS", name: "一番くじ 雪ミク ～SNOW MIKU ALL STARS～", price: 850, unit: "1回", places: [], url: "https://snowmiku.com/2026/goods_bandai-spirits_1ban-kuji.html" },
     { id: "candy-collection", booth: "28", maker: "株式会社バンダイキャンディ事業部", name: "SNOW MIKU 2026 COLLECTION", price: 770, places: ["skytown"], url: "https://snowmiku.com/2026/goods_bandai-candy_snowmiku-collection.html" },
 

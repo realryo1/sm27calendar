@@ -23,24 +23,12 @@
     search: "商品名・会社名でさがす",
     filter: "種類でしぼる",
     all: "すべて",
-    // カードの中の見出しと、しぼり込みのボタン
+    // しぼり込みのボタン
     kinds: { sale: "販売", exhibit: "展示・体験", gift: "配布・特典" },
     legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示", goods: "グッズ販売・展示など", marche: "マルシェ" },
-    noPrice: "価格未掲載",
-    notSold: "会場では販売なし",
-    soldAt: (where) => `${where}で販売`,
-    also: (where) => `${where}でも`,
-    more: (n) => `ほか${n}件`,
     empty: "見つかりませんでした。ほかのことばでさがしてみてください。",
-    officialLead: "公式グッズの売り場です。商品の写真や詳しい説明は、公式のグッズ一覧で見られます。",
-    officialLink: "公式のグッズ一覧",
-    officialCount: (n) => `${n}点`,
-    loose: "売り場の記載がないグッズ",
-    looseLead: "公式のグッズ一覧ではウイングベイで扱うとあるものの、売り場が書かれていません。",
     zoom: { out: ["－", "縮小"], fit: ["全体", "全体を表示"], in: ["＋", "拡大"] },
     turn: ["↻", "マップを右へ90度回す"],
-    boothName: (no) => `ブース${no}`,
-    showOnMap: (name) => `${name}をマップで見る`,
     updated: (date) => `データ：${date}時点の公式サイト`,
     disclaimer:
       "本ページは非公式の試験版です。\nこのページの問い合わせはx.com/realryo1にお願いします。\n情報の正確性には留意していますが、最終的な判断は利用者が行ってください。\n商品の写真は、品名のリンクから公式サイトで見られます。",
@@ -51,54 +39,22 @@
   const $ = (id) => document.getElementById(id);
   const { esc } = window.TT_UTIL; // カレンダーの ../util.js
   const br = (s) => esc(s).replace(/\n/g, "<br>");
-  const yen = (n) => `¥${n.toLocaleString("ja-JP")}`;
   const r1 = (n) => Math.round(n * 10) / 10;
-  // 品名の先頭の「SNOW MIKU 2026」は、このページではほとんどに付くので表示では省く（検索は元の名前で）
-  const short = (name) => name.replace(/^「?SNOW MIKU \d{4}」?\s*/, "");
-  // 検索用：全角半角・大文字小文字・カタカナとひらがなの違いと、空白・中黒を無視する
-  const norm = (s) =>
-    String(s)
-      .normalize("NFKC")
-      .toLowerCase()
-      .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
-      .replace(/[\s・]/g, "");
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   // 2カラム（左にマップを固定）にする幅。goodsmap.css と合わせる
   const twoCol = matchMedia("(min-width: 641px)");
 
-  // ---------- データの整理 ----------
+  // ---------- データの整理と一覧の部品（goodslist.js。グッズ一覧 goods.js と共通） ----------
+  // カードの番号は、押すとマップでそのブースを示すボタン
+  const L = window.GM_LIST(D, {
+    boothNo: (b) => `<button type="button" class="gm-no" data-map="${esc(b.no)}" aria-label="${esc(L.TEXT.showOnMap(L.boothName(b)))}">${esc(L.boothLabel(b))}</button>`,
+  });
+  const { norm, short, yen, onSale, boothBy, goodsAt, official, loose, info, boothLabel, srcOf, urlOf, noticeBy } = L;
   const booths = D.booths;
-  const boothBy = new Map(booths.map((b) => [b.no, b]));
-  // グッズはウイングベイの売り場ごとに分ける：ブース／公式物販／売り場の記載なし（ウイングベイで売らないものは出さない）
-  const goodsAt = new Map();
-  const official = [];
-  const loose = [];
-  for (const g of D.goods) {
-    if (g.booth) goodsAt.set(g.booth, [...(goodsAt.get(g.booth) ?? []), g]);
-    else if (g.floor === "公式物販") official.push(g);
-    else if (g.places.includes("wingbay")) loose.push(g);
-  }
-  const onSale = (g) => g.places.includes("wingbay");
   // 中にブースがある売り場（ガチャコーナー）。ブース → 売り場
   const spotOf = new Map(Object.entries(D.spots).flatMap(([id, s]) => (s.booths ?? []).map((no) => [no, id])));
-  const officialTitle = D.spots.official?.title ?? "公式物販";
-
-  // ブースの種類と色。マップとカードの色は先頭のもの（販売＞展示・体験＞配布・特典）
-  const THEME = { sale: "pink", exhibit: "violet", gift: "orange" };
-  const info = new Map(
-    booths.map((b) => {
-      const gs = goodsAt.get(b.no) ?? [];
-      const kinds = [
-        (gs.some(onSale) || b.more?.length) && "sale",
-        (gs.some((g) => !onSale(g)) || b.shows?.length) && "exhibit",
-        b.gifts?.length && "gift",
-      ].filter(Boolean);
-      const words = [b.name, b.short, b.org, b.label, ...gs.flatMap((g) => [g.name, g.maker]), ...(b.more ?? []), ...(b.shows ?? []), ...(b.gifts ?? []), ...(b.notes ?? [])];
-      return [b.no, { kinds, theme: THEME[kinds[0] ?? "sale"], text: norm(words.filter(Boolean).join("|")) }];
-    })
-  );
-  const boothLabel = (b) => b.label ?? b.no;
-  const boothName = (b) => (b.label ? b.label : TEXT.boothName(b.no));
+  // 凡例の色（goodslist.js のブースの種類の色と同じ）
+  const theme = (kind) => `theme-${{ sale: "pink", exhibit: "violet", gift: "orange" }[kind]}`;
 
   // 書き写しの確認（27年のデータを作るときに、ブースの割り当て漏れ・重複・マップとのずれに気づけるように）。画面には出さない
   {
@@ -109,103 +65,37 @@
       ids.add(g.id);
       if (g.booth && !boothBy.has(g.booth)) warn(`グッズのブースが一覧に無い: ${g.id} → ${g.booth}`);
       if (!g.booth && onSale(g) && g.floor && g.floor !== "公式物販") warn(`売り場が「${g.floor}」なのにブースが無い: ${g.id}`);
+      for (const n of srcOf(g)) if (n !== "official" && !noticeBy.has(n)) warn(`グッズの情報元が notices に無い: ${g.id} → ${n}`);
+      if (!urlOf(g)) warn(`グッズのリンク先が無い: ${g.id}`);
     }
     const onMap = new Set(D.floors.flatMap((f) => [...Object.keys(f.booths), ...f.areas.flatMap((a) => D.spots[a.spot]?.booths ?? [])]));
     for (const b of booths) if (!onMap.has(b.no)) warn(`マップに無いブース: ${b.no}`);
     for (const no of onMap) if (!boothBy.has(no)) warn(`一覧に無いブースがマップにある: ${no}`);
   }
 
-  // ---------- 部品 ----------
-  const theme = (kind) => `theme-${THEME[kind]}`;
-  const pill = (text, mod = "") => `<span class="gm-also${mod}">${esc(text)}</span>`;
-  const placeName = (p) => D.places[p] ?? p;
-  const priceOf = (g) => (g.price == null ? "" : `<span class="gm-price">${g.unit ? `<small>${esc(g.unit)}</small>` : ""}${yen(g.price)}</span>`);
-  const linkList = (links = []) =>
-    links.length ? `<div class="gm-links">${links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join("")}</div>` : "";
-  const itemText = (g) => norm(`${g.name}|${g.maker}`);
-
-  // 品の1行：左に品名と札（折り返す）、右に値段
-  const itemRow = (text, body, price = "", mod = "") =>
-    `<li class="gm-item${mod}" data-text="${esc(text)}"><span class="gm-item__body">${body}</span>${price}</li>`;
-  const goodsLink = (g) => `<a class="gm-item__name" href="${esc(g.url)}" target="_blank" rel="noopener">${esc(short(g.name))}</a>`;
-  const notePill = (g) => (g.note ? pill(g.note, " gm-also--note") : "");
-  // ウイングベイで売るグッズ。品名は公式の商品ページ（写真あり）へのリンク。ほかの売り場でも買えるものは札を付ける
-  const goodsRow = (g) =>
-    itemRow(itemText(g), goodsLink(g) + g.places.filter((p) => p !== "wingbay").map((p) => pill(TEXT.also(placeName(p)))).join("") + notePill(g), priceOf(g));
-  // ブースで展示だけするグッズ（ウイングベイでは売らない）
-  const showRow = (g) =>
-    itemRow(itemText(g), goodsLink(g) + pill(g.places.length ? TEXT.soldAt(g.places.map(placeName).join("・")) : TEXT.notSold, " gm-also--no") + notePill(g), priceOf(g));
-  // ブースの紹介にだけある品・展示・配布（値段は公式に無い）
-  const textRow = (t, note) =>
-    itemRow(norm(t), `<span class="gm-item__name">${esc(t)}</span>`, note ? `<span class="gm-price gm-price--none">${esc(note)}</span>` : "", " gm-item--text");
-  const block = (kind, rows) =>
-    rows.length ? `<h4 class="gm-sub ${theme(kind)}">${TEXT.kinds[kind]}</h4><ul class="gm-items ${theme(kind)}">${rows.join("")}</ul>` : "";
-
   // ---------- 出展ブースの一覧 ----------
+  // カード（ブース・公式物販・売り場の記載なし）は goodslist.js。初めは閉じていて、マップで選んだとき（showCard）・種類でしぼった・さがしたとき（applyFilter）に開く
   const $list = $("gmList");
-
-  function cardHtml(b) {
-    const i = info.get(b.no);
-    const gs = goodsAt.get(b.no) ?? [];
-    return `<article class="gm-card theme-${i.theme}" id="booth-${esc(b.no)}" data-no="${esc(b.no)}">
-      <header class="gm-card__head">
-        <button type="button" class="gm-no" data-map="${esc(b.no)}" aria-label="${esc(TEXT.showOnMap(boothName(b)))}">${esc(boothLabel(b))}</button>
-        <div class="gm-card__title">
-          <h3 class="gm-card__name">${esc(b.name)}</h3>
-          ${b.org ? `<p class="gm-card__org">${esc(b.org)}</p>` : ""}
-        </div>
-      </header>
-      ${block("sale", [...gs.filter(onSale).map(goodsRow), ...(b.more ?? []).map((t) => textRow(t, TEXT.noPrice))])}
-      ${block("exhibit", [...gs.filter((g) => !onSale(g)).map(showRow), ...(b.shows ?? []).map((t) => textRow(t))])}
-      ${block("gift", (b.gifts ?? []).map((t) => textRow(t)))}
-      ${(b.notes ?? []).map((t) => `<p class="gm-note">${esc(t)}</p>`).join("")}
-      ${linkList(b.links)}
-    </article>`;
-  }
-
-  // 公式物販は、グッズを会社ごとにまとめて、閉じた状態で一覧の最後に置く（ブースではないため）
-  function officialHtml() {
-    if (!official.length) return "";
-    const makers = new Map();
-    for (const g of official) makers.set(g.maker, [...(makers.get(g.maker) ?? []), g]);
-    return `<details class="gm-card gm-official theme-gold" id="booth-official" data-no="official">
-      <summary class="gm-official__head">
-        <span class="gm-official__title">${esc(officialTitle)}</span>
-        <span class="gm-official__count">${TEXT.officialCount(official.length)}</span>
-      </summary>
-      <div class="gm-official__body">
-        <p class="gm-note">${esc(TEXT.officialLead)}<a href="${esc(D.officialGoods)}" target="_blank" rel="noopener">${esc(TEXT.officialLink)} ↗</a></p>
-        ${[...makers].map(([m, gs]) => `<h4 class="gm-official__maker">${esc(m)}</h4><ul class="gm-items">${gs.map(goodsRow).join("")}</ul>`).join("")}
-      </div>
-    </details>`;
-  }
-
-  function looseHtml() {
-    if (!loose.length) return "";
-    return `<section class="gm-card gm-loose theme-indigo" id="booth-loose" data-no="loose">
-      <h3 class="gm-card__name">${esc(TEXT.loose)}</h3>
-      <p class="gm-note">${esc(TEXT.looseLead)}</p>
-      <ul class="gm-items theme-pink">${loose.map(goodsRow).join("")}</ul>
-    </section>`;
-  }
 
   // ブースの無い売り場・設備（主催展示・ワークショップ・クロークなど）の説明。マップで押すと、ここへ移る
   const infoSpots = Object.entries(D.spots).filter(([, s]) => !s.booths && !s.official);
   const spotText = (s) => norm([s.title, ...(s.lines ?? [])].join("|"));
-  function spotsHtml() {
-    return infoSpots
-      .map(
-        ([id, s]) => `<section class="gm-card gm-spot theme-violet" id="spot-${esc(id)}" data-no="${esc(id)}">
-          <h3 class="gm-card__name">${esc(s.title)}</h3>
-          ${s.lines?.length ? `<ul class="gm-items">${s.lines.map((t) => textRow(t)).join("")}</ul>` : ""}
-          ${linkList(s.links)}
-        </section>`
+  const spotsHtml = () =>
+    infoSpots
+      .map(([id, s]) =>
+        L.foldCard({
+          theme: "violet",
+          id: `spot-${id}`,
+          no: id,
+          cls: " gm-spot",
+          head: L.titleHtml(s.title),
+          body: `${s.lines?.length ? `<ul class="gm-items">${s.lines.map((t) => L.textRow(t)).join("")}</ul>` : ""}${L.linkList(s.links)}`,
+        })
       )
       .join("");
-  }
 
   function renderList() {
-    $list.innerHTML = booths.map(cardHtml).join("") + officialHtml() + looseHtml() + spotsHtml();
+    $list.innerHTML = booths.map(L.boothCard).join("") + L.officialCard() + L.looseCard() + spotsHtml();
   }
 
   // ---------- 会場マップ ----------
@@ -349,7 +239,7 @@
       const b = boothBy.get(no);
       const g = big.get(no);
       // 元の大きさの四角と、ブース名が出るときの大きい四角（goodsmap.css で入れ替える）
-      return `<g class="gm-tile theme-${info.get(no)?.theme ?? "pink"}" data-pick="${esc(no)}" tabindex="0" role="button" aria-label="${esc(TEXT.boothName(no) + (b ? `：${b.name}` : ""))}">
+      return `<g class="gm-tile theme-${info.get(no)?.theme ?? "pink"}" data-pick="${esc(no)}" tabindex="0" role="button" aria-label="${esc(L.TEXT.boothName(no) + (b ? `：${b.name}` : ""))}">
         <rect class="gm-tile__box" x="${x}" y="${y}" width="${tw}" height="${th}" rx="8"/>
         <rect class="gm-tile__big" x="${r1(g.x)}" y="${r1(g.y)}" width="${r1(g.w)}" height="${r1(g.h)}" rx="8"/>
         <text x="${r1(x + tw / 2)}" y="${r1(y + th / 2)}" dy=".36em" font-size="${r1(Math.min(th * 0.55, tw * 0.48))}">${esc(no)}</text>
@@ -710,7 +600,7 @@
     const $card = cardOf(id);
     if (!$card) return;
     if ($card.hidden) resetFilter();
-    if ($card.tagName === "DETAILS") $card.open = true;
+    L.openCard($card); // 選んで開いたので、しぼり込みを外しても閉じない
     $card.scrollIntoView({ behavior: instant ? "auto" : behavior, block: "start" });
     $card.classList.remove("is-flash");
     void $card.offsetWidth;
@@ -741,6 +631,7 @@
 
   function applyFilter() {
     const q = norm(state.q);
+    const active = state.kind !== "all" || !!q;
     const hits = new Set();
     for (const b of booths) {
       const i = info.get(b.no);
@@ -748,6 +639,7 @@
       const $card = $(`booth-${b.no}`);
       $card.hidden = !on;
       markItems($card, q);
+      L.fold($card, on, active);
       if (on) hits.add(b.no);
     }
     // 公式物販と、売り場の記載がないグッズ（どちらも販売だけ）。検索で当たったら開く
@@ -760,7 +652,7 @@
       const on = (state.kind === "all" || state.kind === "sale") && (!q || gs.some((g) => norm(`${g.name}|${g.maker}`).includes(q)));
       $el.hidden = !on;
       markItems($el, q);
-      if (on && q && $el.tagName === "DETAILS") $el.open = true;
+      L.fold($el, on, active);
       if (on) hits.add(id);
     }
     // 売り場・設備の説明は「すべて」のときだけ
@@ -769,6 +661,7 @@
       const $el = $(`spot-${id}`);
       $el.hidden = !on;
       markItems($el, q);
+      L.fold($el, on, active);
       if (on) hits.add(id);
     }
     // マップは、しぼり込み中だけ当たらなかったところを薄くする

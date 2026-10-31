@@ -9,8 +9,9 @@
   </script>
   <!-- 試験ページ：検索に載せない。カレンダーからはサイドバー（nav.js、既定は無効）が有効なときだけ ?embed=1 の iframe で開く。PWA の対象外（sw.js は test_ で始まるフォルダをキャッシュしない） -->
   <meta name="robots" content="noindex">
+  <!-- ?page=goods でグッズ一覧（goods.js）、無ければグッズ・出展ブースマップ（goodsmap.js）。データ・一覧の部品・スタイルは共通。タイトルは下で付け直す -->
   <title>グッズ・出展ブースマップ（試験版）</title>
-  <meta name="description" content="ウイングベイ小樽の出展ブース・チ・カ・ホで売っているものを、会場マップと出展企業ごとにまとめた非公式ページの試験版。">
+  <meta name="description" content="ウイングベイ小樽の出展ブース・チ・カ・ホで売っているものを、会場マップと出展企業ごと・売り場ごとにまとめた非公式ページの試験版。">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="../favicon.ico" sizes="48x48">
   <link rel="icon" href="../image/favicon-32.png" type="image/png" sizes="32x32">
@@ -22,8 +23,15 @@
   <!-- 配色・フォント・背景・フッターはカレンダーの style.css をそのまま使う（変えたときに、このページも一緒に変わるように） -->
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="goodsmap.css">
+  <link rel="stylesheet" href="goods.css">
   <!-- 年ごとのデータ。既定は27年（data-2027.js）。?year=2026 で前年の見本（data-2026fix.js）。defer の順番を守るため document.write で書く -->
   <script>
+    // グッズ一覧のとき（?page=goods）。html の .gd-page でマップを隠して一覧を出す（goods.css）
+    window.GM_PAGE = new URLSearchParams(location.search).get("page") === "goods" ? "goods" : "map";
+    if (window.GM_PAGE === "goods") {
+      document.documentElement.classList.add("gd-page");
+      document.title = "グッズ一覧（試験版）";
+    }
     // 会場のタブ（年のデータをまたいで並べる。goodsmap.js）。別の年のタブは、その年のデータで読み込み直す
     window.GM_TABS = [
       { year: 2027, floor: "wingbay", label: "2027 ウイングベイ" },
@@ -33,7 +41,11 @@
     document.write(`<script src="${new URLSearchParams(location.search).get("year") === "2026" ? "data-2026fix.js" : "data-2027.js"}" defer><\/script>`);
   </script>
   <script src="../util.js" defer></script>
-  <script src="goodsmap.js" defer></script>
+  <!-- 一覧の部品（品の行・タグ・カード）。マップとグッズ一覧で共通 -->
+  <script src="goodslist.js" defer></script>
+  <script>
+    document.write(`<script src="${window.GM_PAGE === "goods" ? "goods.js" : "goodsmap.js"}" defer><\/script>`);
+  </script>
 </head>
 <body>
   <div class="gm">
@@ -75,6 +87,23 @@
           <footer class="site-footer gm-footer" id="gmFooter"></footer>
         </div>
       </section>
+    </main>
+    <!-- グッズ一覧（?page=goods のときだけ出す。goods.js が描く） -->
+    <main class="gd-main">
+      <h1 class="gm-visually-hidden">グッズ一覧</h1>
+      <div class="gm-chips gd-years" id="gdYears" role="tablist"></div>
+      <p class="gm-notice" id="gdNotice" hidden></p>
+      <!-- 検索と、売り場（すべて・公式物販・企業ブース・ライブ物販）のしぼり込み -->
+      <section class="gd-guide" aria-label="さがす・しぼり込む">
+        <label class="gm-search">
+          <span class="gm-search__icon" aria-hidden="true"></span>
+          <input type="search" id="gdQuery" autocomplete="off" enterkeyhint="search">
+        </label>
+        <div id="gdGuide"></div>
+      </section>
+      <div class="gd-list" id="gdList"></div>
+      <p class="gm-empty" id="gdEmpty" hidden></p>
+      <footer class="site-footer gm-footer" id="gdFooter"></footer>
     </main>
   </div>
 

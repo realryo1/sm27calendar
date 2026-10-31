@@ -1,0 +1,87 @@
+/* グッズ一覧（index.html の ?page=goods。html に .gd-page が付く）
+   配色・フォント・背景・フッターはカレンダーの ../style.css、カード・品の行・タグ・検索欄は goodsmap.css を使い、
+   ここではグッズ一覧だけの部品を足す（クラス名は gd- で始める）。
+   色は売り場ごと：公式物販＝.theme-gold、企業ブース＝.theme-pink、ライブ物販＝.theme-violet、売り場の記載なし＝.theme-indigo */
+/* goodsmap.css の2カラム（641px〜。ページ全体をスクロールさせず列ごとにスクロールする）は、このページでは使わない。ページ全体をスクロールする */
+@media (min-width: 641px) {
+  .gd-page,
+  .gd-page body { height: auto; overflow: visible; }
+  .gd-page .gm { height: auto; padding: var(--gap) var(--gap) 0; }
+}
+/* マップと一覧のどちらか一方だけを出す */
+.gd-page .gm-main,
+html:not(.gd-page) .gd-main { display: none; }
+.gd-main { max-width: 760px; margin: 0 auto; padding-bottom: var(--gap); }
+.gd-sec[hidden],
+.gm-card[hidden],
+.gm-item[hidden] { display: none; }
+
+.gd-years { margin: 0 0 10px; }
+
+/* ---------- 検索・売り場のしぼり込み ---------- */
+.gd-guide {
+  margin: 0 0 14px;
+  padding: 14px 16px 12px;
+  border-radius: 16px;
+  background: var(--col-paper);
+  box-shadow: var(--gm-shadow);
+}
+@media (max-width: 767px) {
+  .gd-guide { padding: 12px 12px 10px; }
+}
+.gd-guide .gm-search { display: block; margin: 0 0 10px; }
+/* 売り場のボタン（すべて・公式物販・企業ブース・ライブ物販）。色は売り場の .theme-○○、すべてはカレンダーの日付ボタンと同じグラデーション */
+.gd-ats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+/* すべてだけは売り場の色が無いので、紫にする（売り場のボタンは .theme-○○ の色。ここに書くと .theme-○○ を上書きするので、すべてに限る） */
+.gd-at[data-at="all"] { --c: var(--col-secondary); --c-dark: var(--col-ink); --c-light: var(--col-secondary-light); --c-tint: var(--col-secondary-lighter); }
+.gd-at {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 64px;
+  padding: 6px 4px;
+  border: 2px solid var(--c-light);
+  border-radius: 12px;
+  font: inherit;
+  line-height: 1.3;
+  color: var(--c-dark);
+  background: var(--c-tint); /* 売り場の色の薄い地（表の列見出しと同じ） */
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.gd-at[data-at="all"] { background: var(--col-paper); }
+.gd-at:hover { filter: brightness(.97); }
+.gd-at[aria-pressed="true"] { border-color: transparent; color: var(--col-paper); background: var(--c) border-box; }
+.gd-at[data-at="all"][aria-pressed="true"] { background: var(--brand-gradient) border-box; }
+.gd-at__label { font-size: .86rem; font-weight: 900; white-space: nowrap; }
+.gd-at small { font-size: .6rem; font-weight: 700; opacity: .85; }
+.gd-at__n { font-size: .66rem; font-weight: 700; white-space: nowrap; }
+.gd-at__n b { margin-right: 1px; font-family: var(--font-display); font-size: 1.15rem; font-weight: 400; }
+@media (max-width: 480px) {
+  .gd-at small { display: none; } /* 狭い幅は売り場の名前と件数だけ */
+}
+@media (max-width: 360px) {
+  .gd-ats { gap: 4px; }
+  .gd-at__label { font-size: .74rem; }
+}
+
+/* ---------- 一覧 ---------- */
+.gd-list { display: grid; gap: 22px; }
+.gd-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding-left: 10px;
+  border-left: 6px solid var(--c);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--c-dark);
+}
+.gd-h__count { font-family: var(--font-display); font-size: .85rem; font-weight: 400; color: var(--c); }
+.gd-sec .gm-lead { border-left-color: var(--c-light); }
+.gd-none { margin: 10px 0 0; font-size: .82rem; font-weight: 700; color: #8b8b96; }
+a.gm-no { text-decoration: none; }
+

@@ -1,4 +1,4 @@
-// サイドバー（スマホは画面の下のバー）：日付のボタンをガラスのバーにし、カレンダーのまま、マップ・運行情報に切り替える（data.js の nav）。
+// サイドバー（スマホは画面の下のバー）：日付のボタンをガラスのバーにし、カレンダーのまま、マップ・グッズ・運行情報に切り替える（data.js の nav）。
 // 切り替え（nav.enabled）は仮実装なので、無効のときは切り替えボタンを出さず、日付のガラスのバーだけにする（html に .has-views が付かない）。
 // 切り替え先は別ページだが、iframe で画面に重ねて出し、カレンダーは裏に残す（戻ったときにスクロール位置・拡大率がそのまま）。
 // URL は ?view=○○ にして（history.pushState）、戻るボタンでカレンダーに戻れるようにする。
@@ -14,6 +14,7 @@
   const ICONS = {
     calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
     map: '<path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4zM9 4v14M15 6v14"/>',
+    bag: '<path d="M5 8h14l-1 12.5H6L5 8z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/>',
     train: '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M9 13.5h.01M15 13.5h.01M8 21l2-4M16 21l-2-4"/>',
   };
 
@@ -195,6 +196,28 @@
   const syncDay = () => setDayIndex(Math.max(0, [...$days.querySelectorAll(".day-chip")].findIndex((c) => c.classList.contains("is-active"))));
   new MutationObserver(syncDay).observe($days, { subtree: true, childList: true, attributeFilter: ["class"] });
   syncDay();
+
+  // 表示の中のページから、別の表示へ移る（グッズ一覧 test_sm26goodsmap/?page=goods のブースの番号 → マップのそのブース）。
+  // { type: "sm27-view", view: "map", search: "year=2026", hash: "#booth-11" } を postMessage で受け取る。
+  // search（年など）が今の iframe と違えば読み込み直し、同じならハッシュだけ変える（マップは hashchange でそのブースを開く）
+  if (enabled)
+    window.addEventListener("message", (ev) => {
+      const { type, view, search = "", hash = "" } = ev.data ?? {};
+      const it = items.find((x) => x.id === view && x.url);
+      if (ev.origin !== location.origin || type !== "sm27-view" || !it) return;
+      const $f = viewFor(it).querySelector("iframe");
+      const want = new URL((local && it.localUrl) || it.url, location.href);
+      for (const [k, v] of new URLSearchParams(search)) want.searchParams.set(k, v);
+      try {
+        const cur = $f.contentWindow.location;
+        if (cur.pathname !== want.pathname || cur.search !== want.search) throw 0;
+        if (cur.hash === hash) cur.hash = ""; // 同じブースをもう一度押したときも hashchange を起こす
+        cur.hash = hash;
+      } catch {
+        $f.src = want.href + hash;
+      }
+      show(it.id, true);
+    });
 
   // 押す前（指が触れた・マウスが乗った・Tab で選んだ時点）から読み込み始め、押したときにはなるべく表示できているようにする
   const warm = (ev) => viewFor(itemOf(ev.target));
