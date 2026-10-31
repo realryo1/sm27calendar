@@ -80,7 +80,7 @@ html:not(.gd-page) .gd-main { display: none; }
   font-weight: 900;
   color: var(--c-dark);
 }
-.gd-h__count { font-family: var(--font-display); font-size: .85rem; font-weight: 400; color: var(--c); }
+.gd-h__count { font-family: var(--font-display); font-size: 1.1rem; font-weight: 400; color: var(--c); }
 .gd-sec .gm-lead { border-left-color: var(--c-light); }
 .gd-none { margin: 10px 0 0; font-size: .82rem; font-weight: 700; color: #8b8b96; }
 a.gm-no { text-decoration: none; }

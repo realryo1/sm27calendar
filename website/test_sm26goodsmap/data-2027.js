@@ -32,9 +32,14 @@ window.GM_DATA = {
 
   // グッズの情報元（お品書き・告知）。書き方は data-2026fix.js と同じ。企業のお品書きが出たら maker を足す。
   // 公式のグッズ一覧は、2026-10-31時点では404（26年と同じ場所に出ると見込んで置いておく）
-  notices: [{ id: "official", kind: "official", label: "公式のグッズ一覧", url: "https://snowmiku.com/2027/goods.html" }],
+  notices: [
+    { id: "official", kind: "official", label: "公式のグッズ一覧", url: "https://snowmiku.com/2027/goods.html" },
+    // （仮）27年の動きを確かめるための仮のお品書き（リンク先は各社の公式サイト）。公式の発表が出たら消す
+    { id: "kari-cospa", kind: "maker", booth: "1", label: "（仮）コスパのお品書き", url: "https://www.cospa.com/" },
+    { id: "kari-movic", kind: "maker", booth: "2", label: "（仮）ムービックのお品書き", url: "https://www.movic.jp/" },
+  ],
 
-  // ライブ（SNOW MIKU LIVE! 2027）のグッズ。グッズは goods に floor: "ライブ物販"、places: ["live"] で入れる。
+  // ライブ（SNOW MIKU LIVE! 2027）のグッズ。グッズは goods に floor: "ライブ物販" で入れ、places に売る場所（ライブ会場は live、チ・カ・ホは chikaho など）。
   // status は、分かっていないこと（売り場・販売方法）を書く。分かったら直す
   live: {
     title: "SNOW MIKU LIVE! 2027",
@@ -42,7 +47,8 @@ window.GM_DATA = {
     status: ["グッズの内容・売り場・販売方法（ライブ会場での物販か、ウイングベイ・チ・カ・ホでも売るか、通販か）は未発表"],
   },
 
-  places: { hmv: "HMV", skytown: "スカイタウン", chikaho: "チ・カ・ホ", live: "ライブ会場" },
+  // 売り場の名前（品名の前のタグ）
+  places: { wingbay: "小樽", chikaho: "チカホ", hmv: "HMV", skytown: "空港", live: "ライブ会場" },
 
   floors: [
     {
@@ -85,7 +91,8 @@ window.GM_DATA = {
         // 海側
         { kind: "void", x: 10, y: 410, w: 830, h: 24, label: ["マリンデッキ"], size: 13 },
       ],
-      booths: {},
+      // （仮）27年の動きを確かめるための仮のブース（5番街の吹抜けの上に、くっつけて置く。吹抜けに重なるので「売り場に近すぎます」の警告が出る）。公式の発表が出たら消す
+      booths: { 1: [335, 305], 2: [405, 305] },
     },
     {
       id: "chikaho",
@@ -132,6 +139,22 @@ window.GM_DATA = {
     },
   },
 
-  booths: [],
-  goods: [],
+  // （仮）27年の動きを確かめるための仮のブース・グッズ。品名・ブース名の頭に（仮）を付けてある。公式の発表が出たら消す
+  booths: [
+    { no: "1", name: "（仮）コスパ" },
+    { no: "2", name: "（仮）ムービック" },
+  ],
+  goods: [
+    // 公式物販
+    { id: "kari-shopper", maker: "（仮）公式", name: "（仮）ショッパー", price: 4000, places: ["chikaho"], floor: "公式物販" },
+    { id: "kari-keyholder", maker: "（仮）公式", name: "（仮）アクリルキーホルダー", price: 1000, places: ["chikaho"], floor: "公式物販" },
+    // 企業ブース（ウイングベイ）
+    { id: "kari-cospa-tsumamare", booth: "1", src: ["kari-cospa"], maker: "（仮）コスパ", name: "（仮）つままれ2027", price: 1500, places: ["wingbay"], floor: "出展ブース" },
+    { id: "kari-cospa-tshirt", booth: "1", src: ["kari-cospa"], maker: "（仮）コスパ", name: "（仮）Tシャツ2027", price: 3000, places: ["wingbay"], floor: "出展ブース" },
+    { id: "kari-movic-cheki", booth: "2", src: ["kari-movic"], maker: "（仮）ムービック", name: "（仮）チェキ2027", price: 500, note: "限定", places: ["wingbay"], floor: "出展ブース" },
+    { id: "kari-movic-stand", booth: "2", src: ["kari-movic"], maker: "（仮）ムービック", name: "（仮）アクリルスタンド2027", price: 2000, note: "限定", places: ["wingbay"], floor: "出展ブース" },
+    // ライブ物販
+    { id: "kari-penlight", maker: "（仮）公式", name: "（仮）ペンライト", price: 4000, places: ["chikaho"], floor: "ライブ物販" },
+    { id: "kari-ringlight", maker: "（仮）公式", name: "（仮）リングライト", price: 1000, places: ["chikaho"], floor: "ライブ物販" },
+  ],
 };

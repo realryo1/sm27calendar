@@ -64,7 +64,7 @@
       if (ids.has(g.id)) warn(`グッズの id が重複: ${g.id}`);
       ids.add(g.id);
       if (g.booth && !boothBy.has(g.booth)) warn(`グッズのブースが一覧に無い: ${g.id} → ${g.booth}`);
-      if (!g.booth && onSale(g) && g.floor && g.floor !== "公式物販") warn(`売り場が「${g.floor}」なのにブースが無い: ${g.id}`);
+      if (!g.booth && onSale(g) && g.floor && g.floor !== "公式物販" && g.floor !== "ライブ物販") warn(`売り場が「${g.floor}」なのにブースが無い: ${g.id}`);
       for (const n of srcOf(g)) if (n !== "official" && !noticeBy.has(n)) warn(`グッズの情報元が notices に無い: ${g.id} → ${n}`);
       if (!urlOf(g)) warn(`グッズのリンク先が無い: ${g.id}`);
     }
@@ -88,7 +88,7 @@
           id: `spot-${id}`,
           no: id,
           cls: " gm-spot",
-          head: L.titleHtml(s.title),
+          title: s.title,
           body: `${s.lines?.length ? `<ul class="gm-items">${s.lines.map((t) => L.textRow(t)).join("")}</ul>` : ""}${L.linkList(s.links)}`,
         })
       )

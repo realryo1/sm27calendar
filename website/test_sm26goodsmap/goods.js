@@ -85,7 +85,7 @@
     return L.foldCard({
       theme: "violet",
       n: live.length,
-      head: L.titleHtml(V.title ?? TEXT.at.live),
+      title: V.title ?? TEXT.at.live,
       body: `${[...(V.lines ?? []), ...(V.status ?? [])].map((t) => `<p class="gm-note">${esc(t)}</p>`).join("")}
         ${live.length ? `<ul class="gm-items">${[...live].sort(L.byTags({ here: ["live"] })).map((g) => L.goodsRow(g, { here: ["live"] })).join("")}</ul>` : `<p class="gd-none">${esc(TEXT.liveNone)}</p>`}`,
     });

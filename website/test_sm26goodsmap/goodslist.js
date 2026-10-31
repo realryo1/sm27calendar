@@ -77,17 +77,17 @@ window.GM_LIST = (D, { boothNo }) => {
 
   // ---------- 品の行とタグ ----------
   // タグはどれも同じ大きさ（goodsmap.css の .gm-tag）で、品名の前に TAG_ORDER の順に並べる：
-  // 限定＞企業＞公式＞HMV＞スカイタウン＞先行＞受注（限定・先行・受注はデータの note、企業・公式は情報元でブースの品だけ、HMV・スカイタウンは places）。
-  // TAG_ORDER に無いもの（チ・カ・ホ以外の売り場・ほかの note）は最後。会場（ウイングベイ・チ・カ・ホ）と、その節の売り場（here。ライブ会場など）のタグは出さない。
+  // 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注（限定・先行・受注はデータの note、企業・公式は情報元でブースの品だけ、ほかは places。名前はデータの places）。
+  // TAG_ORDER に無いもの（ライブ会場などの売り場・ほかの note）は最後。その節の売り場（here。ライブ物販の節のライブ会場など）のタグは出さない。
   // カードの中の品もこの順に並べる（限定のある品が先、次に企業のタグのある品…。byTags）
-  const TAG_ORDER = ["限定", "maker", "official", "hmv", "skytown", "先行", "受注"];
+  const TAG_ORDER = ["限定", "maker", "official", "wingbay", "chikaho", "hmv", "skytown", "先行", "受注"];
   const rank = (k) => (TAG_ORDER.includes(k) ? TAG_ORDER.indexOf(k) : TAG_ORDER.length);
   const tagKeys = (g, { src = false, here = [] } = {}) =>
     [
       g.note,
       src && srcOf(g).some((id) => id !== "official") && "maker",
       src && srcOf(g).includes("official") && "official",
-      ...g.places.filter((p) => p !== "wingbay" && p !== "chikaho" && !here.includes(p)),
+      ...g.places.filter((p) => !here.includes(p)),
     ]
       .filter(Boolean)
       .sort((a, b) => rank(a) - rank(b));
@@ -114,7 +114,7 @@ window.GM_LIST = (D, { boothNo }) => {
   const goodsRow = (g, opts) => itemRow(goodsText(g), tagsOf(g, opts) + goodsLink(g), priceOf(g));
   // ブースで売る品（情報元のタグ付き）
   const boothRow = (g) => goodsRow(g, { src: true });
-  // ブースで展示だけする品（会場では売らない）。ほかで売るなら、その売り場のタグ（スカイタウンなど）を付け、どこでも売らないなら「会場では販売なし」
+  // ブースで展示だけする品（会場では売らない）。ほかで売るなら、その売り場のタグ（空港など）を付け、どこでも売らないなら「会場では販売なし」
   const showRow = (g) => itemRow(goodsText(g), (g.places.length ? "" : tag("no", TEXT.notSold)) + tagsOf(g) + goodsLink(g), priceOf(g));
   // 品名・展示・配布などの文だけの行（値段は公式に無い）
   const textRow = (t, { note = "", b } = {}) =>
@@ -131,13 +131,13 @@ window.GM_LIST = (D, { boothNo }) => {
 
   // ---------- カード ----------
   // カードは開け閉めできる（details.gm-fold。goodsmap.css）。初めは閉じていて、選んだ・しぼった・さがしたときに開く（fold）。
-  // 見出しの行（summary）の右端に売る品の件数。見出しの中のブースの番号を押したときは開け閉めしない（summary の中のボタン・リンクは、それ自体として働くため）
-  const foldCard = ({ theme, head, body, n = 0, id = "", no = id, cls = "" }) =>
+  // 見出しの中のブースの番号を押したときは開け閉めしない（summary の中のボタン・リンクは、それ自体として働くため）
+  // title はカードの名前、sub は名前の下の行（会社名など）、before は名前の左（ブースの番号）。件数は名前の行のすぐ右（公式物販の見出しと同じ位置）
+  const foldCard = ({ theme, title, sub = "", before = "", body, n = 0, id = "", no = id, cls = "" }) =>
     `<details class="gm-card gm-fold${cls} theme-${theme}"${id ? ` id="${esc(id)}" data-no="${esc(no)}"` : ""}>
-      <summary class="gm-card__head">${head}${n ? `<span class="gm-fold__n">${TEXT.count(n)}</span>` : ""}</summary>
+      <summary class="gm-card__head">${before}<div class="gm-card__title"><h3 class="gm-card__name">${esc(title)}${n ? `<span class="gm-fold__n">${TEXT.count(n)}</span>` : ""}</h3>${sub}</div></summary>
       ${body}
     </details>`;
-  const titleHtml = (name, sub = "") => `<div class="gm-card__title"><h3 class="gm-card__name">${esc(name)}</h3>${sub}</div>`;
 
   // 出展ブースのカード：販売（公式の一覧に載る品が先。情報元のタグ付き）・公式掲載（公式のブース紹介にある品名）・展示・体験・配布・特典、補足、リンク（企業のお品書き・告知を先に）
   function boothCard(b) {
@@ -148,7 +148,9 @@ window.GM_LIST = (D, { boothNo }) => {
       id: `booth-${b.no}`,
       no: b.no,
       n: sale.length,
-      head: boothNo(b) + titleHtml(b.name, b.org ? `<p class="gm-card__org">${esc(b.org)}</p>` : ""),
+      before: boothNo(b),
+      title: b.name,
+      sub: b.org ? `<p class="gm-card__org">${esc(b.org)}</p>` : "",
       body: `${block("sale", sale.map(boothRow))}
         ${block("intro", (b.more ?? []).map((t) => textRow(t, { note: TEXT.noPrice, b })))}
         ${block("exhibit", [...gs.filter((g) => !onSale(g)).map(showRow), ...(b.shows ?? []).map((t) => textRow(t, { b }))])}
@@ -183,7 +185,7 @@ window.GM_LIST = (D, { boothNo }) => {
       no: "loose",
       cls: " gm-loose",
       n: loose.length,
-      head: titleHtml(TEXT.loose),
+      title: TEXT.loose,
       body: `<p class="gm-note">${esc(TEXT.looseLead)}</p><ul class="gm-items theme-pink">${[...loose].sort(byTags()).map((g) => goodsRow(g)).join("")}</ul>`,
     });
   }
@@ -206,6 +208,6 @@ window.GM_LIST = (D, { boothNo }) => {
 
   return {
     TEXT, norm, short, yen, srcOf, urlOf, onSale, boothBy, noticeBy, goodsAt, official, live, loose, info, boothLabel, boothName,
-    tag, byTags, goodsRow, textRow, block, linkList, foldCard, titleHtml, boothCard, officialCard, looseCard, fold, openCard,
+    tag, byTags, goodsRow, textRow, block, linkList, foldCard, boothCard, officialCard, looseCard, fold, openCard,
   };
 };
