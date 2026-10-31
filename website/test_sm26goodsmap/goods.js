@@ -138,6 +138,7 @@
     section("booth", booths.length ? `<div class="gm-list">${booths.map(L.boothCard).join("")}</div>` : "") +
     section("live", liveCard()) +
     section("loose", L.looseCard());
+  window.GM_WISH(D, L); // ほしいものリスト（wishlist.js。品の行の♡と浮かぶボタン）
   $("gdEmpty").textContent = TEXT.empty;
   const [y, mo, d] = dateOf(D.updated);
   const sources = [...D.sources.map((s) => ({ ...s, label: `${s.label}（${E.name}）` })), ...(D.notices ?? []).filter((n) => n.kind === "maker")];

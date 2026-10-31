@@ -40,13 +40,27 @@
   const views = new Map();
   // 手元で開いたときは localUrl（data.js）を開く。LiveServer はリポジトリのフォルダごと配信するので、手元の hokkaido_delay/ が見える
   const local = ["localhost", "127.0.0.1"].includes(location.hostname);
+  // pass（data.js）の名前の引数は、カレンダーを開いたときの URL から表示のページへ渡す（ほしいものリストのリンク ?view=goods&wish=… など）。
+  // 渡した wish はカレンダーの URL から消す（読み込みは表示のページが行い、戻る・共有で何度も読み込まないように）
+  const startParams = new URLSearchParams(location.search);
+  const srcOf = (it) => {
+    const u = new URL((local && it.localUrl) || it.url, location.href);
+    for (const k of it.pass ?? []) if (startParams.has(k)) u.searchParams.set(k, startParams.get(k));
+    if ((it.pass ?? []).includes("wish") && startParams.has("wish")) {
+      startParams.delete("wish");
+      const now = new URL(location.href);
+      now.searchParams.delete("wish");
+      history.replaceState(history.state, "", now);
+    }
+    return u.href;
+  };
   const viewFor = (it) => {
     if (!it?.url) return null;
     let $v = views.get(it.id);
     if ($v) return $v;
     $v = document.createElement("div");
     $v.className = "app-view";
-    $v.innerHTML = `<iframe class="app-view__frame" src="${esc((local && it.localUrl) || it.url)}" title="${esc(it.label)}"></iframe>`;
+    $v.innerHTML = `<iframe class="app-view__frame" src="${esc(srcOf(it))}" title="${esc(it.label)}"></iframe>`;
     document.body.append($v);
     views.set(it.id, $v);
     return $v;

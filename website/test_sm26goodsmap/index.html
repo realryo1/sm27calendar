@@ -43,6 +43,8 @@
   <script src="../util.js" defer></script>
   <!-- 一覧の部品（品の行・タグ・カード）。マップとグッズ一覧で共通 -->
   <script src="goodslist.js" defer></script>
+  <!-- ほしいものリスト（マップとグッズ一覧で共通。一覧を描いたあとに各ページが呼ぶ） -->
+  <script src="wishlist.js" defer></script>
   <script>
     document.write(`<script src="${window.GM_PAGE === "goods" ? "goods.js" : "goodsmap.js"}" defer><\/script>`);
   </script>

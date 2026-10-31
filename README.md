@@ -28,7 +28,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連|
 |`website/style.css`|スタイル（ページの隙間は`:root`の`--gap`の1か所で決める。グッズマップも同じ値を使う）|
 |`website/delay/`|姉妹プロジェクト（運行情報）への転送ページ（旧URL）|
-|`website/test_sm26goodsmap/`|グッズ・出展ブースマップの試験ページ（`?page=goods`でグッズ一覧。売り場ごとにまとめ、企業ブースの品に公式・企業のタグ。既定は2027年の会場の略図＋チ・カ・ホのタブ。`?year=2026`で前年の見本。`noindex`。カレンダーからはサイドバーの切り替え（`nav.enabled`）が有効なときだけ開ける）|
+|`website/test_sm26goodsmap/`|グッズ・出展ブースマップの試験ページ（`?page=goods`でグッズ一覧。どちらの品も♡でほしいものリストに入れられ、PDFに印刷できる（`wishlist.js`）。売り場ごとにまとめ、企業ブースの品に公式・企業のタグ。既定は2027年の会場の略図＋チ・カ・ホのタブ。`?year=2026`で前年の見本。`noindex`。カレンダーからはサイドバーの切り替え（`nav.enabled`）が有効なときだけ開ける）|
 |`document/`|タスクリスト（`sm27progress.md`）、グッズ・出展ブースマップ・グッズ一覧の構成・仕様・注意（`goodsmap.md`）|
 |`tools/`|アイコン・OGP画像の元になるHTML、ブースマップのエディタ（`goodsmap-editor.html`）、デプロイスクリプト（`deploy-pages.mjs`）|
 
@@ -53,6 +53,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 - iframeのURLには`?embed=1`を付けます。マップ（`test_sm26goodsmap/`）・グッズ（同じページの`?page=goods`）と運行情報（姉妹プロジェクト）は、これでカレンダーへ戻るリンクやマップの左右の金の帯を隠し、スマホでは重なる下のバーの分だけページの下を空けます。
 - 手元（`localhost`・`127.0.0.1`）で開いたときは、運行情報は公開中のページではなく、手元の`hokkaido_delay/website/`を開きます（`nav.items`の`localUrl`）。公開前の変更をカレンダーの中で確かめるためです。
 - 表示の中のページから別の表示へ移れます。グッズのブースの番号を押すと、iframeから`postMessage`（`{ type: "sm27-view", view: "map", search, hash }`）を送り、`nav.js`がマップに切り替えて`#booth-○○`を開きます（年が違うときは`?year=`を付けて読み込み直し、同じならハッシュだけ変える）。同じオリジンからのものだけ受け付けます。
+- `pass`の名前の引数は、カレンダーを開いたときのURLからその表示のページへ渡します（グッズは`year`と`wish`。ほしいものリストのリンク`?view=goods&wish=…`のため）。渡した`wish`はカレンダーのURLから消します。
 - `preload: true`の項目（マップ・グッズ）は、カレンダーを読み込み終えてから裏で読み込みます。運行情報は1分ごとに取得し続けるので、サイドバーに触れたときに読み込み始めます。
 - どちらもPWAの対象外なので、オフラインでは表示できません。
 

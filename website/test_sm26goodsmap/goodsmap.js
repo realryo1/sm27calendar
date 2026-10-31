@@ -1108,6 +1108,7 @@
   // ---------- 開始 ----------
   renderStatic();
   renderList();
+  window.GM_WISH(D, L); // ほしいものリスト（wishlist.js。品の行の♡と浮かぶボタン）
   renderMap();
   shrink(); // スマホは、先にマップの枠を開いたときの高さにしてから拡大する（右下に寄せるため）
   initialZoom();

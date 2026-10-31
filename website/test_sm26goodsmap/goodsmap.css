@@ -678,7 +678,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-price { font-family: var(--font-display); font-size: .98rem; white-space: nowrap; color: var(--c-dark); }
 .gm-price small { margin-right: 2px; font-family: var(--font-base); font-size: .7rem; font-weight: 700; }
 .gm-price--none { font-family: var(--font-base); font-size: .68rem; font-weight: 700; color: #8b8b96; }
-/* タグ（goodslist.js。マップとグッズ一覧で共通）。どれも同じ大きさで、品名の前に 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注 の順 */
+/* タグ（goodslist.js。マップとグッズ一覧で共通）。背景の色は --tag-bg（ほしいものリストの見出しの帯・PDF の見出しの行でも使う）。どれも同じ大きさで、品名の前に 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注 の順 */
 .gm-tag {
   display: inline-block;
   margin-right: 6px;
@@ -690,14 +690,14 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   line-height: 1.75;
   white-space: nowrap;
   color: var(--col-secondary-dark);
-  background: var(--col-secondary-lighter); /* 色の決まっていない売り場（チ・カ・ホ・ライブ会場など） */
+  background: var(--tag-bg, var(--col-secondary-lighter)); /* 色の決まっていない売り場（小樽・チカホ・ライブ会場など）は薄紫 */
 }
-.gm-tag--official { color: var(--col-gold-dark); background: #f8f4d8; } /* 公式：.theme-gold の色 */
-.gm-tag--maker { color: #873890; background: #fcecfd; } /* 企業（お品書き）：.theme-pink の色 */
-.gm-tag--hmv { color: #b02a63; background: #ffe2ee; } /* HMV：ピンク（企業の紫寄りのピンクと見分けるため、赤寄り） */
-.gm-tag--skytown { color: #1a6f9a; background: #ddf2fc; } /* 空港（新千歳空港の雪ミク スカイタウン）：スカイブルー */
-.gm-tag--no { color: #5c5c66; background: #f0f0f3; } /* 展示だけの品の「会場では販売なし」など */
-.gm-tag--note { color: #8f5900; background: #fff4dc; } /* 限定・先行・受注など（データの note） */
+.gm-tag--official { --tag-bg: #f8f4d8; color: var(--col-gold-dark); background: var(--tag-bg); } /* 公式：.theme-gold の色 */
+.gm-tag--maker { --tag-bg: #fcecfd; color: #873890; background: var(--tag-bg); } /* 企業（お品書き）：.theme-pink の色 */
+.gm-tag--hmv { --tag-bg: #ffe2ee; color: #b02a63; background: var(--tag-bg); } /* HMV：ピンク（企業の紫寄りのピンクと見分けるため、赤寄り） */
+.gm-tag--skytown { --tag-bg: #ddf2fc; color: #1a6f9a; background: var(--tag-bg); } /* 空港（新千歳空港の雪ミク スカイタウン）：スカイブルー */
+.gm-tag--no { --tag-bg: #f0f0f3; color: #5c5c66; background: var(--tag-bg); } /* 展示だけの品の「会場では販売なし」など */
+.gm-tag--note { --tag-bg: #fff4dc; color: #8f5900; background: var(--tag-bg); } /* 限定・先行・受注など（データの note） */
 .gm-block[hidden] { display: none; }
 .gm-note { margin: 10px 0 0; padding-left: 10px; font-size: .78rem; border-left: 3px solid var(--col-gold); }
 .gm-note a { margin-left: .4em; color: var(--col-link); font-weight: 700; }
@@ -820,10 +820,215 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 }
 
 /* ---------- フッター ---------- */
-.gm-footer { margin-top: 32px; }
+.gm-footer { margin-top: 32px; margin-bottom: 72px; } /* 一番下まで来ても、浮かぶほしいもののボタン（.gm-wishfab）に隠れないように */
 .gm-footer p { margin: 0 0 6px; }
 .gm-sources a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .gm-card.is-flash { animation: none; }
+}
+
+/* ---------- ほしいものリスト（wishlist.js。マップとグッズ一覧で共通） ---------- */
+:root {
+  --gm-heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z'/%3E%3C/svg%3E");
+  --gm-heart-line: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'%3E%3Cpath d='M12 20s-7-4.3-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.5 1.2 5.2 3.1C13.7 6.2 15.2 5 17.2 5c3.3 0 5.2 3.3 3.8 6.4C19 15.7 12 20 12 20z'/%3E%3C/svg%3E");
+}
+/* 品の行の♡（行の左端。箇条書きのキラ星の位置）。入れると塗りつぶしのピンク */
+.gm-item--wish { padding-left: 26px; }
+.gm-item--wish::before { display: none; } /* ♡のある行は、箇条書きのキラ星の代わりに♡ */
+.gm-wish {
+  position: absolute;
+  left: -5px;
+  top: calc(7px + .78em - 16px); /* 品名の1行目のまん中 */
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.gm-wish::before {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: auto;
+  background: var(--c); /* 外したときはキラ星と同じ色の線 */
+  -webkit-mask: var(--gm-heart-line) no-repeat center / contain;
+  mask: var(--gm-heart-line) no-repeat center / contain;
+  transition: transform .15s;
+}
+.gm-wish:hover::before { background: var(--col-ink-primary); }
+.gm-wish[aria-pressed="true"]::before { background: var(--col-ink-primary); -webkit-mask-image: var(--gm-heart); mask-image: var(--gm-heart); }
+.gm-wish:active::before { transform: scale(.85); }
+.gm-wish:focus-visible { outline: 2px solid var(--col-ink-primary); outline-offset: -2px; }
+
+/* 浮かぶボタン。スマホは下のまん中（カレンダーの中では、カレンダーの下のバーの上）、2カラム（641px〜）は右下 */
+.gm-wishfab {
+  position: fixed;
+  z-index: 60;
+  right: calc(var(--gap) * 2);
+  bottom: calc(var(--gap) * 2 + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 18px 0 14px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 900;
+  color: var(--col-paper);
+  background: var(--brand-gradient);
+  box-shadow: 0 6px 20px rgb(79 69 143 / .3);
+  cursor: pointer;
+}
+.gm-wishfab:hover { filter: brightness(1.05); }
+.gm-wishfab__icon { width: 20px; height: 20px; background: var(--col-paper); -webkit-mask: var(--gm-heart) no-repeat center / contain; mask: var(--gm-heart) no-repeat center / contain; }
+.gm-wishfab__label { font-size: .9rem; }
+.gm-wishfab__n,
+.gm-wishfab__sum { font-family: var(--font-display); font-size: 1rem; font-weight: 400; }
+@media (max-width: 640px) {
+  .gm-wishfab { right: auto; left: 50%; transform: translateX(-50%); bottom: calc(var(--gap) + env(safe-area-inset-bottom)); white-space: nowrap; }
+  .is-embed .gm-wishfab { bottom: calc(86px + env(safe-area-inset-bottom)); } /* カレンダーの下のバー（.is-embed body の下の余白と同じ分）の上 */
+  .gm-noscroll .gm-wishfab { display: none; } /* マップの全画面のあいだは出さない */
+}
+
+/* リスト（dialog）。画面のまん中に出す（カレンダーの中のスマホは、下のバーより上の部分のまん中） */
+.gm-wishlist {
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(86dvh, 860px);
+  padding: 0;
+  border: none;
+  border-radius: 20px;
+  color: var(--col-ink);
+  background: var(--col-paper);
+  box-shadow: 0 12px 40px rgb(79 69 143 / .3);
+}
+.gm-wishlist[open] { display: flex; flex-direction: column; }
+.gm-wishlist:focus { outline: none; } /* 開いたときに枠そのものにフォーカスの線を出さない（中のボタンには出る） */
+.gm-wishlist::backdrop { background: rgb(79 69 143 / .35); }
+@media (max-width: 640px) {
+  .gm-wishlist { width: 100%; max-width: none; max-height: calc(100dvh - 48px); border-radius: 0; } /* スマホは画面の幅いっぱい（上下はまん中）。端まであるので角は丸めない */
+  .is-embed .gm-wishlist { bottom: calc(80px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 80px - env(safe-area-inset-bottom) - 32px); } /* 下のバー（.is-embed body の下の余白と同じ分）を除いた部分のまん中 */
+}
+.gm-wishlist__inner { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; } /* flex: 1（基準0%）だと、高さの決まっていない dialog の中で Safari が高さ0にして、リストが見えなくなる */
+.gm-wishlist__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+.gm-wishlist__title { flex: 1; margin: 0; font-size: 1.1rem; font-weight: 900; }
+.gm-wishlist__close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--col-secondary-lighter);
+  cursor: pointer;
+}
+.gm-wishlist__close::before { content: ""; display: block; width: 14px; height: 14px; margin: auto; background: var(--col-ink); -webkit-mask: var(--gm-close) no-repeat center / contain; mask: var(--gm-close) no-repeat center / contain; }
+.gm-wishlist__sorts { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0 16px 10px; }
+.gm-wishlist__opt { display: flex; align-items: center; gap: 6px; }
+.gm-wishlist__opt > span { font-size: .72rem; font-weight: 900; color: var(--col-secondary-dark); }
+@media (max-width: 640px) {
+  /* 「まとめ方」と「ソート」を1行に収める（ボタンの左右の余白と、2つのあいだを詰める） */
+  .gm-wishlist__sorts { gap: 6px 10px; }
+  .gm-wishlist__opt { gap: 4px; }
+  .gm-wishlist__opt .gm-chips { gap: 4px; }
+  .gm-wishlist__opt .gm-chip { padding: 4px 9px; }
+}
+/* タグでまとめたときの見出しの帯は、そのタグの色（.gm-tag--○○ を付ける。文字はふつうの見出しと同じ） */
+.gm-wishlist__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px; border-top: 1px solid #ece8fb; border-bottom: 1px solid #ece8fb; }
+.gm-wishlist__empty { margin: 24px 0; font-size: .86rem; font-weight: 700; text-align: center; color: #8b8b96; }
+.gm-wishgroup__head { display: flex; justify-content: space-between; gap: 10px; margin: 14px 0 2px; padding: 2px 10px; border-radius: 4px; font-size: .78rem; font-weight: 900; }
+.gm-wishgroup__head:not([class*="gm-tag--"]) { color: var(--col-secondary-dark); background: var(--col-secondary-lighter); } /* タグの色を付けていない見出し（ブースでまとめたとき）は紫 */
+.gm-wishgroup__head span:last-child { font-family: var(--font-display); font-weight: 400; }
+.gm-wishgroup__items { margin: 0 0 6px; padding: 0; list-style: none; }
+.gm-wishitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #e6e1fb; }
+.gm-wishitem:last-child { border-bottom: none; }
+.gm-wishitem__where { margin: 0 0 2px; font-size: .7rem; font-weight: 700; color: var(--col-secondary-dark); }
+.gm-wishitem__name { margin: 0; font-size: .86rem; font-weight: 700; line-height: 1.55; overflow-wrap: anywhere; }
+.gm-wishitem__name a { color: var(--col-ink); text-decoration: none; }
+.gm-wishitem__name a:hover { text-decoration: underline; }
+.gm-wishitem__buy { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.gm-wishitem__price { font-family: var(--font-display); font-size: .95rem; white-space: nowrap; color: var(--col-primary-dark); }
+.gm-wishitem__price small { margin-right: 2px; font-family: var(--font-base); font-size: .68rem; font-weight: 700; }
+.gm-wishitem__qty { display: flex; align-items: center; gap: 2px; border: 2px solid var(--col-secondary-light); border-radius: 999px; }
+.gm-wishitem__qty b { min-width: 1.6em; font-family: var(--font-display); font-weight: 400; text-align: center; }
+.gm-wishitem__qty button { width: 30px; height: 28px; padding: 0; border: none; border-radius: 999px; font: inherit; font-weight: 900; color: var(--col-ink); background: none; cursor: pointer; }
+.gm-wishitem__qty button:hover { background: var(--col-secondary-lighter); }
+.gm-wishlist__foot { padding: 10px 16px 14px; }
+.gm-wishlist__total { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font-weight: 900; }
+.gm-wishlist__total b { font-family: var(--font-display); font-size: 1.4rem; font-weight: 400; color: var(--col-primary-dark); }
+.gm-wishlist__note { margin: 2px 0 0; font-size: .7rem; color: #8b8b96; }
+.gm-wishlist__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.gm-wishlist__actions button { height: 44px; padding: 0 16px; border-radius: 999px; font: inherit; font-weight: 900; cursor: pointer; }
+.gm-wishlist__actions button:disabled { opacity: .4; cursor: default; }
+.gm-wishlist__clear { border: 2px solid var(--col-secondary-light); color: var(--col-ink); background: var(--col-paper); }
+.gm-wishlist__copy { border: 2px solid var(--col-secondary-light); color: var(--col-ink); background: var(--col-secondary-lighter); }
+.gm-wishlist__print { flex: 1; border: none; color: var(--col-paper); background: var(--brand-gradient); }
+@media (max-width: 640px) {
+  /* スマホは2段：上に「すべて消す」「リンクをコピー」、下に「PDFに保存」「画像で保存」を半分ずつ */
+  .gm-wishlist__actions button { flex: 1 1 40%; padding: 0 10px; }
+}
+/* 画像で保存：できた画像を出す（長押し・右クリックで保存。.gm-wishlist と同じ枠） */
+.gm-wishimg__note { margin: 0; padding: 0 16px 10px; font-size: .8rem; font-weight: 700; }
+.gm-wishimg__body { padding: 12px 16px; background: var(--col-secondary-lighter); }
+.gm-wishimg__body img { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 10px rgb(79 69 143 / .15); -webkit-touch-callout: default; } /* iPhone の長押しのメニュー（写真に保存）を出す */
+.gm-wishimg__actions { padding: 0 16px 14px; }
+.gm-wishimg__actions a { display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 999px; font-weight: 900; text-decoration: none; }
+@media (pointer: coarse) {
+  .gm-wishimg__actions { display: none; } /* スマホは長押しで保存するので、ダウンロードのボタンは出さない */
+}
+/* リンクから読み込むときの確認（.gm-wishlist と同じ枠） */
+.gm-wishask__lead { padding: 0 16px 10px; font-size: .9rem; }
+.gm-wishask__lead p { margin: 0 0 4px; }
+.gm-wishask__actions { flex-direction: column; margin-top: 0; padding: 0 16px 16px; }
+/* プレビューの行：左に売り場（右に今のリストに入っている数）と品名、右に「値段 ×個数」を1段で */
+.gm-wishitem--preview { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "where where" "name buy"; row-gap: 0; padding: 5px 0; }
+.gm-wishitem--preview .gm-wishitem__where { grid-area: where; }
+.gm-wishitem--preview .gm-wishitem__name { grid-area: name; line-height: 1.45; }
+.gm-wishitem--preview .gm-wishitem__buy { grid-area: buy; flex-direction: row; align-items: baseline; gap: 6px; margin: 0; }
+.gm-wishitem__n { font-family: var(--font-display); font-size: .9rem; }
+.gm-wishitem__have { margin-left: .5em; font-size: .68rem; font-weight: 500; color: #a3a1b3; white-space: nowrap; } /* 今のリストに入っている数（品名のあとに薄く） */
+.gm-wishask__actions button { width: 100%; flex: none; }
+
+/* 印刷（PDF）：印刷用の表（#gmWishPrint）だけを、白地に黒で出す。ページの2カラムやスクロールの指定は外す */
+.gm-wishprint { display: none; }
+/* 表の見た目（印刷と、画像で保存のときの両方） */
+.gm-wishprint { color: #000; font-size: 10pt; line-height: 1.5; letter-spacing: normal; font-feature-settings: normal; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.gm-wishprint * { letter-spacing: inherit; font-feature-settings: inherit; } /* カレンダーの "palt"（全角の記号を詰める）は外す。画像（html2canvas）が対応しておらず、記号が重なったり消えたりするため。PDF と画像で同じ見た目にする */
+.gm-wishprint h1 { margin: 0 0 2pt; font-size: 15pt; }
+.gm-wishprint__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12pt; margin-bottom: 6pt; }
+.gm-wishprint__share { display: flex; align-items: center; gap: 8pt; max-width: 75mm; font-size: 8pt; color: #444; }
+.gm-wishprint__share p { margin: 0; }
+.gm-wishprint__share a { color: #000; font-weight: 700; }
+.gm-wishprint__qr { flex: none; }
+.gm-wishprint__qr svg { display: block; width: 26mm; height: 26mm; }
+.gm-wishprint__meta,
+.gm-wishprint__note { margin: 0 0 8pt; font-size: 8.5pt; color: #444; }
+.gm-wishprint table { width: 100%; border-collapse: collapse; }
+.gm-wishprint th,
+.gm-wishprint td { padding: 4pt 5pt; border-bottom: .5pt solid #999; text-align: left; vertical-align: top; }
+.gm-wishprint th { border-bottom: 1pt solid #000; font-size: 8.5pt; white-space: nowrap; }
+.gm-wishprint th + th,
+.gm-wishprint td + td { border-left: .5pt solid #ccc; } /* 列の区切りの薄い縦線 */
+.gm-wishprint tfoot td { border-top: 1pt solid #000; border-bottom: none; font-weight: 700; }
+.gm-wishprint__group td { padding-top: 7pt; border-bottom: 1pt solid #666; font-weight: 700; color: #000; background: #f2f2f2; }
+.gm-wishprint__group[class*="gm-tag--"] td { background: var(--tag-bg, var(--col-secondary-lighter)); } /* タグでまとめたときは、そのタグの薄い色（文字は黒のまま） */
+.gm-wishprint__group[class*="gm-tag--"] { background: none; }
+.gm-wishprint tr { break-inside: avoid; }
+.gm-wishprint__num { text-align: right !important; white-space: nowrap; }
+.gm-wishprint__check { width: 1em; font-size: 12pt; }
+.gm-wishprint .gm-tag { font-size: 7pt; }
+
+/* 画像で保存：画面の外に、A4 の印刷と同じ幅・余白で出して写す（wishlist.js の saveImage） */
+.gm-wishprint.is-capture { display: block; position: fixed; top: 0; left: -10000px; z-index: -1; box-sizing: content-box; width: 186mm; padding: 12mm; background: #fff; }
+@media print {
+  @page { margin: 12mm; }
+  html,
+  body { height: auto !important; overflow: visible !important; padding: 0 !important; background: #fff !important; }
+  body::before,
+  body::after { display: none !important; }
+  body > :not(.gm-wishprint) { display: none !important; }
+  .gm-wishprint { display: block; }
+}
 }

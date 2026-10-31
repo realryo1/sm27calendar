@@ -19,6 +19,8 @@ window.GM_LIST = (D, { boothNo }) => {
     looseLead: "公式のグッズ一覧ではウイングベイで扱うとあるものの、売り場が書かれていません。",
     boothName: (no) => `ブース${no}`,
     showOnMap: (name) => `${name}をマップで見る`,
+    wish: "ほしいものリストに入れる",
+    where: { official: "公式物販", live: "ライブ物販", loose: "売り場の記載なし" },
   };
 
   const yen = (n) => `¥${n.toLocaleString("ja-JP")}`;
@@ -105,17 +107,18 @@ window.GM_LIST = (D, { boothNo }) => {
   const tagsOf = (g, opts) => tagKeys(g, opts).map(tagHtml).join("");
   const priceOf = (g) => (g.price == null ? "" : `<span class="gm-price">${g.unit ? `<small>${esc(g.unit)}</small>` : ""}${yen(g.price)}</span>`);
 
-  // 品の1行：左に品名とタグ（折り返す）、右に値段。data-text は検索用（品名・会社名・ブース名）
-  const itemRow = (text, body, price = "", mod = "") =>
-    `<li class="gm-item${mod}" data-text="${esc(norm(text))}"><span class="gm-item__body">${body}</span>${price}</li>`;
+  // 品の1行：左に品名とタグ（折り返す）、右に値段。グッズの行（wish にグッズの id）は、左端の箇条書きの印をほしいものの♡にする（wishlist.js が押したときと見た目を受け持つ）。data-text は検索用（品名・会社名・ブース名）
+  const wishBtn = (id) => `<button type="button" class="gm-wish" data-wish="${esc(id)}" aria-pressed="false" aria-label="${esc(TEXT.wish)}"></button>`;
+  const itemRow = (text, body, price = "", mod = "", wish = "") =>
+    `<li class="gm-item${mod}${wish ? " gm-item--wish" : ""}" data-text="${esc(norm(text))}">${wish ? wishBtn(wish) : ""}<span class="gm-item__body">${body}</span>${price}</li>`;
   const goodsLink = (g) => `<a class="gm-item__name" href="${esc(urlOf(g))}" target="_blank" rel="noopener">${esc(short(g.name))}</a>`;
   const goodsText = (g) => `${g.name}|${g.maker}|${g.booth ? boothText(boothBy.get(g.booth)) : ""}`;
   // 売る品。opts は tagKeys と同じ（src: 情報元のタグを付ける、here: 出さない売り場）
-  const goodsRow = (g, opts) => itemRow(goodsText(g), tagsOf(g, opts) + goodsLink(g), priceOf(g));
+  const goodsRow = (g, opts) => itemRow(goodsText(g), tagsOf(g, opts) + goodsLink(g), priceOf(g), "", g.id);
   // ブースで売る品（情報元のタグ付き）
   const boothRow = (g) => goodsRow(g, { src: true });
   // ブースで展示だけする品（会場では売らない）。ほかで売るなら、その売り場のタグ（空港など）を付け、どこでも売らないなら「会場では販売なし」
-  const showRow = (g) => itemRow(goodsText(g), (g.places.length ? "" : tag("no", TEXT.notSold)) + tagsOf(g) + goodsLink(g), priceOf(g));
+  const showRow = (g) => itemRow(goodsText(g), (g.places.length ? "" : tag("no", TEXT.notSold)) + tagsOf(g) + goodsLink(g), priceOf(g), "", g.id);
   // 品名・展示・配布などの文だけの行（値段は公式に無い）
   const textRow = (t, { note = "", b } = {}) =>
     itemRow(`${t}|${b ? boothText(b) : ""}`, `<span class="gm-item__name">${esc(t)}</span>`, note ? `<span class="gm-price gm-price--none">${esc(note)}</span>` : "", " gm-item--text");
@@ -128,6 +131,15 @@ window.GM_LIST = (D, { boothNo }) => {
     links.length
       ? `<div class="gm-links">${links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}${l.date ? `（${md(l.date)}）` : ""} ↗</a>`).join("")}</div>`
       : "";
+
+  // 売り場（ほしいものリストの並べ替えと表示）：公式物販 → 企業ブース（データのブースの順）→ ライブ物販 → 売り場の記載なし
+  function whereOf(g) {
+    if (g.floor === "公式物販") return { order: 0, sub: 0, label: TEXT.where.official };
+    if (g.floor === "ライブ物販") return { order: 2, sub: 0, label: TEXT.where.live };
+    const b = g.booth && boothBy.get(g.booth);
+    if (b) return { order: 1, sub: booths.indexOf(b), label: `${boothName(b)} ${b.name}`, no: b.no };
+    return { order: 3, sub: 0, label: TEXT.where.loose };
+  }
 
   // ---------- カード ----------
   // カードは開け閉めできる（details.gm-fold。goodsmap.css）。初めは閉じていて、選んだ・しぼった・さがしたときに開く（fold）。
@@ -208,6 +220,6 @@ window.GM_LIST = (D, { boothNo }) => {
 
   return {
     TEXT, norm, short, yen, srcOf, urlOf, onSale, boothBy, noticeBy, goodsAt, official, live, loose, info, boothLabel, boothName,
-    tag, byTags, goodsRow, textRow, block, linkList, foldCard, boothCard, officialCard, looseCard, fold, openCard,
+    tag, byTags, tagKeys, tagHtml, rank, tagsOf, whereOf, priceOf, goodsRow, textRow, block, linkList, foldCard, boothCard, officialCard, looseCard, fold, openCard,
   };
 };
