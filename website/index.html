@@ -41,6 +41,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="雪ミク27">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- 本番（GitHub Pages）以外（Live Server。スマホから PC の IP アドレスで開くときも）では、インストールしたアプリを本番と見分けられるよう、
+       モノクロのアイコンと名前の違うマニフェストにする -->
+  <script>
+    if (!location.hostname.endsWith("github.io")) {
+      document.querySelector('link[rel="manifest"]').href = "manifest-dev.webmanifest";
+      document.querySelector('link[rel="apple-touch-icon"]').href = "image/icon-dev-512.png";
+      document.querySelector('meta[name="apple-mobile-web-app-title"]').content = "雪ミク27dev";
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- フォントの CSS は大きく表示を止めてしまうので、非同期で読み込む（読み込むまでは端末のフォントで表示） -->
