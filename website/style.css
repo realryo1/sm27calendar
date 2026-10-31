@@ -1783,8 +1783,14 @@ button { font: inherit; color: inherit; }
   background: var(--brand-gradient);
   cursor: pointer;
 }
-/* 本文がボタンの左に収まらない幅（狭いスマホ）では、ボタンを本文の下の右端に回す */
+/* 狭いスマホ（SE など幅375px）では、アイコン・文字・ボタンを少し小さくして、ボタンを本文の右に収める */
 @container install (max-width: 350px) {
+  .install__icon { width: 36px; height: 36px; border-radius: 9px; }
+  .install__text { font-size: .78rem; }
+  .install__btn { padding: 5px 12px; font-size: .8rem; }
+}
+/* それでも本文がボタンの左に収まらない幅（幅320pxのスマホ）では、ボタンを本文の下の右端に回す */
+@container install (max-width: 331px) {
   .install__text { grid-column: 2 / -1; }
   .install__btn { grid-column: 2 / -1; grid-row: 3; margin-top: 6px; }
 }
