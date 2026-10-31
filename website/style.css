@@ -692,6 +692,45 @@ button { font: inherit; color: inherit; }
     conic-gradient(var(--c-tint) 25%, var(--col-paper) 0 50%, var(--c-tint) 0 75%, var(--col-paper) 0) 0 0 / 24px 24px round; /* round でマスの数が整数になり、列幅の端がぴったり揃う */
 }
 
+/* 1日目の予定のない列（A〜C）をまたぐ「下へスクロール」の案内（app.js の tt-hint）。
+   先頭の列の中に置き、--span 列ぶん（間の column-gap 5px を含む）右へ広げる */
+.tt-hint {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--span) * 100% + (var(--span) - 1) * 5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.tt-hint__card {
+  margin: 0;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / .85);
+  box-shadow: 0 4px 16px rgb(79 69 143 / .15);
+  color: var(--col-ink);
+  font-weight: 700;
+  font-size: .95rem;
+  line-height: 1.6;
+  text-align: center;
+}
+.tt-hint__arrow {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.8rem;
+  line-height: 1.2;
+  color: var(--col-ink-primary);
+  animation: tt-hint-bob 1.4s ease-in-out infinite;
+}
+@keyframes tt-hint-bob { 50% { transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .tt-hint__arrow { animation: none; }
+}
+
 /* ---------- Event block ---------- */
 .ev {
   position: absolute;

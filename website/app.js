@@ -240,13 +240,20 @@
     const sections = days
       .map((d, i) => {
         const dayEvents = events.filter((e) => e.days.includes(d.id));
+        // 1日目の左端から予定のない列が2つ以上続くとき、その列をまたいで「下へスクロール」の案内を置く
+        const empty = venues.findIndex((v) => dayEvents.some((e) => e.letter === v.letter));
+        const hintSpan = i === 0 && site.scrollHint ? (empty < 0 ? venues.length : empty) : 0;
+        const hint =
+          hintSpan >= 2
+            ? `<div class="tt-hint" style="--span:${hintSpan}"><p class="tt-hint__card">${br(site.scrollHint)}<span class="tt-hint__arrow" aria-hidden="true">↓</span></p></div>`
+            : "";
         const cols = venues
-          .map((v) => {
+          .map((v, vi) => {
             const blocks = dayEvents
               .filter((e) => e.letter === v.letter)
               .map((e) => renderEvent(e))
               .join("");
-            return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}${i > 0 ? " tt-col--round" : ""}" style="grid-row:${bodyRow(i)}">${blocks}</div>`;
+            return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}${i > 0 ? " tt-col--round" : ""}" style="grid-row:${bodyRow(i)}">${vi === 0 ? hint : ""}${blocks}</div>`;
           })
           .join("");
         // 日付帯は日ごとに上へ貼り付く。次の日の帯が下から来て、前の日の帯を押し上げて入れ替わる（updateActiveChip）
