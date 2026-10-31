@@ -706,12 +706,13 @@
     $tt.style.paddingBottom = `${Math.max(12, fill - last.offsetHeight)}px`;
   };
 
-  // 縮小時は予定ブロックの表示を簡略化する
-  const updateDensity = () => {
+  // 縮小時は予定ブロックの表示を簡略化する。
+  // live（ピンチの途中）は予定カードの収まりを測らない（全カードを何度も測るので、毎コマだとコマ落ちする）。指を離したときに測る
+  const updateDensity = (live = false) => {
     fitTail();
     const h = hourPx();
     $tt.dataset.density = h < 44 ? "tight" : h < 60 ? "compact" : "";
-    fitEvents();
+    if (!live) fitEvents();
   };
 
   // 予定カードの内容（OPEN 帯＋文字）が高さに収まらないとき、バッジ→サブタイトル→時刻→OPEN の文字の順に隠し、最後はタイトルだけにする。
@@ -747,11 +748,9 @@
   };
 
   // 拡大率 ky（縦）/ kx（横）を、開始時の大きさ base に掛けて適用。
-  // anchor（スクロール領域内の座標）の下にある内容が動かないようにスクロール位置を補正する
-  function applyZoom(base, kx, ky, anchor) {
+  // 開始時に from（画面の座標）の下にあった内容が、anchor の位置に来るようにスクロール位置を補正する（ピンチは指の中点についてくる）
+  function applyZoom(base, kx, ky, anchor, from = anchor, live = false) {
     const rect = $scroll.getBoundingClientRect();
-    const ax = anchor.x - rect.left;
-    const ay = anchor.y - rect.top;
     // 1時間の高さは偶数のpxに丸める（正時・30分の横線が小数pxにかかってにじみ、太さがそろわなくなるため）
     const hour = Math.round(clamp(base.hour * ky, ZOOM.hour) / 2) * 2;
     const col = clamp(base.col * kx, ZOOM.col);
@@ -760,16 +759,28 @@
     fitTail(); // スクロール位置を入れる前に余白を直す（足りないと下端で切られる）
     const ry = hour / base.hour;
     const rx = colWidth() / base.col;
-    $scroll.scrollTop = (base.top + ay) * ry - ay;
-    $scroll.scrollLeft = (base.left + ax) * rx - ax;
-    updateDensity();
+    $scroll.scrollTop = zoomedY(base, base.top + from.y - rect.top, ry) - (anchor.y - rect.top);
+    $scroll.scrollLeft = zoomedX(base, base.left + from.x - rect.left, rx) - (anchor.x - rect.left);
+    updateDensity(live);
   }
+
+  // 表の中の座標が、拡大後にどこへ移るか。伸び縮みするのは各日の時間の部分と会場列だけで、
+  // 会場見出し・日付帯・時刻軸は大きさが変わらない（全体に倍率を掛けると、下の日ほど指の下の内容がずれて、拡大が速く・ガタガタに見える）
+  const zoomedY = (base, y, ry) => {
+    const bodyH = (range.end - range.start) * base.hour;
+    const i = base.bodyTops.findLastIndex((t) => t <= y);
+    if (i < 0) return y;
+    return y + (i * bodyH + Math.min(y - base.bodyTops[i], bodyH)) * (ry - 1);
+  };
+  const zoomedX = (base, x, rx) => (x > base.colLeft ? base.colLeft + (x - base.colLeft) * rx : x);
 
   const zoomBase = () => ({
     hour: hourPx(),
     col: colWidth(),
     top: $scroll.scrollTop,
     left: $scroll.scrollLeft,
+    bodyTops: axes().map((a) => a.offsetTop),
+    colLeft: $tt.querySelector(".tt-col").offsetLeft,
   });
 
   // タッチのピンチ
@@ -793,7 +804,8 @@
     "touchstart",
     (ev) => {
       if (ev.touches.length !== 2) return;
-      pinch = { prev: spread(ev.touches), base: zoomBase(), lx: 0, ly: 0, raf: 0 };
+      const s = spread(ev.touches);
+      pinch = { prev: s, from: s, base: zoomBase(), lx: 0, ly: 0, raf: 0 };
     },
     { passive: true }
   );
@@ -817,13 +829,15 @@
       const kx = Math.exp(pinch.lx);
       const ky = Math.exp(pinch.ly);
       cancelAnimationFrame(pinch.raf);
-      pinch.raf = requestAnimationFrame(() => applyZoom(pinch.base, kx, ky, now));
+      const { base, from } = pinch;
+      pinch.raf = requestAnimationFrame(() => applyZoom(base, kx, ky, now, from, true));
     },
     { passive: false }
   );
   const endPinch = (ev) => {
     if (!pinch || ev.touches.length >= 2) return;
     pinch = null;
+    requestAnimationFrame(fitEvents); // ピンチの途中で省いた、予定カードの収まりを測る（最後のコマを描いた後に）
     updateActiveChip();
   };
   $scroll.addEventListener("touchend", endPinch);
