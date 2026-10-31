@@ -1996,19 +1996,17 @@ button { font: inherit; color: inherit; }
 }
 /* スマホ（1カラム） */
 @media (max-width: 640px) {
-  /* 時間割は下のバー（切り替えボタン）のすぐ上までにし、日付ボタンのバーと案内（.board__hint）は時間割の下端に重ねる。
-     下のバーの裏まで時間割を伸ばすと、ページをスクロールしたときに、裏に隠れていた時間割の下端が日付のバーの下に空白として見えるため */
-  .has-nav .board { height: calc(100svh - var(--nav-h) + var(--glass-gap)); }
-  /* 切り替えボタンが無いとき（nav.enabled が false）は、下のバーが無いので時間割を画面の下端（ホームバーの裏）まで伸ばし、
-     日付のバーだけ安全な余白の分だけ上げる。100svh だと、iPhone でアドレスバーが縮んだときやホームバーの余白の分、時間割の下に会場一覧が見えた。
-     高さは app.js が innerHeight から入れる（--app-h） */
-  .has-nav:not(.has-views) .board { height: var(--app-h, 100dvh); }
-  .has-nav:not(.has-views) .day-nav { bottom: calc(var(--glass-gap) + var(--safe-b)); }
-  .has-nav:not(.has-views) .board__hint { bottom: calc(var(--glass-h) + var(--glass-gap) * 2 + var(--safe-b)); }
+  /* 時間割は画面の下端（下のバー・ホームバーの裏）まで伸ばし、日付ボタンのバーと案内（.board__hint）は下のバーの上に重ねる。
+     バーのすぐ上で切ると、バーの裏に会場一覧の見出しが透けて見えた。100svh だと、iPhone でアドレスバーが縮んだときやホームバーの余白の分、
+     時間割の下に会場一覧が見えた。高さは app.js が innerHeight から入れる（--app-h）。
+     ページをスクロールすると、バーの裏に隠れていた時間割の最後の余白が日付のバーの下に空白として見えるが、
+     スクロールに合わせて余白を縮めるとがくがく動いたので、空白のままにしている */
+  .has-nav .board { height: var(--app-h, 100dvh); }
+  .has-nav .day-nav { bottom: var(--nav-h); }
   .has-nav .board__hint {
     position: absolute;
     left: 50%;
-    bottom: calc(var(--glass-h) + var(--glass-gap) * 2);
+    bottom: calc(var(--nav-h) + var(--glass-h) + var(--glass-gap));
     z-index: 20;
     margin: 0;
     padding: 2px 10px;
@@ -2021,8 +2019,7 @@ button { font: inherit; color: inherit; }
     pointer-events: none;
   }
   /* 重ねたバーの裏に隠れる分だけ、時間割の最後をさらに送れるようにする */
-  .has-nav .tt-scroll { padding-bottom: calc(var(--glass-h) + var(--glass-gap) + 32px); } /* 日付のバー・案内の分 */
-  .has-nav:not(.has-views) .tt-scroll { padding-bottom: calc(var(--glass-h) + var(--glass-gap) + 32px + var(--safe-b)); }
+  .has-nav .tt-scroll { padding-bottom: calc(var(--nav-h) + var(--glass-h) + 32px); } /* 下のバー・日付のバー・案内の分 */
   .has-nav .install { left: var(--gap); right: var(--gap); width: auto; bottom: calc(var(--nav-h) + var(--glass-h) + var(--glass-gap)); } /* 日付のバーのすぐ上（「二本指で〜」の案内には重ねる） */
   /* 「▲ カレンダーへ」は、画面の一番上で「市電いまどこ」がある位置・大きさにそろえる（色はいつものグラデーションのまま） */
   .has-nav .to-board {
