@@ -919,7 +919,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   .is-embed .gm-wishimg { max-height: calc(100dvh - 80px - env(safe-area-inset-bottom) - 32px); }
 }
 .gm-wishlist__inner { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; } /* flex: 1（基準0%）だと、高さの決まっていない dialog の中で Safari が高さ0にして、リストが見えなくなる */
-.gm-wishlist__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+.gm-wishlist__head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
 .gm-wishlist__title { flex: 1; margin: 0; font-size: 1.1rem; font-weight: 900; }
 .gm-wishlist__close {
   width: 36px;
@@ -930,28 +930,33 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   cursor: pointer;
 }
 .gm-wishlist__close::before { content: ""; display: block; width: 14px; height: 14px; margin: auto; background: var(--col-ink); -webkit-mask: var(--gm-close) no-repeat center / contain; mask: var(--gm-close) no-repeat center / contain; }
-.gm-wishlist__sorts { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0 16px 10px; }
+/* 見出しの行：左にタイトル、右端に「設定・保存」と × */
+.gm-wishlist__bar { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; }
+.gm-wishlist__bar .gm-wishlist__title { flex: none; }
+.gm-wishlist__menubtn { display: flex; align-items: center; gap: 6px; flex: none; height: 36px; margin-left: auto; padding: 0 14px; font-size: .82rem; line-height: 1; } /* 右端（× の左）。高さは × と同じ */
+.gm-wishlist__menubtn::after { content: ""; width: 6px; height: 6px; margin-top: -3px; border: solid currentColor; border-width: 0 2px 2px 0; rotate: 45deg; transition: rotate .2s; } /* ▼の形。開いているときは上向き */
+.gm-wishlist__menubtn[aria-expanded="true"] { border-color: transparent; color: var(--col-paper); background: var(--brand-gradient) border-box; }
+.gm-wishlist__menubtn[aria-expanded="true"]::after { margin-top: 3px; rotate: -135deg; }
+/* 設定（「設定・保存」で開け閉めする）。上にまとめ方・並び順・表示の3組、下にすべて消す・リンクをコピー・PDF・印刷・画像で保存。
+   場所を取らないよう、大きさは2種類だけで低めに：選ぶボタン（.gm-chip）は高さ28px、保存などのボタンは高さ32px。文字はどちらも .78rem。
+   3組は幅が足りる分だけ横に詰めて並べ、4つのボタンは同じ幅で1行（狭ければ2×2） */
+.gm-wishlist__menu { display: grid; gap: 8px; padding: 10px 16px; } /* 上下は同じ（上は見出しの下の線、下は一覧の上の線までの間） */
+.gm-wishlist__menu[hidden] { display: none; }
+/* 設定を開いているときは、見出しとのあいだにも線を引く（閉じているときは一覧の上の線と重なるので引かない） */
+.gm-wishlist__head:has(+ .gm-wishlist__menu:not([hidden])) { border-bottom: 1px solid #ece8fb; } /* 一覧の上の線と同じ、端から端まで */
+.gm-wishlist__opts { display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .gm-wishlist__opt { display: flex; align-items: center; gap: 6px; }
-.gm-wishlist__opt > span { font-size: .72rem; font-weight: 900; color: var(--col-secondary-dark); }
-.gm-wishlist__opt .gm-chips { flex-wrap: nowrap; } /* 「まとめ方」「ソート」のボタンは折り返さない（足りないときは2つの組ごと2行にする） */
-/* 「まとめ方」と「ソート」を1行に収める（ボタンの左右の余白と、2つのあいだを詰める）。
-   リストの幅は画面の幅と一致しない（グッズ一覧の2カラムでは右の列で、幅を変えられる）ので、リストの幅で決める */
-.gm-wishlist__inner { container: wishlist / inline-size; }
-@container wishlist (max-width: 440px) {
-  .gm-wishlist__sorts { gap: 6px 10px; }
-  .gm-wishlist__opt { gap: 4px; }
-  .gm-wishlist__opt .gm-chips { gap: 4px; }
-  .gm-wishlist__opt .gm-chip { padding: 4px 9px; }
-}
+.gm-wishlist__opt > span { flex: none; font-size: .72rem; font-weight: 900; color: var(--col-secondary-dark); }
+.gm-wishlist__opt .gm-chips { flex-wrap: nowrap; gap: 4px; }
+.gm-wishlist__menu .gm-chip { display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 4em; padding: 0 10px; font-size: .78rem; line-height: 1; white-space: nowrap; }
+.gm-wishlist__inner { container: wishlist / inline-size; } /* リストの幅（画面の幅と一致しない。グッズ一覧の2カラムでは右の列で、幅を変えられる）で品の行の組み方を変える */
 @media (max-width: 640px) {
-  /* リストを広く見せるため、上（見出し）と下（合計・ボタン）を詰める */
-  .gm-wishlist__head { padding: 10px 12px 6px 16px; }
+  /* リストを広く見せるため、上（見出し・設定）と下（合計）を詰める */
+  .gm-wishlist__head { padding: 10px 12px 10px 16px; }
   .gm-wishlist__title { font-size: 1rem; }
   .gm-wishlist__close { width: 32px; height: 32px; }
-  .gm-wishlist__sorts { padding-bottom: 8px; }
   .gm-wishlist__foot { padding: 8px 16px 10px; }
-  .gm-wishlist__foot .gm-wishlist__actions { gap: 6px; margin-top: 8px; }
-  .gm-wishlist__foot .gm-wishlist__actions button { height: 40px; }
+  .gm-wishlist__menubtn { height: 32px; } /* × と同じ */
 }
 /* タグでまとめたときの見出しの帯は、そのタグの色（.gm-tag--○○ を付ける。文字はふつうの見出しと同じ） */
 .gm-wishlist__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px; border-top: 1px solid #ece8fb; border-bottom: 1px solid #ece8fb; }
@@ -1003,7 +1008,11 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   .gm-wishlist__body--list .gm-wishitem__name { grid-area: name; }
   .gm-wishlist__body--list .gm-wishitem__buy { grid-area: buy; }
 }
-.gm-wishlist__tagsbtn { flex: none; padding: 3px 10px; font-size: .72rem; }
+/* 全画面のリスト：画面いっぱい（カレンダーの中のスマホは、下のバーより上いっぱい） */
+.gm-wishlist.is-full { width: 100%; max-width: none; height: 100dvh; max-height: none; margin: 0; padding-bottom: env(safe-area-inset-bottom); border-radius: 0; }
+@media (max-width: 640px) {
+  .is-embed .gm-wishlist.is-full { height: calc(100dvh - 80px - env(safe-area-inset-bottom)); padding-bottom: 0; }
+}
 .gm-wishitem__where { margin: 0 0 2px; font-size: .7rem; font-weight: 700; color: var(--col-secondary-dark); }
 .gm-wishitem__name { margin: 0; font-size: .86rem; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
 .gm-wishitem__name a { color: var(--col-ink); text-decoration: none; }
@@ -1025,9 +1034,11 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-wishlist__clear { border: 2px solid var(--col-secondary-light); color: var(--col-ink); background: var(--col-paper); }
 .gm-wishlist__copy { border: 2px solid var(--col-secondary-light); color: var(--col-ink); background: var(--col-secondary-lighter); }
 .gm-wishlist__print { flex: 1; border: none; color: var(--col-paper); background: var(--brand-gradient); }
-/* リストの下のボタンは4つを1行に並べる。枠が狭いので、文字を小さめにして折り返さず、幅は文字の長さに合わせて分ける */
-.gm-wishlist__foot .gm-wishlist__actions { flex-wrap: nowrap; gap: 6px; }
-.gm-wishlist__foot .gm-wishlist__actions button { flex: 1 1 auto; min-width: 0; padding: 0 6px; font-size: .78rem; white-space: nowrap; }
+.gm-wishlist__menu .gm-wishlist__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 0; } /* 2列×2段。たいていは4列×1段（3つと1つに分かれないように） */
+@container wishlist (min-width: 400px) {
+  .gm-wishlist__menu .gm-wishlist__actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.gm-wishlist__menu .gm-wishlist__actions button { height: 32px; min-width: 0; padding: 0 6px; font-size: .78rem; white-space: nowrap; }
 @media (max-width: 640px) {
   .gm-wishlist__actions button { flex: 1 1 40%; padding: 0 10px; }
 }

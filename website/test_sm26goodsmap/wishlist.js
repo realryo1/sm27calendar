@@ -1,6 +1,6 @@
 // ほしいものリスト（グッズマップ・グッズ一覧で共通）。品の行の左端の♡（goodslist.js の .gm-wish）で入れ、浮かぶボタンからリストを開く。
 // リストは年ごとにブラウザ（localStorage の sm27-wish-年）に保存し、マップとグッズ一覧で同じものを使う（カレンダーの中の2つの iframe も storage イベントで合わせる）。
-// まとめ方（タグ・ブース）とソート（値段・ブース）、個数を持ち、PDF はブラウザの印刷で、画像は印刷と同じ表を写して PNG で出す（印刷用の表 #gmWishPrint だけを印刷する。goodsmap.css の @media print）。
+// まとめ方（タグ・ブース）と並び順（値段・ブース）、個数を持ち、PDF はブラウザの印刷で、画像は印刷と同じ表を写して PNG で出す（印刷用の表 #gmWishPrint だけを印刷する。goodsmap.css の @media print）。
 // リストはリンク（カレンダーの ?view=goods&wish=id.個数,…）にでき、PDF にはそのリンクと QR コードを載せる。リンクを開くと、今のリストに合わせるか置き換えるかを選んで読み込む。
 // グッズ一覧の2カラム（641px〜）では、浮かぶボタンの代わりに、右カラム（#gdWish）にリストを常に出す。
 // 使い方：ページの一覧を描いたあとに window.GM_WISH(GM_DATA, GM_LIST の戻り値)
@@ -15,14 +15,17 @@ window.GM_WISH = (D, L) => {
     fab: "ほしいもの",
     title: "ほしいものリスト",
     close: "閉じる",
-    // まとめ方：tag＝いちばん上のタグ（限定＞企業＞公式＞…）ごと、where＝ブース（売り場）ごと。ソート：まとまりの中の並び（値段は高い順、ブースはブースの順）
+    // まとめ方：tag＝いちばん上のタグ（限定＞企業＞公式＞…）ごと、where＝ブース（売り場）ごと。並び順：まとまりの中の並び（値段は高い順、ブースはブースの順）
     groups: { tag: "タグ", where: "ブース" },
     groupLabel: "まとめ方",
     sorts: { price: "値段", where: "ブース" },
-    sortLabel: "ソート",
+    sortLabel: "並び順",
+    viewLabel: "表示",
     tagsToggle: "タグを表示", // リストの品のタグを出すか（押して切り替え）
+    full: "全画面", // リストを画面いっぱいに広げる（押して切り替え）
+    menu: "設定・保存", // まとめ方・並び順・タグ・全画面と、すべて消す・リンク・PDF・画像のボタンを開け閉めする
     noTag: "タグなし",
-    printOrder: (g, s) => `まとめ方：${g}／ソート：${s}`,
+    printOrder: (g, s) => `まとめ方：${g}／並び順：${s}`,
     empty: "まだ入っていません。品の行の♡を押すと入ります。",
     total: "合計",
     count: (n) => `${n}点`,
@@ -97,6 +100,8 @@ window.GM_WISH = (D, L) => {
   let group = loadPref(GROUP_KEY, TEXT.groups, "where");
   let sort = loadPref(SORT_KEY, TEXT.sorts, "price");
   let showTags = loadPref(TAGS_KEY, { on: 1, off: 1 }, "on") === "on";
+  let full = false; // 全画面で見ているか（覚えない）
+  let menuOpen = true; // 設定を開いているか（覚えない。ページを開いたときは開いた状態）
 
   // ---------- リンク（カレンダーの ?view=goods&wish=id.個数,…。1個なら .個数 を省く。年は今のページの ?year= を引き継ぐ） ----------
   // カレンダー（このページの1つ上）を開き、カレンダーの nav.js がグッズの表示へ wish・year を渡す（data.js の nav の pass）
@@ -135,7 +140,7 @@ window.GM_WISH = (D, L) => {
   const tagName = (k) => (!k ? TEXT.noTag : k === "maker" || k === "official" ? L.TEXT.tags[k] : D.places[k] ?? k);
   const tagKind = (k) => (!k ? "" : k === "maker" || k === "official" || k in D.places ? k : "note");
   // まとまり（[{ head: 見出しの文字, kind: 見出しの帯の色（タグでまとめたときのタグの色。goodsmap.css の .gm-tag--○○）, items }]）。
-  // まとめ方で分け、まとまりの順はタグなら TAG_ORDER、ブースならブースの順。中はソートで並べる。
+  // まとめ方で分け、まとまりの順はタグなら TAG_ORDER、ブースならブースの順。中は並び順で並べる。
   // map は { id: 個数 }（既定は今のリスト。リンクから読み込む前のプレビューでも使う）
   function groupsOf(map = wish) {
     const within = sort === "price" ? (a, b) => byPrice(a, b) || byWhere(a, b) || byTags(a, b) : (a, b) => byWhere(a, b) || byTags(a, b) || byPrice(a, b);
@@ -230,21 +235,31 @@ window.GM_WISH = (D, L) => {
     const t = totals();
     const html = `<div class="gm-wishlist__inner">
       <header class="gm-wishlist__head">
-        <h2 class="gm-wishlist__title">${esc(TEXT.title)}</h2>
-        <button type="button" class="gm-chip gm-wishlist__tagsbtn" data-tags aria-pressed="${showTags}">${esc(TEXT.tagsToggle)}</button>
+        <div class="gm-wishlist__bar">
+          <h2 class="gm-wishlist__title">${esc(TEXT.title)}</h2>
+          <button type="button" class="gm-chip gm-wishlist__menubtn" data-menu aria-expanded="${menuOpen}">${esc(TEXT.menu)}</button>
+        </div>
         <button type="button" class="gm-wishlist__close" data-close aria-label="${esc(TEXT.close)}"></button>
       </header>
-      <div class="gm-wishlist__sorts">${optHtml("group", TEXT.groupLabel, TEXT.groups, group)}${optHtml("sort", TEXT.sortLabel, TEXT.sorts, sort)}</div>
-      <div class="gm-wishlist__body gm-wishlist__body--list${showTags ? "" : " is-notags"}">${gs.length ? listHtml() : `<p class="gm-wishlist__empty">${esc(TEXT.empty)}</p>`}</div>
-      <footer class="gm-wishlist__foot">
-        <p class="gm-wishlist__total"><span>${esc(TEXT.total)} ${esc(TEXT.count(t.n))}</span><b>${yen(t.sum)}</b></p>
-        ${t.unpriced ? `<p class="gm-wishlist__note">${esc(TEXT.noPriceNote(t.unpriced))}</p>` : ""}
+      <div class="gm-wishlist__menu"${menuOpen ? "" : " hidden"}>
+        <div class="gm-wishlist__opts">
+          ${optHtml("group", TEXT.groupLabel, TEXT.groups, group)}${optHtml("sort", TEXT.sortLabel, TEXT.sorts, sort)}
+          <div class="gm-wishlist__opt"><span>${esc(TEXT.viewLabel)}</span><div class="gm-chips" role="group" aria-label="${esc(TEXT.viewLabel)}">
+            <button type="button" class="gm-chip" data-tags aria-pressed="${showTags}">${esc(TEXT.tagsToggle)}</button>
+            <button type="button" class="gm-chip" data-full aria-pressed="${full}">${esc(TEXT.full)}</button>
+          </div></div>
+        </div>
         <div class="gm-wishlist__actions">
           <button type="button" class="gm-wishlist__clear" data-clear${gs.length ? "" : " disabled"}>${esc(TEXT.clear)}</button>
           <button type="button" class="gm-wishlist__copy" data-copy${gs.length ? "" : " disabled"}>${esc(TEXT.copy)}</button>
           <button type="button" class="gm-wishlist__print" data-print${gs.length ? "" : " disabled"}>${esc(TEXT.print)}</button>
           <button type="button" class="gm-wishlist__print gm-wishlist__image" data-image${gs.length ? "" : " disabled"}>${esc(TEXT.image)}</button>
         </div>
+      </div>
+      <div class="gm-wishlist__body gm-wishlist__body--list${showTags ? "" : " is-notags"}">${gs.length ? listHtml() : `<p class="gm-wishlist__empty">${esc(TEXT.empty)}</p>`}</div>
+      <footer class="gm-wishlist__foot">
+        <p class="gm-wishlist__total"><span>${esc(TEXT.total)} ${esc(TEXT.count(t.n))}</span><b>${yen(t.sum)}</b></p>
+        ${t.unpriced ? `<p class="gm-wishlist__note">${esc(TEXT.noPriceNote(t.unpriced))}</p>` : ""}
       </footer>
     </div>`;
     $dlg.innerHTML = html;
@@ -290,12 +305,25 @@ window.GM_WISH = (D, L) => {
     if (ev.target === $dlg || ev.target.closest("[data-close]")) return $dlg.close(); // 外側（うしろの暗いところ）か × で閉じる
     const q = ev.target.closest("[data-qty]");
     if (q) return setQty(q.dataset.id, (wish[q.dataset.id] ?? 0) + Number(q.dataset.qty));
+    if (ev.target.closest("[data-menu]")) {
+      menuOpen = !menuOpen;
+      return renderDialog();
+    }
     if (ev.target.closest("[data-tags]")) {
       showTags = !showTags;
       try {
         localStorage.setItem(TAGS_KEY, showTags ? "on" : "off");
       } catch {}
       return renderDialog();
+    }
+    // 全画面：dialog を画面いっぱいに広げる（右カラムに出ているときは、dialog を全画面で開く。やめたら閉じて右カラムに戻る）
+    if (ev.target.closest("[data-full]")) {
+      full = !full;
+      $dlg.classList.toggle("is-full", full);
+      renderDialog();
+      if (full && !$dlg.open) $dlg.showModal();
+      else if (!full && inPanel()) $dlg.close();
+      return;
     }
     const o = ev.target.closest("[data-group], [data-sort]");
     if (o) {
@@ -319,6 +347,13 @@ window.GM_WISH = (D, L) => {
     if (im) saveImage(im);
   };
   $dlg.addEventListener("click", onListClick);
+  // 閉じたら全画面もやめる（次に開くときはふつうの大きさ）
+  $dlg.addEventListener("close", () => {
+    if (!full) return;
+    full = false;
+    $dlg.classList.remove("is-full");
+    if ($panel) renderDialog();
+  });
   $panel?.addEventListener("click", onListClick);
   // リンクをコピー（できないブラウザでは、選んでコピーできる欄で見せる）
   async function copyLink($b) {
@@ -499,7 +534,7 @@ window.GM_WISH = (D, L) => {
       openList();
     };
     if (!Object.keys(wish).length) return apply("replace");
-    // プレビュー：リンクの品を、リストと同じまとめ方・ソート（listHtml）で並べる。タグ・値段・個数を出し、今のリストに入っている品は品名のあとに薄く「リストに○」（縦を詰めるため、値段と個数は1段）
+    // プレビュー：リンクの品を、リストと同じまとめ方・並び順（listHtml）で並べる。タグ・値段・個数を出し、今のリストに入っている品は品名のあとに薄く「リストに○」（縦を詰めるため、値段と個数は1段）
     const t = totals(got);
     const previewRow = (g, showWhere) => `<li class="gm-wishitem gm-wishitem--preview">
         ${showWhere ? `<p class="gm-wishitem__where">${esc(L.whereOf(g).label)}</p>` : ""}
