@@ -29,7 +29,7 @@ window.GM_WISH = (D, L) => {
     minus: (name) => `${name}を1つ減らす`,
     plus: (name) => `${name}を1つ増やす`,
     remove: (name) => `${name}をリストから外す`,
-    print: "PDFに保存（印刷）",
+    print: "PDF・印刷",
     copy: "リンクをコピー",
     copied: "コピーしました",
     copyPrompt: "このリンクをコピーしてください",
