@@ -85,12 +85,8 @@ html:not(.gd-page) .gd-cols { display: none; }
 .gd-at[aria-pressed="true"] { border-color: transparent; color: var(--col-paper); background: var(--c) border-box; }
 .gd-at[data-at="all"][aria-pressed="true"] { background: var(--brand-gradient) border-box; }
 .gd-at__label { font-size: .86rem; font-weight: 900; white-space: nowrap; }
-.gd-at small { font-size: .6rem; font-weight: 700; opacity: .85; }
 .gd-at__n { font-size: .66rem; font-weight: 700; white-space: nowrap; }
 .gd-at__n b { margin-right: 1px; font-family: var(--font-display); font-size: 1.15rem; font-weight: 400; }
-@media (max-width: 480px) {
-  .gd-at small { display: none; } /* 狭い幅は売り場の名前と件数だけ */
-}
 @media (max-width: 360px) {
   .gd-ats { gap: 4px; }
   .gd-at__label { font-size: .74rem; }

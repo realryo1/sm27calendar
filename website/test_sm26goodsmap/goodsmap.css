@@ -933,12 +933,17 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-wishlist__sorts { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0 16px 10px; }
 .gm-wishlist__opt { display: flex; align-items: center; gap: 6px; }
 .gm-wishlist__opt > span { font-size: .72rem; font-weight: 900; color: var(--col-secondary-dark); }
-@media (max-width: 640px) {
-  /* 「まとめ方」と「ソート」を1行に収める（ボタンの左右の余白と、2つのあいだを詰める） */
+.gm-wishlist__opt .gm-chips { flex-wrap: nowrap; } /* 「まとめ方」「ソート」のボタンは折り返さない（足りないときは2つの組ごと2行にする） */
+/* 「まとめ方」と「ソート」を1行に収める（ボタンの左右の余白と、2つのあいだを詰める）。
+   リストの幅は画面の幅と一致しない（グッズ一覧の2カラムでは右の列で、幅を変えられる）ので、リストの幅で決める */
+.gm-wishlist__inner { container: wishlist / inline-size; }
+@container wishlist (max-width: 440px) {
   .gm-wishlist__sorts { gap: 6px 10px; }
   .gm-wishlist__opt { gap: 4px; }
   .gm-wishlist__opt .gm-chips { gap: 4px; }
   .gm-wishlist__opt .gm-chip { padding: 4px 9px; }
+}
+@media (max-width: 640px) {
   /* リストを広く見せるため、上（見出し）と下（合計・ボタン）を詰める */
   .gm-wishlist__head { padding: 10px 12px 6px 16px; }
   .gm-wishlist__title { font-size: 1rem; }
@@ -950,22 +955,65 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 }
 /* タグでまとめたときの見出しの帯は、そのタグの色（.gm-tag--○○ を付ける。文字はふつうの見出しと同じ） */
 .gm-wishlist__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px; border-top: 1px solid #ece8fb; border-bottom: 1px solid #ece8fb; }
+/* リストのスクロールバーは、カレンダーの時間割（style.css の .tt-scroll）と同じピンクのもの。
+   Chrome・Edge・Safari は ::-webkit-scrollbar で形まで作り、Firefox は scrollbar-color だけ（両方を指定すると ::-webkit-scrollbar が無視される） */
+.gm-wishlist__body::-webkit-scrollbar { width: 13px; }
+.gm-wishlist__body::-webkit-scrollbar-track { background: var(--col-paper); }
+.gm-wishlist__body::-webkit-scrollbar-thumb { border: 3px solid var(--col-paper); border-radius: 999px; background: var(--col-primary); } /* 通り道の色で縁取って、つまみを細く見せる */
+.gm-wishlist__body::-webkit-scrollbar-thumb:hover { background: var(--col-ink-primary); }
+@supports not selector(::-webkit-scrollbar) {
+  .gm-wishlist__body { scrollbar-color: var(--col-primary) var(--col-paper); }
+}
+/* マウスのある端末はスクロールバーが場所を取るので、右の余白はその分（13px）を引いて3pxにし、バーの場所は常に空けておく（品が少なくてバーが無いときも左右の余白がそろう）。
+   スマホなどはバーが内容に重なって場所を取らないので、16pxのまま */
+@media (hover: hover) and (pointer: fine) {
+  .gm-wishlist__body { padding-right: 3px; scrollbar-gutter: stable; }
+}
 .gm-wishlist__empty { margin: 24px 0; font-size: .86rem; font-weight: 700; text-align: center; color: #8b8b96; }
 .gm-wishgroup__head { display: flex; justify-content: space-between; gap: 10px; margin: 14px 0 2px; padding: 2px 10px; border-radius: 4px; font-size: .78rem; font-weight: 900; }
 :where(.gm-wishgroup__head) { color: var(--col-secondary-dark); background: var(--tag-bg, var(--col-secondary-lighter)); } /* 色の決まっていないタグ（チカホなど）とブースでまとめたときは、.gm-tag と同じ薄紫。:where で詳細度を0にして、.gm-tag--○○ の色を優先する */
 .gm-wishgroup__items { margin: 0 0 6px; padding: 0; list-style: none; }
-.gm-wishitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #e6e1fb; }
+.gm-wishitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 4px 0; border-bottom: 1px dashed #e6e1fb; }
 .gm-wishitem:last-child { border-bottom: none; }
+/* リスト（プレビューではない方）：タグ・品名・値段と個数の3列。subgrid で全部の品の列の幅をそろえ、品名の左端をそろえる。
+   タグの列は、いちばんタグの多い品に合わせる（幅の4割まで。それを超えるとタグを折り返す）。.is-notags（「タグを表示」を外したとき）はタグの列を消す */
+.gm-wishlist__body--list { display: grid; grid-template-columns: fit-content(40%) minmax(0, 1fr) auto; align-content: start; }
+.gm-wishlist__body--list > *,
+.gm-wishlist__body--list .gm-wishgroup > *,
+.gm-wishlist__body--list .gm-wishgroup__items > * { grid-column: 1 / -1; }
+.gm-wishlist__body--list .gm-wishgroup,
+.gm-wishlist__body--list .gm-wishgroup__items,
+.gm-wishlist__body--list .gm-wishitem { display: grid; grid-template-columns: subgrid; }
+.gm-wishlist__body--list .gm-wishitem { column-gap: 0; } /* 列のあいだは下の余白で空ける（タグを消したときに隙間が残らないように） */
+.gm-wishlist__body--list .gm-wishitem > * { grid-column: auto; }
+.gm-wishlist__body--list .gm-wishitem__where { grid-column: 1 / -1; }
+.gm-wishitem__tags { display: flex; flex-wrap: wrap; gap: 4px; padding-right: 10px; }
+.gm-wishitem__tags:empty { padding-right: 0; }
+.gm-wishitem__tags .gm-tag { margin-right: 0; }
+.gm-wishlist__body--list .gm-wishitem__buy { padding-left: 10px; }
+.is-notags .gm-wishitem__tags { display: none; }
+/* リストが狭いときは列をやめ、品ごとに2行（上にタグ、下に品名。値段と個数は右に2行分の高さで。タグでまとめたときのブースはその上に1行） */
+@container wishlist (max-width: 480px) {
+  .gm-wishlist__body--list,
+  .gm-wishlist__body--list .gm-wishgroup,
+  .gm-wishlist__body--list .gm-wishgroup__items { display: block; }
+  .gm-wishlist__body--list .gm-wishitem { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "where where" "tags buy" "name buy"; row-gap: 2px; }
+  .gm-wishlist__body--list .gm-wishitem__where { grid-area: where; }
+  .gm-wishlist__body--list .gm-wishitem__tags { grid-area: tags; padding-right: 0; }
+  .gm-wishlist__body--list .gm-wishitem__name { grid-area: name; }
+  .gm-wishlist__body--list .gm-wishitem__buy { grid-area: buy; }
+}
+.gm-wishlist__tagsbtn { flex: none; padding: 3px 10px; font-size: .72rem; }
 .gm-wishitem__where { margin: 0 0 2px; font-size: .7rem; font-weight: 700; color: var(--col-secondary-dark); }
-.gm-wishitem__name { margin: 0; font-size: .86rem; font-weight: 700; line-height: 1.55; overflow-wrap: anywhere; }
+.gm-wishitem__name { margin: 0; font-size: .86rem; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
 .gm-wishitem__name a { color: var(--col-ink); text-decoration: none; }
 .gm-wishitem__name a:hover { text-decoration: underline; }
-.gm-wishitem__buy { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.gm-wishitem__buy { display: flex; align-items: center; gap: 8px; } /* 値段と個数は横に並べて、1行を低くする */
 .gm-wishitem__price { font-size: .95rem; font-weight: 900; white-space: nowrap; color: var(--col-primary-dark); }
 .gm-wishitem__price small { margin-right: 2px; font-size: .68rem; font-weight: 700; }
-.gm-wishitem__qty { display: flex; align-items: center; gap: 2px; border: 2px solid var(--col-secondary-light); border-radius: 999px; }
-.gm-wishitem__qty b { min-width: 1.6em; font-family: var(--font-display); font-weight: 400; text-align: center; }
-.gm-wishitem__qty button { width: 30px; height: 28px; padding: 0; border: none; border-radius: 999px; font: inherit; font-weight: 900; color: var(--col-ink); background: none; cursor: pointer; }
+.gm-wishitem__qty { display: flex; align-items: center; gap: 0; font-size: .8rem; border: 1.5px solid var(--col-secondary-light); border-radius: 999px; }
+.gm-wishitem__qty b { min-width: 1.4em; font-family: var(--font-display); font-weight: 400; text-align: center; }
+.gm-wishitem__qty button { width: 24px; height: 20px; padding: 0; border: none; border-radius: 999px; font: inherit; font-weight: 900; color: var(--col-ink); background: none; cursor: pointer; }
 .gm-wishitem__qty button:hover { background: var(--col-secondary-lighter); }
 .gm-wishlist__foot { padding: 10px 16px 14px; }
 .gm-wishlist__total { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font-weight: 900; }

@@ -21,7 +21,6 @@
     // 売り場。上のしぼり込みのボタンと節の見出し
     all: "すべて",
     at: { official: "公式物販", booth: "企業ブース", live: "ライブ物販", loose: "売り場の記載なし" },
-    atSub: { official: "公式グッズの売り場", booth: "出展企業のブース", live: "ライブのグッズ" },
     count: (n) => `${n}点`,
     search: "商品名・会社名でさがす",
     leads: {
@@ -59,12 +58,12 @@
   // ---------- 売り場のしぼり込み ----------
   const THEME = { official: "gold", booth: "pink", live: "violet", loose: "indigo" };
   function guideHtml() {
-    const btn = (at, label, sub, n) =>
+    const btn = (at, label, n) =>
       `<button type="button" class="gd-at${at === "all" ? "" : ` theme-${THEME[at]}`}" data-at="${at}" aria-pressed="false">` +
-      `<span class="gd-at__label">${esc(label)}</span>${sub ? `<small>${esc(sub)}</small>` : ""}<span class="gd-at__n"><b>${n}</b>点</span></button>`;
+      `<span class="gd-at__label">${esc(label)}</span><span class="gd-at__n"><b>${n}</b>点</span></button>`;
     const total = Object.values(COUNT).reduce((a, b) => a + b, 0);
-    return `<div class="gd-ats">${btn("all", TEXT.all, "", total)}${Object.keys(TEXT.atSub)
-      .map((at) => btn(at, TEXT.at[at], TEXT.atSub[at], COUNT[at]))
+    return `<div class="gd-ats">${btn("all", TEXT.all, total)}${["official", "booth", "live"]
+      .map((at) => btn(at, TEXT.at[at], COUNT[at]))
       .join("")}</div>`;
   }
 

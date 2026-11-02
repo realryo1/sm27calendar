@@ -9,6 +9,7 @@ window.GM_WISH = (D, L) => {
   const KEY = `sm27-wish-${D.year}`;
   const GROUP_KEY = "sm27-wish-group";
   const SORT_KEY = "sm27-wish-sort";
+  const TAGS_KEY = "sm27-wish-tags";
 
   const TEXT = {
     fab: "ほしいもの",
@@ -19,6 +20,7 @@ window.GM_WISH = (D, L) => {
     groupLabel: "まとめ方",
     sorts: { price: "値段", where: "ブース" },
     sortLabel: "ソート",
+    tagsToggle: "タグを表示", // リストの品のタグを出すか（押して切り替え）
     noTag: "タグなし",
     printOrder: (g, s) => `まとめ方：${g}／ソート：${s}`,
     empty: "まだ入っていません。品の行の♡を押すと入ります。",
@@ -94,6 +96,7 @@ window.GM_WISH = (D, L) => {
   };
   let group = loadPref(GROUP_KEY, TEXT.groups, "where");
   let sort = loadPref(SORT_KEY, TEXT.sorts, "price");
+  let showTags = loadPref(TAGS_KEY, { on: 1, off: 1 }, "on") === "on";
 
   // ---------- リンク（カレンダーの ?view=goods&wish=id.個数,…。1個なら .個数 を省く。年は今のページの ?year= を引き継ぐ） ----------
   // カレンダー（このページの1つ上）を開き、カレンダーの nav.js がグッズの表示へ wish・year を渡す（data.js の nav の pass）
@@ -183,11 +186,11 @@ window.GM_WISH = (D, L) => {
   function rowHtml(g, showWhere) {
     const q = wish[g.id];
     const name = short(g);
+    // タグ・品名・値段と個数の3列（goodsmap.css の .gm-wishlist__body--list。列の幅はリスト全体でそろえる）
     return `<li class="gm-wishitem">
-      <div class="gm-wishitem__body">
-        ${showWhere ? `<p class="gm-wishitem__where">${esc(L.whereOf(g).label)}</p>` : ""}
-        <p class="gm-wishitem__name">${L.tagsOf(g, tagOpts(g))}<a href="${esc(L.urlOf(g))}" target="_blank" rel="noopener">${esc(name)}</a></p>
-      </div>
+      ${showWhere ? `<p class="gm-wishitem__where">${esc(L.whereOf(g).label)}</p>` : ""}
+      <span class="gm-wishitem__tags">${L.tagsOf(g, tagOpts(g))}</span>
+      <p class="gm-wishitem__name"><a href="${esc(L.urlOf(g))}" target="_blank" rel="noopener">${esc(name)}</a></p>
       <div class="gm-wishitem__buy">
         <span class="gm-wishitem__price">${g.price == null ? esc(TEXT.noPrice) : `${g.unit ? `<small>${esc(g.unit)}</small>` : ""}${yen(g.price)}`}</span>
         <span class="gm-wishitem__qty">
@@ -228,10 +231,11 @@ window.GM_WISH = (D, L) => {
     const html = `<div class="gm-wishlist__inner">
       <header class="gm-wishlist__head">
         <h2 class="gm-wishlist__title">${esc(TEXT.title)}</h2>
+        <button type="button" class="gm-chip gm-wishlist__tagsbtn" data-tags aria-pressed="${showTags}">${esc(TEXT.tagsToggle)}</button>
         <button type="button" class="gm-wishlist__close" data-close aria-label="${esc(TEXT.close)}"></button>
       </header>
       <div class="gm-wishlist__sorts">${optHtml("group", TEXT.groupLabel, TEXT.groups, group)}${optHtml("sort", TEXT.sortLabel, TEXT.sorts, sort)}</div>
-      <div class="gm-wishlist__body">${gs.length ? listHtml() : `<p class="gm-wishlist__empty">${esc(TEXT.empty)}</p>`}</div>
+      <div class="gm-wishlist__body gm-wishlist__body--list${showTags ? "" : " is-notags"}">${gs.length ? listHtml() : `<p class="gm-wishlist__empty">${esc(TEXT.empty)}</p>`}</div>
       <footer class="gm-wishlist__foot">
         <p class="gm-wishlist__total"><span>${esc(TEXT.total)} ${esc(TEXT.count(t.n))}</span><b>${yen(t.sum)}</b></p>
         ${t.unpriced ? `<p class="gm-wishlist__note">${esc(TEXT.noPriceNote(t.unpriced))}</p>` : ""}
@@ -286,6 +290,13 @@ window.GM_WISH = (D, L) => {
     if (ev.target === $dlg || ev.target.closest("[data-close]")) return $dlg.close(); // 外側（うしろの暗いところ）か × で閉じる
     const q = ev.target.closest("[data-qty]");
     if (q) return setQty(q.dataset.id, (wish[q.dataset.id] ?? 0) + Number(q.dataset.qty));
+    if (ev.target.closest("[data-tags]")) {
+      showTags = !showTags;
+      try {
+        localStorage.setItem(TAGS_KEY, showTags ? "on" : "off");
+      } catch {}
+      return renderDialog();
+    }
     const o = ev.target.closest("[data-group], [data-sort]");
     if (o) {
       if (o.dataset.group) group = o.dataset.group;

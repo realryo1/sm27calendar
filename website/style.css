@@ -142,6 +142,9 @@ button { font: inherit; color: inherit; }
 /* 2カラム：左に時間割（画面に固定）、右に会場一覧（こちらだけスクロール）。
    スマホ表示（640px以下）でなければ2カラムにする（iPad mini・折りたたみスマホを開いたとき・横向きのスマホも） */
 @media (min-width: 641px) {
+  /* 会場一覧の横に出るページのスクロールバーは消す（ホイール・タッチ・キーではスクロールできる） */
+  html { scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; }
   /* 時間割・持ち手・会場一覧の3列。時間割の幅（--board-w）は持ち手で変えられる（app.js が .main に入れる） */
   .main {
     display: grid;
@@ -1960,13 +1963,9 @@ button { font: inherit; color: inherit; }
   }
   .glass-bar { flex: 1; min-width: 0; height: var(--glass-h); }
   .glass-bar > :not(.glass-glider) { flex: 1 1 0; }
-  .app-nav__item { gap: 6px; font-size: .8rem; }
+  /* 切り替えボタンは、アイコンを上・文字を下にする */
+  .app-nav__item { flex-direction: column; gap: 1px; font-size: .62rem; }
   .app-nav__icon { width: 18px; height: 18px; }
-  /* 切り替えバーが狭いとき（2カラムに切り替わる幅のすぐ上や、小さいスマホ）は、アイコンを上・文字を下にして収める */
-  .app-nav__views { container: views / inline-size; }
-  @container views (max-width: 300px) {
-    .app-nav__item { flex-direction: column; gap: 1px; font-size: .62rem; }
-  }
   /* 板は横に動く */
   .glass-glider {
     bottom: 4px;
@@ -2044,19 +2043,16 @@ button { font: inherit; color: inherit; }
    画面の下に横一列に並べる（日付のボタンは nav.js がバーの中に移す。日付は左の時間割に関わるので左）。
    バーは内容に重ねず、時間割・会場一覧の下に置く（重ねると、横に長いバーが両方の列の下端を広く隠すため） */
 @media (min-width: 641px) and (max-width: 1023px) {
-  .app-nav .day-nav {
-    position: static;
-    order: -1;
-    flex: 4.6 1 0; /* 日付4つ＋市電いまどこ と、切り替え3つ の幅の割合 */
-    min-width: 0;
-    gap: var(--gap);
-    padding: 0;
-  }
-  .app-nav__views { flex: 3 1 0; }
+  /* 日付のボタンの枠は外し、日付のバー・市電いまどこ・切り替えバーを .app-nav に直接並べる。
+     2つのバーは、ボタンの数（nav.js の --n）に合わせて広げ、日付のボタンと切り替えボタンの幅をそろえる（基準の8pxはバーの左右の余白） */
+  .app-nav .day-nav { display: contents; }
+  .app-nav #dayNav,
+  .app-nav .day-chip--train { order: -1; }
+  .app-nav .glass-bar { flex: var(--n, 1) 1 8px; }
   /* この幅では切り替えボタンが無くても日付のバーが帯に入るので、帯の高さは下げない（上の :not(.has-views) を打ち消す） */
   .has-nav:not(.has-views) { --nav-h: calc(var(--glass-h) + var(--glass-gap) * 2 + var(--safe-b)); }
   /* 切り替えボタンが無いと日付のバーが帯いっぱいに伸びて横に長すぎるので、幅に上限を付けて中央に置く */
-  .has-nav:not(.has-views) .app-nav .day-nav { max-width: 512px; }
+  .has-nav:not(.has-views) .app-nav #dayNav { max-width: 400px; }
   /* バーの帯はページの背景と同じ色で塗り、スクロールする会場一覧が裏に透けないようにする */
   .app-nav { background: var(--col-secondary-lighter); }
   /* 時間割（と持ち手）は、バーの帯の上端まで（バーとの間は帯の上の余白） */
