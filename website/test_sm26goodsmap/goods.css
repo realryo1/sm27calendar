@@ -2,16 +2,45 @@
    配色・フォント・背景・フッターはカレンダーの ../style.css、カード・品の行・タグ・検索欄は goodsmap.css を使い、
    ここではグッズ一覧だけの部品を足す（クラス名は gd- で始める）。
    色は売り場ごと：公式物販＝.theme-gold、企業ブース＝.theme-pink、ライブ物販＝.theme-violet、売り場の記載なし＝.theme-indigo */
-/* goodsmap.css の2カラム（641px〜。ページ全体をスクロールさせず列ごとにスクロールする）は、このページでは使わない。ページ全体をスクロールする */
+/* 2カラム（641px〜）：goodsmap.css と同じく、ページ全体はスクロールせず、左の一覧と右のほしいものリストがそれぞれスクロールする。
+   スマホ（1カラム）は右のリスト（.gd-wish）を隠し、ページ全体をスクロールして、浮かぶボタンから dialog で開く */
+.gd-wish { display: none; }
 @media (min-width: 641px) {
-  .gd-page,
-  .gd-page body { height: auto; overflow: visible; }
-  .gd-page .gm { height: auto; padding: var(--gap) var(--gap) 0; }
+  .gd-page .gm { height: 100%; padding: var(--gap); }
+  .gd-cols {
+    display: grid;
+    /* 持ち手の列の幅は --gap。一覧の幅（--gd-list-w）は持ち手で変える（goods.js が入れる）。
+       持ち手を選んだときは、持ち手の列が --gm-split-extra だけ広がり、一覧の右端とリストの左端を半分ずつ押しのける（goodsmap.css・カレンダーと同じ） */
+    grid-template-columns: calc(var(--gd-list-w, 60%) - var(--gm-split-extra) / 2) calc(var(--gap) + var(--gm-split-extra)) minmax(0, 1fr);
+    transition: --gm-split-extra .2s cubic-bezier(.22, 1, .36, 1);
+    gap: 0;
+    height: calc(100svh - var(--gap) * 2);
+    height: calc(100dvh - var(--gap) * 2);
+    height: calc(var(--app-h, 100dvh) - var(--gap) * 2);
+  }
+  .gd-page .gd-main { min-height: 0; margin: 0 -8px; padding: 0 8px var(--gap); /* カードの影が左右で切れないよう、8px 広げて同じ分だけ内側に戻す（goodsmap.css の .gm-scroll と同じ。持ち手の列の中央が、カードとリストの真ん中になる） */ overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  .gd-page .gd-main::-webkit-scrollbar { display: none; }
+  /* リストの枠は dialog（.gm-wishlist）のもの。dialog でないので、出して縦に並べ、列の高さに収める */
+  .gd-page .gd-wish { display: flex; width: auto; max-height: none; flex-direction: column; min-height: 0; overflow: hidden; border-radius: 16px; box-shadow: var(--gm-shadow); }
+  /* 押しのけるあいだ、一覧の中身は止めずに毎フレーム組み直す（カレンダーの時間割と同じ）。止めて後から組み直すと、動き終わってから中身が遅れてかくっと動く */
+  .gd-cols:has(> .gm-split:is(:hover, :focus-visible, .is-dragging)) { --gm-split-extra: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    .gd-cols { transition: none; }
+  }
+  .gd-wish .gm-wishlist__close { display: none; }
+  .gd-page .gm-wishfab { display: none; }
+}
+@media (min-width: 641px) and (max-height: 500px) {
+  .gd-page .gm { padding-top: calc(var(--gap) / 2); padding-bottom: calc(var(--gap) / 2); }
+  .gd-cols { height: calc(100svh - var(--gap)); height: calc(100dvh - var(--gap)); height: calc(var(--app-h, 100dvh) - var(--gap)); }
 }
 /* マップと一覧のどちらか一方だけを出す */
 .gd-page .gm-main,
-html:not(.gd-page) .gd-main { display: none; }
+html:not(.gd-page) .gd-cols { display: none; }
 .gd-main { max-width: 760px; margin: 0 auto; padding-bottom: var(--gap); }
+@media (min-width: 641px) {
+  .gd-main { max-width: none; }
+}
 .gd-sec[hidden],
 .gm-card[hidden],
 .gm-item[hidden] { display: none; }

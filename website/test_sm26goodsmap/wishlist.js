@@ -2,6 +2,7 @@
 // リストは年ごとにブラウザ（localStorage の sm27-wish-年）に保存し、マップとグッズ一覧で同じものを使う（カレンダーの中の2つの iframe も storage イベントで合わせる）。
 // まとめ方（タグ・ブース）とソート（値段・ブース）、個数を持ち、PDF はブラウザの印刷で、画像は印刷と同じ表を写して PNG で出す（印刷用の表 #gmWishPrint だけを印刷する。goodsmap.css の @media print）。
 // リストはリンク（カレンダーの ?view=goods&wish=id.個数,…）にでき、PDF にはそのリンクと QR コードを載せる。リンクを開くと、今のリストに合わせるか置き換えるかを選んで読み込む。
+// グッズ一覧の2カラム（641px〜）では、浮かぶボタンの代わりに、右カラム（#gdWish）にリストを常に出す。
 // 使い方：ページの一覧を描いたあとに window.GM_WISH(GM_DATA, GM_LIST の戻り値)
 window.GM_WISH = (D, L) => {
   const { esc } = window.TT_UTIL;
@@ -174,6 +175,9 @@ window.GM_WISH = (D, L) => {
   $print.className = "gm-wishprint";
   $print.id = "gmWishPrint";
   document.body.append($fab, $dlg, $print);
+  const $panel = document.getElementById("gdWish"); // グッズ一覧の右カラム。CSS が狭い画面では隠す
+  const wide = window.matchMedia("(min-width: 641px)");
+  const inPanel = () => !!$panel && getComputedStyle($panel).display !== "none"; // マップのページでは隠れている
 
   const short = (g) => L.short(g.name);
   function rowHtml(g, showWhere) {
@@ -221,7 +225,7 @@ window.GM_WISH = (D, L) => {
   function renderDialog() {
     const gs = Object.keys(wish);
     const t = totals();
-    $dlg.innerHTML = `<div class="gm-wishlist__inner">
+    const html = `<div class="gm-wishlist__inner">
       <header class="gm-wishlist__head">
         <h2 class="gm-wishlist__title">${esc(TEXT.title)}</h2>
         <button type="button" class="gm-wishlist__close" data-close aria-label="${esc(TEXT.close)}"></button>
@@ -239,7 +243,14 @@ window.GM_WISH = (D, L) => {
         </div>
       </footer>
     </div>`;
+    $dlg.innerHTML = html;
+    if ($panel) $panel.innerHTML = html;
   }
+  // リストを見せる：右カラムがあるときは出ているので何もせず、無いときは dialog で開く
+  const openList = () => {
+    renderDialog();
+    if (!inPanel() && !$dlg.open) $dlg.showModal();
+  };
 
   // 品の行の♡と、浮かぶボタンの件数・合計を今のリストに合わせる
   function refresh() {
@@ -249,7 +260,7 @@ window.GM_WISH = (D, L) => {
       t.n ? `<span class="gm-wishfab__n">${esc(TEXT.count(t.n))}</span><span class="gm-wishfab__sum">${yen(t.sum)}</span>` : ""
     }`;
     $fab.classList.toggle("is-empty", !t.n);
-    if ($dlg.open) renderDialog();
+    if ($dlg.open || $panel) renderDialog();
   }
   const setQty = (id, q) => {
     if (q > 0) wish[id] = q;
@@ -268,11 +279,10 @@ window.GM_WISH = (D, L) => {
     setQty(b.dataset.wish, b.dataset.wish in wish ? 0 : 1);
   });
   $fab.addEventListener("click", () => {
-    renderDialog();
-    $dlg.showModal();
+    openList();
     loadQr().catch(() => {}); // PDF を作るときに待たないよう、先に読み込んでおく
   });
-  $dlg.addEventListener("click", (ev) => {
+  const onListClick = (ev) => {
     if (ev.target === $dlg || ev.target.closest("[data-close]")) return $dlg.close(); // 外側（うしろの暗いところ）か × で閉じる
     const q = ev.target.closest("[data-qty]");
     if (q) return setQty(q.dataset.id, (wish[q.dataset.id] ?? 0) + Number(q.dataset.qty));
@@ -296,7 +306,9 @@ window.GM_WISH = (D, L) => {
     if (ev.target.closest("[data-print]")) printList();
     const im = ev.target.closest("[data-image]");
     if (im) saveImage(im);
-  });
+  };
+  $dlg.addEventListener("click", onListClick);
+  $panel?.addEventListener("click", onListClick);
   // リンクをコピー（できないブラウザでは、選んでコピーできる欄で見せる）
   async function copyLink($b) {
     const url = shareUrl();
@@ -473,8 +485,7 @@ window.GM_WISH = (D, L) => {
       else return;
       save();
       refresh();
-      renderDialog();
-      $dlg.showModal();
+      openList();
     };
     if (!Object.keys(wish).length) return apply("replace");
     // プレビュー：リンクの品を、リストと同じまとめ方・ソート（listHtml）で並べる。タグ・値段・個数を出し、今のリストに入っている品は品名のあとに薄く「リストに○」（縦を詰めるため、値段と個数は1段）
@@ -516,6 +527,7 @@ window.GM_WISH = (D, L) => {
     $ask.showModal();
   }
 
+  wide.addEventListener("change", () => $dlg.open && inPanel() && $dlg.close()); // 広くなったら、開いている dialog は閉じる（右カラムに出ている）
   refresh();
   importFromUrl();
 };

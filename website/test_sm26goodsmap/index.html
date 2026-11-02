@@ -90,7 +90,8 @@
         </div>
       </section>
     </main>
-    <!-- グッズ一覧（?page=goods のときだけ出す。goods.js が描く） -->
+    <!-- グッズ一覧（?page=goods のときだけ出す。goods.js が描く）。2カラム（641px〜）では、左に一覧・右にほしいものリスト（wishlist.js が描く） -->
+    <div class="gd-cols">
     <main class="gd-main">
       <h1 class="gm-visually-hidden">グッズ一覧</h1>
       <div class="gm-chips gd-years" id="gdYears" role="tablist"></div>
@@ -107,6 +108,10 @@
       <p class="gm-empty" id="gdEmpty" hidden></p>
       <footer class="site-footer gm-footer" id="gdFooter"></footer>
     </main>
+    <!-- 2カラムのときだけ出る、一覧とほしいものリストの幅を変える持ち手（goods.js） -->
+    <div class="gm-split gd-split" id="gdSplit" role="separator" aria-orientation="vertical" aria-label="一覧とほしいものリストの幅" tabindex="0"></div>
+    <aside class="gd-wish gm-wishlist" id="gdWish" aria-label="ほしいものリスト"></aside>
+    </div>
   </div>
 
 </body>

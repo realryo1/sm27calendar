@@ -168,6 +168,7 @@
   .is-frozen .gm-card { overflow: clip; min-width: 0; }
   .is-frozen { min-width: 0; }
   .is-frozen .gm-card > * { width: var(--cw); }
+  .is-frozen .gm-card > .gm-official__head { width: auto; } /* 公式物販の見出しは帯なので、固定すると右端が組み直すたびに段になって動く。幅に合わせて伸び縮みさせる（中身は1行なので軽い） */
   /* 一覧は独立したレイヤーにして、横に動いても中身を描き直さない。最初のフレームが重いので、持ち手にマウスが乗った時点で作っておく */
   .gm-main:has(> .gm-split:hover) .gm-sec--list,
   .is-resizing .gm-sec--list { will-change: transform; }

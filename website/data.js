@@ -69,7 +69,7 @@ window.TT_DATA = {
   // preload: true は、開く前に裏で読み込んでおく（運行情報は1分ごとに取得し続けるので、押そうとしたときだけ読み込む）。
   // pass は、カレンダーの URL からそのページへ渡す引数（ほしいものリストのリンク ?view=goods&wish=… の wish と、年の year）
   nav: {
-    enabled: false,
+    enabled: true,
     label: "表示の切り替え",
     items: [
       { id: "calendar", label: "カレンダー", icon: "calendar" },
