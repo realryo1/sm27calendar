@@ -937,7 +937,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-wishlist__menubtn::after { content: ""; width: 6px; height: 6px; margin-top: -3px; border: solid currentColor; border-width: 0 2px 2px 0; rotate: 45deg; transition: rotate .2s; } /* ▼の形。開いているときは上向き */
 .gm-wishlist__menubtn[aria-expanded="true"] { border-color: transparent; color: var(--col-paper); background: var(--brand-gradient) border-box; }
 .gm-wishlist__menubtn[aria-expanded="true"]::after { margin-top: 3px; rotate: -135deg; }
-/* 設定（「設定・保存」で開け閉めする）。上にまとめ方・並び順・表示の3組、下にすべて消す・リンクをコピー・PDF・印刷・画像で保存。
+/* 設定（「設定・保存」で開け閉めする）。上にまとめ方・並び順・表示の3組、下にすべて消す・リンクコピー・PDF・印刷・画像で保存。
    場所を取らないよう、大きさは2種類だけで低めに：選ぶボタン（.gm-chip）は高さ28px、保存などのボタンは高さ32px。文字はどちらも .78rem。
    3組は幅が足りる分だけ横に詰めて並べ、4つのボタンは同じ幅で1行（狭ければ2×2） */
 .gm-wishlist__menu { display: grid; gap: 8px; padding: 10px 16px; } /* 上下は同じ（上は見出しの下の線、下は一覧の上の線までの間） */

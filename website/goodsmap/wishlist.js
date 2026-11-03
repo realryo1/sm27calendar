@@ -35,7 +35,7 @@ window.GM_WISH = (D, L) => {
     plus: (name) => `${name}を1つ増やす`,
     remove: (name) => `${name}をリストから外す`,
     print: "PDF・印刷",
-    copy: "リンクをコピー",
+    copy: "リンクコピー",
     copied: "コピーしました",
     copyPrompt: "このリンクをコピーしてください",
     clear: "すべて消す",
@@ -355,7 +355,7 @@ window.GM_WISH = (D, L) => {
     if ($panel) renderDialog();
   });
   $panel?.addEventListener("click", onListClick);
-  // リンクをコピー（できないブラウザでは、選んでコピーできる欄で見せる）
+  // リンクコピー（できないブラウザでは、選んでコピーできる欄で見せる）
   async function copyLink($b) {
     const url = shareUrl();
     try {
