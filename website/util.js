@@ -1,4 +1,9 @@
 // 共通の小さな関数（app.js・train-view.js・nav.js と、グッズマップの goodsmap.js で使う）
+// タッチでページ全体を拡大させない（iPhoneで拡大のあと「繰り返しエラー」になることがある）。
+// iOS は viewport の user-scalable=no を無視するので、ジェスチャーごと止める。カレンダーの表とマップのピンチは自前の処理で行う
+document.addEventListener("gesturestart", (ev) => ev.preventDefault());
+document.addEventListener("gesturechange", (ev) => ev.preventDefault());
+
 window.TT_UTIL = {
   // HTML の本文・属性に入れる文字をエスケープする
   esc: (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])),

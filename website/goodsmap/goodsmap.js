@@ -481,8 +481,6 @@
   };
   $map.addEventListener("touchend", endPinch);
   $map.addEventListener("touchcancel", endPinch);
-  // iOS Safari のページ全体のピンチズームを抑止
-  $map.addEventListener("gesturestart", (ev) => ev.preventDefault());
 
   // マウスのホイールは Google マップなどと同じく、カーソルの位置を中心に拡大縮小する
   $map.addEventListener(

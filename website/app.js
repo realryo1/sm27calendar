@@ -965,8 +965,6 @@
     },
     { passive: false }
   );
-  // iOS Safari のページ全体のピンチズームを抑止
-  $scroll.addEventListener("gesturestart", (ev) => ev.preventDefault());
 
   // PC: Ctrl+ホイール（トラックパッドのピンチ）で縦、Ctrl+Shift+ホイールで横
   // マウスのホイールは1目盛りが大きい（deltaY ≒ 100）ので、トラックパッドより係数を小さくして1目盛り≒1.1倍にする。
