@@ -9,6 +9,10 @@ const PRECACHE = self.PRECACHE;
 // 版の更新でも更新ボタン（app.js の hardRefresh）でも消さない
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 const FONT_CACHE = "sm27-fonts";
+// ほしいものリストのライブラリ（cdnjs の qrcode-generator・html2canvas）も保存してオフラインで使う。
+// URL に版が入っていて中身が変わらないので、キャッシュにあれば取りに行かない。フォントと同じく版の更新でも更新ボタンでも消さない
+const LIB_HOSTS = ["cdnjs.cloudflare.com"];
+const LIB_CACHE = "sm27-lib";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -18,7 +22,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("sm27-") && k !== CACHE && k !== FONT_CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("sm27-") && k !== CACHE && k !== FONT_CACHE && k !== LIB_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -28,6 +32,18 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
+  if (!sameOrigin && LIB_HOSTS.includes(url.hostname)) {
+    event.respondWith(
+      caches.open(LIB_CACHE).then(async (cache) => {
+        const cached = await cache.match(req);
+        if (cached) return cached;
+        const res = await fetch(req);
+        if (res.ok) cache.put(req, res.clone()); // SRI 付き・crossOrigin で読むので CORS の応答（opaque は保存しない）
+        return res;
+      })
+    );
+    return;
+  }
   if (!sameOrigin && !FONT_HOSTS.includes(url.hostname)) return;
   // delay/ は姉妹プロジェクト（運行情報）への転送ページ。キャッシュを通すとカレンダーが返るので、そのまま取得させる
   if (sameOrigin && url.pathname.includes("/delay/")) return;

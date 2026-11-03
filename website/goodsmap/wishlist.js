@@ -64,7 +64,7 @@ window.GM_WISH = (D, L) => {
   // QR コードを作るライブラリ（qrcode-generator 1.4.4、MIT）。リストを開いたときに読み込み始め、PDF を作るときに使う
   const QR_SRC = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
   const QR_SRI = "sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1";
-  // 画像で保存：PDF（印刷）と同じ表を画像に写すライブラリ（html2canvas 1.4.1、MIT）。押したときに読み込む
+  // 画像で保存：PDF（印刷）と同じ表を画像に写すライブラリ（html2canvas 1.4.1、MIT）。リストを開いたときに読み込み始める
   const H2C_SRC = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
   const H2C_SRI = "sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H";
 
@@ -302,7 +302,9 @@ window.GM_WISH = (D, L) => {
   });
   $fab.addEventListener("click", () => {
     openList();
-    loadQr().catch(() => {}); // PDF を作るときに待たないよう、先に読み込んでおく
+    // PDF・画像を作るときに待たないよう、先に読み込んでおく（sw.js が保存するので、一度読めばオフラインでも使える）
+    loadQr().catch(() => {});
+    loadH2c().catch(() => {});
   });
   const onListClick = (ev) => {
     if (ev.target === $dlg || ev.target.closest("[data-close]")) return $dlg.close(); // 外側（うしろの暗いところ）か × で閉じる

@@ -49,6 +49,8 @@
 
 ## 解決
 
+- [x] ほしいものリストのライブラリ（cdnjs）をService Workerで保存し、html2canvasもリストを開いたときに読み込み始めるようにした（オフラインでもQRコードと画像で保存が使える）
+
 - [x] **github.ioの廃止後のファイル**：転送する`index.html`に加え、キャッシュを消して登録を解除するだけの`sw.js`も置く（`sw.js`が404でも、入っている古いServiceWorkerは残るため）
 - [x] favicon（`favicon.ico`・`image/favicon-32.png`）を、github.ioと新しいドメインで共通に、新しいアイコンの♡と27にした（`tools/icon-app.html?favicon`。小さいので影と点は省き、ふちは金色、つやの光を足した）
 - [x] 新しいドメインのアイコンを作った（`tools/iconnew.html`の案A5：4つのタイル＋紫の♡、♡のふちは金。元は`tools/icon-app.html`、書き出しは`website/image/app/icon-maskable-512.png`）
