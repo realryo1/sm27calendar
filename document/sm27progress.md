@@ -6,7 +6,7 @@
 
 ## これから
 
-- [ ] 一挙公開のときに公開URLを新しいドメインに差し替える：`data.js`の`migrate.enabled`を`true`に（github.ioに引っ越しの案内）、`index.html`のcanonical・`og:url`・`og:image`・`twitter:image`、READMEの公開URL、`goodsmap.md`の公開URL。github.ioはゆくゆく廃止する（同じgithub.io配下のPWAがAndroidでインストールできない不具合のため）。廃止の手順（転送・ServiceWorkerの解除・ホーム画面に追加した人への案内）は未定。ほしいものリストは一挙公開から出すので引き継がない
+- [ ] 一挙公開のときに公開URLを新しいドメインに差し替える：`data.js`の`migrate.enabled`を`true`に（github.ioに引っ越しの案内）、`index.html`のcanonical・`og:url`・`og:image`・`twitter:image`、READMEの公開URL、`goodsmap.md`の公開URL。github.ioはゆくゆく廃止し、PWAをすべて消して新しいドメインへ転送する`index.html`と解除用の`sw.js`だけにする（READMEの「公開先」）。ほしいものリストは一挙公開から出すので引き継がない
 - [ ] グッズマップの`noindex`を外すか
 - [ ] グッズ一覧（`goodsmap/?page=goods`）を実機で確かめる（スマホの下のバーが4つになった幅、ブースの番号からマップへ移る）
 - [ ] マップのブースのカードが、企業のお品書きの品で長くなる（26年のコスパは41品）。カードは閉じた状態から始まるようにしたが、開いたときの長さはそのまま
@@ -49,6 +49,7 @@
 
 ## 解決
 
+- [x] **github.ioの廃止後のファイル**：転送する`index.html`に加え、キャッシュを消して登録を解除するだけの`sw.js`も置く（`sw.js`が404でも、入っている古いServiceWorkerは残るため）
 - [x] favicon（`favicon.ico`・`image/favicon-32.png`）を、github.ioと新しいドメインで共通に、新しいアイコンの♡と27にした（`tools/icon-app.html?favicon`。小さいので影と点は省き、ふちは金色、つやの光を足した）
 - [x] 新しいドメインのアイコンを作った（`tools/iconnew.html`の案A5：4つのタイル＋紫の♡、♡のふちは金。元は`tools/icon-app.html`、書き出しは`website/image/app/icon-maskable-512.png`）
 - [x] 公開先ごとに作り分けた（新しいドメインはサイドバー・グッズマップのオフライン保存あり、github.ioはカレンダーだけ。引っ越しの案内は`migrate.enabled`）。`test_sm26goodsmap/`は`goodsmap/`に名前を変えた
