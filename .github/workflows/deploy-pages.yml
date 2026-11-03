@@ -53,3 +53,12 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # 同じ加工済みのファイルを Vercel（sm27app.realryo1.jp）にも公開する。
+      # Vercel のプロジェクト設定で Root Directory を website にし、Git 連携は切っておく（加工前のリポジトリが公開されないように）。
+      # Secrets：VERCEL_TOKEN、VERCEL_ORG_ID、VERCEL_PROJECT_ID
+      - name: Deploy to Vercel
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx -y vercel@64.5.0 deploy --prod --yes --token="${{ secrets.VERCEL_TOKEN }}"

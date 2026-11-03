@@ -1,4 +1,4 @@
-// F5 で実行する: main を push してから GitHub Pages のデプロイ（deploy-pages.yml）を起動し、完了まで待つ。
+// F5 で実行する: main を push してから GitHub Pages・Vercel のデプロイ（deploy-pages.yml）を起動し、完了まで待つ。
 // コミットはしない。未コミットの変更がある場合は中断する（デプロイされるのは push 済みの main だけのため）。
 // 認証は git push と同じ Git Credential Manager の認証情報を使う（gh CLI は不要）。
 // 使い方: F5（.vscode/launch.json の「Deploy: カレンダー（sm27calendar）」、運行情報と一緒なら「Deploy: 一括（カレンダー＋運行情報）」）。
@@ -73,14 +73,16 @@ async function api(method, path, body) {
 
 const runsPath = `/actions/workflows/${WORKFLOW_FILE}/runs`;
 const pagesUrl = `https://${owner}.github.io/${repo}/`;
+// 公開URL（GitHub Pages と Vercel）。どちらも新しくなるまで待つ
+const siteUrls = [pagesUrl, "https://sm27app.realryo1.jp/"];
 
 // 公開中の data.js の版（updatedAt はデプロイのたびにワークフローが書き換える。同じ分に2回デプロイしても区別できるよう Last-Modified も見る）。
 // ワークフローが終わっても CDN（Fastly）が古いファイルを返すことがあり、その間はアプリの更新ボタンを押しても反映されないため、変わるまで待つのに使う
 const CDN_POLL_MS = 5_000;
 const CDN_TIMEOUT_MS = 10 * 60_000;
-async function publishedData() {
+async function publishedData(siteUrl) {
   try {
-    const res = await fetch(`${pagesUrl}data.js`, { cache: "no-store" });
+    const res = await fetch(`${siteUrl}data.js`, { cache: "no-store" });
     if (!res.ok) return null;
     const updatedAt = (await res.text()).match(/updatedAt:\s*"([^"]+)"/)?.[1] ?? "?";
     return { updatedAt, key: `${updatedAt}|${res.headers.get("last-modified")}` };
@@ -88,7 +90,7 @@ async function publishedData() {
     return null;
   }
 }
-const publishedBefore = await publishedData();
+const publishedBefore = await Promise.all(siteUrls.map(publishedData));
 
 // 4. push（コミットはしない）
 log(`▶ ${owner}/${repo} の ${BRANCH} を push します`);
@@ -108,7 +110,7 @@ if (DRY_RUN) {
   log(latest
     ? `  [dry-run] 直近の実行: ${latest.html_url}（${latest.status} / ${latest.conclusion ?? "-"}）`
     : "  [dry-run] 直近の実行はまだありません");
-  log(`  [dry-run] 公開中の updatedAt: ${publishedBefore?.updatedAt ?? "取得できませんでした"}`);
+  siteUrls.forEach((url, i) => log(`  [dry-run] 公開中の updatedAt: ${publishedBefore[i]?.updatedAt ?? "取得できませんでした"}（${url}）`));
   log("  [dry-run] ワークフローの起動はスキップ");
   log("✔ 確認完了（push と起動は行っていません）");
   process.exit(0);
@@ -148,13 +150,15 @@ if (current.conclusion !== "success") {
 // 8. CDN が新しいファイルを返すまで待つ（updatedAt が変わるまで）
 log("▶ 公開URLに反映されるのを待ちます");
 const cdnStart = Date.now();
-let published = await publishedData();
-while (!published || published.key === publishedBefore?.key) {
-  if (Date.now() - cdnStart > CDN_TIMEOUT_MS) {
-    die(`10分待っても公開URLの data.js が新しくなりませんでした（updatedAt: ${published?.updatedAt ?? "取得できず"}）: ${pagesUrl}data.js`);
+for (const [i, siteUrl] of siteUrls.entries()) {
+  let published = await publishedData(siteUrl);
+  while (!published || published.key === publishedBefore[i]?.key) {
+    if (Date.now() - cdnStart > CDN_TIMEOUT_MS) {
+      die(`10分待っても公開URLの data.js が新しくなりませんでした（updatedAt: ${published?.updatedAt ?? "取得できず"}）: ${siteUrl}data.js`);
+    }
+    await sleep(CDN_POLL_MS);
+    published = await publishedData(siteUrl);
   }
-  await sleep(CDN_POLL_MS);
-  published = await publishedData();
+  log(`  updatedAt: ${publishedBefore[i]?.updatedAt ?? "-"} → ${published.updatedAt}（ワークフロー完了から ${Math.round((Date.now() - cdnStart) / 1000)} 秒）: ${siteUrl}`);
 }
-log(`  updatedAt: ${publishedBefore?.updatedAt ?? "-"} → ${published.updatedAt}（ワークフロー完了から ${Math.round((Date.now() - cdnStart) / 1000)} 秒）`);
-log(`✔ デプロイ完了: ${pagesUrl}`);
+log(`✔ デプロイ完了: ${siteUrls.join(" ")}`);

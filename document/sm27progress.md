@@ -2,11 +2,13 @@
 
 プロジェクト全体のタスクと進み具合だけを書く。仕様はREADME.md、グッズマップの構成・仕様・注意は`goodsmap.md`、作業のルールはAGENTS.md。運行情報は別リポジトリ（`hokkaido_delay/`）なのでここには書かない。
 
-最終更新：2026-10-31
+最終更新：2026-11-03
 
 ## これから
 
 - [ ] マップ・運行情報の正式公開とあわせてサイドバーを有効にする（`nav.enabled`）。
+- [ ] Vercelの準備：RootDirectoryを`website`に、Git連携を切る、GitHubのSecretsに`VERCEL_TOKEN`・`VERCEL_ORG_ID`・`VERCEL_PROJECT_ID`を入れる。入れたらF5で両方に出るか確かめる
+- [ ] 一挙公開のときに公開URLを`sm27app.realryo1.jp`に差し替える：`index.html`のcanonical・`og:url`・`og:image`・`twitter:image`、READMEの公開URL、`goodsmap.md`の公開URL。GitHubPagesは止めるか、新URLへ転送するか（github.ioでホーム画面に追加した人の扱いも）
 - [ ] グッズマップをPWAに入れてオフラインで見られるようにする。`precache.js`と`sw.js`のVERSIONも
 - [ ] グッズマップの`noindex`を外すか
 - [ ] グッズ一覧（`test_sm26goodsmap/?page=goods`）を実機で確かめる（スマホの下のバーが4つになった幅、ブースの番号からマップへ移る）

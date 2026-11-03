@@ -86,7 +86,9 @@ im.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save
 
 ## デプロイ
 
-Actionsで手動実行するか、VSCodeでF5（「Deploy:カレンダー（sm27calendar）」）を実行すると、`main`をpushしてGitHubActionsの[deploy-pages.yml](.github/workflows/deploy-pages.yml)を起動し、`website/`がGitHubPagesに公開されます。未コミットの変更があると中断します。F5の場合は、公開URLの`data.js`が新しくなる（CDNに反映される）まで待ってから完了と表示します。
+Actionsで手動実行するか、VSCodeでF5（「Deploy:カレンダー（sm27calendar）」）を実行すると、`main`をpushしてGitHubActionsの[deploy-pages.yml](.github/workflows/deploy-pages.yml)を起動し、`website/`がGitHubPagesとVercel（`https://sm27app.realryo1.jp/`）に公開されます。未コミットの変更があると中断します。F5の場合は、両方の公開URLの`data.js`が新しくなる（CDNに反映される）まで待ってから完了と表示します。
+
+Vercelへは、ワークフローで加工した（`updatedAt`・`?v=`・圧縮）ファイルをVercelCLIで送ります。Vercelのプロジェクトは、RootDirectoryを`website`にし、Git連携を切っておきます（pushのたびに加工前のリポジトリが公開されないように）。リポジトリのSecretsに`VERCEL_TOKEN`・`VERCEL_ORG_ID`・`VERCEL_PROJECT_ID`が要ります。
 
 F5で「Deploy:一括（カレンダー＋運行情報）」を選ぶと、このリポジトリと姉妹プロジェクト（`hokkaido_delay/`）のデプロイを同時に実行します（それぞれのリポジトリの`tools/deploy-pages.mjs`。ターミナルは別々に開きます）。未コミットの変更があるリポジトリは、そちらだけ中断します。
 
