@@ -5,7 +5,8 @@
 // app.js より先に読み込む（.has-nav で時間割の高さ・幅が変わるので、app.js が測る前に付けておく）
 (() => {
   const nav = window.TT_DATA.nav ?? {};
-  const enabled = self.SM27_SITE !== "pages";
+  // 公開先が分からないとき（更新の途中で、古い precache.js と組み合わさったときなど）も出さない
+  const enabled = ["app", "dev"].includes(self.SM27_SITE);
   const items = enabled ? nav.items : [];
   const home = items[0];
   const { esc } = window.TT_UTIL;
