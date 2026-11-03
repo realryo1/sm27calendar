@@ -12,7 +12,6 @@ window.GM_WISH = (D, L) => {
   const TAGS_KEY = "sm27-wish-tags";
 
   const TEXT = {
-    fab: "ほしいもの",
     title: "ほしいものリスト",
     close: "閉じる",
     // まとめ方：tag＝いちばん上のタグ（限定＞企業＞公式＞…）ごと、where＝ブース（売り場）ごと。並び順：まとまりの中の並び（値段は高い順、ブースはブースの順）
@@ -275,9 +274,13 @@ window.GM_WISH = (D, L) => {
   function refresh() {
     document.querySelectorAll(".gm-wish[data-wish]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.wish in wish)));
     const t = totals();
-    $fab.innerHTML = `<span class="gm-wishfab__icon" aria-hidden="true"></span><span class="gm-wishfab__label">${esc(TEXT.fab)}</span>${
-      t.n ? `<span class="gm-wishfab__n">${esc(TEXT.count(t.n))}</span><span class="gm-wishfab__sum">${yen(t.sum)}</span>` : ""
-    }`;
+    // 何も入れていないときは「ほしいものリスト」、入れたら件数と合計だけ（2行。読み上げにはリストの名前も付ける）。
+    // 「ほしいものリスト」は入れたあとも見えないまま重ねておき、ボタンの幅を変えない
+    $fab.innerHTML = `<span class="gm-wishfab__icon" aria-hidden="true"></span><span class="gm-wishfab__body"><span class="gm-wishfab__label">${esc(TEXT.title)}</span>${
+      t.n ? `<span class="gm-wishfab__nums"><span>${esc(TEXT.count(t.n))}</span><span>${yen(t.sum)}</span></span>` : ""
+    }</span>`;
+    if (t.n) $fab.setAttribute("aria-label", `${TEXT.title} ${TEXT.count(t.n)} ${yen(t.sum)}`);
+    else $fab.removeAttribute("aria-label");
     $fab.classList.toggle("is-empty", !t.n);
     if ($dlg.open || $panel) renderDialog();
   }

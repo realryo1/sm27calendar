@@ -311,6 +311,8 @@
 .gm-svg__hatch { fill: #e3defa; }
 .gm-svg__picked-a { stop-color: #9185de; }
 .gm-svg__picked-b { stop-color: #e9a1eb; }
+.gm-svg__picked-orange-a { stop-color: #d08100; } /* 配布・特典だけのブース（.theme-orange）を選んだときは、ブースの色のグラデーション */
+.gm-svg__picked-orange-b { stop-color: #f2b13f; }
 .gm-area rect { stroke-width: 2; transition: stroke .15s, opacity .15s; }
 .gm-area text { font-weight: 700; fill: var(--col-ink); text-anchor: middle; pointer-events: none; }
 .gm-area--exhibit rect { fill: url(#gmStripe); stroke: var(--col-secondary-light); }
@@ -345,7 +347,8 @@
 .gm-area.is-link { cursor: pointer; }
 .gm-area.is-link:hover rect { stroke: var(--col-ink-primary); }
 .gm-area.is-picked rect { stroke: var(--col-ink-primary); stroke-width: 4; }
-/* ブース：色は種類ごと（.theme-○○ の --c 系）。選んだブースはブランドのグラデーションで塗る */
+/* ブース：色は種類ごと（.theme-○○ の --c 系）。選んだブースはブランドのグラデーションで塗る（配布・特典だけのブースはオレンジのグラデーション。
+   :where で強さを上げず、.is-resizing の filter: none が勝つようにする） */
 .gm-tile { cursor: pointer; }
 .gm-tile rect { fill: var(--c-tint); stroke: var(--c); stroke-width: 2.5; transition: fill .15s, stroke .15s, opacity .15s; }
 .gm-tile text { font-family: var(--font-display); fill: var(--c-dark); text-anchor: middle; pointer-events: none; }
@@ -357,6 +360,8 @@
 .gm-tile.is-picked rect { fill: url(#gmPicked); stroke: var(--col-paper); stroke-width: 3; }
 .gm-tile.is-picked text { fill: var(--col-paper); }
 .gm-tile.is-picked { filter: drop-shadow(0 3px 5px rgb(135 56 144 / .45)); }
+.gm-tile.is-picked:where(.theme-orange) rect { fill: url(#gmPickedOrange); }
+.gm-tile.is-picked:where(.theme-orange) { filter: drop-shadow(0 3px 5px rgb(143 89 0 / .45)); }
 .gm-tile:focus,
 .gm-area:focus { outline: none; }
 .gm-tile:focus-visible rect,
@@ -833,6 +838,8 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 :root {
   --gm-heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z'/%3E%3C/svg%3E");
   --gm-heart-line: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'%3E%3Cpath d='M12 20s-7-4.3-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.5 1.2 5.2 3.1C13.7 6.2 15.2 5 17.2 5c3.3 0 5.2 3.3 3.8 6.4C19 15.7 12 20 12 20z'/%3E%3C/svg%3E");
+  /* リストの印（浮かぶボタン）：左に点、右に線を3行 */
+  --gm-list: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='4.5' cy='6' r='2'/%3E%3Ccircle cx='4.5' cy='12' r='2'/%3E%3Ccircle cx='4.5' cy='18' r='2'/%3E%3Cpath d='M9.5 6h11M9.5 12h11M9.5 18h11' stroke='%23000' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 /* 品の行の♡（行の左端。箇条書きのキラ星の位置）。入れると塗りつぶしのピンク */
 .gm-item--wish { padding-left: 26px; }
@@ -882,17 +889,30 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   font-weight: 900;
   color: var(--col-paper);
   background: var(--brand-gradient);
-  box-shadow: 0 6px 20px rgb(79 69 143 / .3);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / .6), 0 6px 20px rgb(79 69 143 / .3); /* 上の縁の照り返し（カレンダーの「市電いまどこ」と同じ形。地が明るいので白を濃くする） */
   cursor: pointer;
 }
 .gm-wishfab:hover { filter: brightness(1.05); }
-.gm-wishfab__icon { width: 20px; height: 20px; background: var(--col-paper); -webkit-mask: var(--gm-heart) no-repeat center / contain; mask: var(--gm-heart) no-repeat center / contain; }
-.gm-wishfab__label { font-size: .9rem; }
-.gm-wishfab__n,
-.gm-wishfab__sum { font-family: var(--font-display); font-size: 1rem; font-weight: 400; }
+.gm-wishfab__icon { width: 20px; height: 20px; background: var(--col-paper); -webkit-mask: var(--gm-list) no-repeat center / contain; mask: var(--gm-list) no-repeat center / contain; }
+/* 「ほしいものリスト」と、件数・合計（2行）を同じ場所に重ね、幅は「ほしいものリスト」に合わせる（入れても幅が変わらない） */
+.gm-wishfab__body { display: grid; font-size: .9rem; line-height: 1.2; }
+.gm-wishfab__body > * { grid-area: 1 / 1; place-self: center; }
+.gm-wishfab:not(.is-empty) .gm-wishfab__label { visibility: hidden; }
+.gm-wishfab__nums { display: flex; flex-direction: column; align-items: center; } /* 件数と合計は、上下に重ねてまん中にそろえる */
 @media (max-width: 640px) {
-  .gm-wishfab { right: auto; left: 50%; transform: translateX(-50%); bottom: calc(var(--gap) + env(safe-area-inset-bottom)); white-space: nowrap; }
-  .is-embed .gm-wishfab { bottom: calc(86px + env(safe-area-inset-bottom)); } /* カレンダーの下のバー（.is-embed body の下の余白と同じ分）の上 */
+  /* スマホはカレンダーの「市電いまどこ」（#trainChip）と同じ位置・大きさ：右下、高さ50px（--glass-h） */
+  .gm-wishfab {
+    right: var(--gap);
+    bottom: calc(var(--gap) + var(--safe-b));
+    gap: 6px;
+    height: 50px;
+    padding: 0 calc(50px * .28); /* 「市電いまどこ」と同じ（高さに合わせて左右の余白も変える） */
+    white-space: nowrap;
+  }
+  .gm-wishfab__icon { width: 18px; height: 18px; }
+  .gm-wishfab__body { font-size: .78rem; }
+  /* カレンダーの中では、カレンダーの下のバー（.app-nav）の上。「市電いまどこ」と同じく bottom は --nav-h（style.css の .has-nav：--glass-h＋--glass-gap×2＋--safe-b）と同じ式 */
+  .is-embed .gm-wishfab { bottom: calc(50px + var(--gap) * 2 + var(--safe-b)); }
   .gm-noscroll .gm-wishfab { display: none; } /* マップの全画面のあいだは出さない */
 }
 
@@ -911,11 +931,13 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-wishlist:focus { outline: none; } /* 開いたときに枠そのものにフォーカスの線を出さない（中のボタンには出る） */
 .gm-wishlist::backdrop { background: rgb(79 69 143 / .35); }
 @media (max-width: 640px) {
-  /* スマホは下から出るシート：幅いっぱい、下端に付けて、上は12pxだけ空ける（iPhone SE でもリストを広く見せる）。角は上だけ丸める */
-  .gm-wishlist { width: 100%; max-width: none; max-height: calc(100dvh - 12px); margin: auto 0 0; padding-bottom: env(safe-area-inset-bottom); border-radius: 20px 20px 0 0; } /* 下の余白はホームバーの分 */
-  .is-embed .gm-wishlist { bottom: calc(80px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 80px - env(safe-area-inset-bottom) - 12px); padding-bottom: 0; border-radius: 20px; box-shadow: 0 0 24px rgb(79 69 143 / .3); } /* 下のバー（.is-embed body の下の余白と同じ分）のすぐ上まで。バーと離れて浮くので角は4つとも丸める */
-  /* 画像で保存はリストと違って広さがいらないので、まん中に出す（上下に16pxずつ空ける） */
-  .gm-wishimg { max-height: calc(100dvh - 32px); margin: auto 0; padding-bottom: 0; border-radius: 20px; }
+  /* スマホは幅いっぱいで上下のまん中に出し、角は丸めない。上下は6pxずつ空ける（iPhone SE でもリストを広く見せる） */
+  .gm-wishlist { width: 100%; max-width: none; max-height: calc(100dvh - 12px); margin: auto 0; padding-bottom: env(safe-area-inset-bottom); border-radius: 0; } /* 下の余白はホームバーの分 */
+  .is-embed .gm-wishlist { bottom: calc(80px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 80px - env(safe-area-inset-bottom) - 12px); padding-bottom: 0; box-shadow: 0 0 24px rgb(79 69 143 / .3); } /* 下のバー（.is-embed body の下の余白と同じ分）より上の部分のまん中 */
+  /* リストは中身が少なくても画面の半分の高さにする（画像で保存・読み込みの確認は中身に合わせる） */
+  dialog.gm-wishlist:not(.gm-wishimg, .gm-wishask) { min-height: 50dvh; }
+  /* 画像で保存はリストと違って広さがいらないので、上下に16pxずつ空ける */
+  .gm-wishimg { max-height: calc(100dvh - 32px); padding-bottom: 0; }
   .is-embed .gm-wishimg { max-height: calc(100dvh - 80px - env(safe-area-inset-bottom) - 32px); }
 }
 .gm-wishlist__inner { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; } /* flex: 1（基準0%）だと、高さの決まっていない dialog の中で Safari が高さ0にして、リストが見えなくなる */
@@ -935,7 +957,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-wishlist__bar .gm-wishlist__title { flex: none; }
 .gm-wishlist__menubtn { display: flex; align-items: center; gap: 6px; flex: none; height: 36px; margin-left: auto; padding: 0 14px; font-size: .82rem; line-height: 1; } /* 右端（× の左）。高さは × と同じ */
 .gm-wishlist__menubtn::after { content: ""; width: 6px; height: 6px; margin-top: -3px; border: solid currentColor; border-width: 0 2px 2px 0; rotate: 45deg; transition: rotate .2s; } /* ▼の形。開いているときは上向き */
-.gm-wishlist__menubtn[aria-expanded="true"] { border-color: transparent; color: var(--col-paper); background: var(--brand-gradient) border-box; }
+.gm-wishlist__menubtn[aria-expanded="false"] { border-color: transparent; color: var(--col-paper); background: var(--brand-gradient) border-box; }
 .gm-wishlist__menubtn[aria-expanded="true"]::after { margin-top: 3px; rotate: -135deg; }
 /* 設定（「設定・保存」で開け閉めする）。上にまとめ方・並び順・表示の3組、下にすべて消す・リンクコピー・PDF・印刷・画像で保存。
    場所を取らないよう、大きさは2種類だけで低めに：選ぶボタン（.gm-chip）は高さ28px、保存などのボタンは高さ32px。文字はどちらも .78rem。

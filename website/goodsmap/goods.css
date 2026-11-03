@@ -5,6 +5,11 @@
 /* 2カラム（641px〜）：goodsmap.css と同じく、ページ全体はスクロールせず、左の一覧と右のほしいものリストがそれぞれスクロールする。
    スマホ（1カラム）は右のリスト（.gd-wish）を隠し、ページ全体をスクロールして、浮かぶボタンから dialog で開く */
 .gd-wish { display: none; }
+@media (max-width: 640px) {
+  /* ページ全体のスクロールバーは消す（ホイール・タッチ・キーではスクロールできる。カレンダーの2カラムと同じ） */
+  html.gd-page { scrollbar-width: none; }
+  html.gd-page::-webkit-scrollbar { display: none; }
+}
 @media (min-width: 641px) {
   .gd-page .gm { height: 100%; padding: var(--gap); }
   .gd-cols {

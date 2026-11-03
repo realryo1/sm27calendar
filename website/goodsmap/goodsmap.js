@@ -251,6 +251,7 @@
         <pattern id="gmStripe" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="12" height="12" class="gm-svg__stripe-bg"/><rect width="5" height="12" class="gm-svg__stripe"/></pattern>
         <pattern id="gmHatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="10" height="10" class="gm-svg__hatch-bg"/><rect width="2" height="10" class="gm-svg__hatch"/></pattern>
         <linearGradient id="gmPicked" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="gm-svg__picked-a"/><stop offset="1" class="gm-svg__picked-b"/></linearGradient>
+        <linearGradient id="gmPickedOrange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="gm-svg__picked-orange-a"/><stop offset="1" class="gm-svg__picked-orange-b"/></linearGradient>
       </defs>
       <rect class="gm-svg__base" x="${vx}" y="${vy}" width="${vw}" height="${vh}"/>
       ${f.areas.map(area).join("")}
@@ -736,10 +737,16 @@
     ev.preventDefault();
     activate(el);
   });
-  // カードの番号を押すと、マップでそのブースを示す
+  // カードの番号を押すと、マップでそのブースを示す。カードを開いたときも、マップにあるブース・売り場なら示す（選んでいなくても）
+  const onMap = (id) => {
+    const key = spotOf.get(id) ?? id;
+    return D.floors.some((x) => key in x.booths || x.areas.some((a) => a.spot === key));
+  };
   $list.addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-map]");
-    if (el) pick(el.dataset.map, { toMap: true });
+    if (el) return pick(el.dataset.map, { toMap: true });
+    const $card = ev.target.closest(".gm-card__head, .gm-official__head")?.parentElement;
+    if ($card && !$card.open && onMap($card.dataset.no)) pick($card.dataset.no, { toMap: true });
   });
   $chips.addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-kind]");
