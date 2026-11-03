@@ -4,6 +4,34 @@
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }
 
+  // github.io の引っ越しの案内（data.js の migrate）。インストールしたアプリの中でも、開くたびに出す（×でそのときだけ閉じる）。
+  // 出すときは、github.io のアプリのインストール案内は出さない
+  const migrate = window.TT_DATA.migrate;
+  // 見出しの下に、今のアイコン ⇒ 新しいアイコン（image/app/。github.io では消さずに残す。deploy-pages.yml）を並べる。
+  // 手元（"dev"）でも、見た目を確かめられるよう出す（appUrl はデプロイ時に入るので、手元ではボタンの行き先が無い）
+  if (migrate?.enabled && ((self.SM27_SITE === "pages" && migrate.appUrl) || self.SM27_SITE === "dev")) {
+    const { esc } = window.TT_UTIL;
+    const $m = document.createElement("div");
+    $m.className = "migrate";
+    $m.setAttribute("role", "dialog");
+    $m.setAttribute("aria-modal", "true");
+    $m.setAttribute("aria-labelledby", "migrateTitle");
+    $m.innerHTML = `<div class="migrate__card">
+        <p class="migrate__title" id="migrateTitle">${esc(migrate.title)}</p>
+        <p class="migrate__icons">
+          <img src="image/icon-maskable-512.png" alt="今のアイコン" width="56" height="56">
+          <span aria-hidden="true">⇒</span>
+          <img src="image/app/icon-maskable-512.png" alt="新しいアイコン" width="56" height="56">
+        </p>
+        <p class="migrate__text">${migrate.text}</p>
+        <a class="migrate__btn" href="${esc(migrate.appUrl || "#")}" target="_blank" rel="noopener">${esc(migrate.button)}</a>
+        <button type="button" class="migrate__close" aria-label="閉じる">×</button>
+      </div>`;
+    $m.querySelector(".migrate__close").addEventListener("click", () => $m.remove());
+    document.body.append($m);
+    return;
+  }
+
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
   if (standalone) return;
 

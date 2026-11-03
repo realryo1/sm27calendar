@@ -7,7 +7,7 @@
   <script>
     if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
   </script>
-  <!-- 試験ページ：検索に載せない。カレンダーからはサイドバー（nav.js、既定は無効）が有効なときだけ ?embed=1 の iframe で開く。PWA の対象外（sw.js は test_ で始まるフォルダをキャッシュしない） -->
+  <!-- 試験ページ：検索に載せない。カレンダーからはサイドバー（nav.js。github.io では出さない）から ?embed=1 の iframe で開く。オフライン保存は新しいドメインと手元だけ（precache.js の PRECACHE_GOODSMAP） -->
   <meta name="robots" content="noindex">
   <!-- ?page=goods でグッズ一覧（goods.js）、無ければグッズ・出展ブースマップ（goodsmap.js）。データ・一覧の部品・スタイルは共通。タイトルは下で付け直す -->
   <title>グッズ・出展ブースマップ（試験版）</title>

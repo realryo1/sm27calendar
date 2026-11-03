@@ -20,7 +20,7 @@
   --brand-gradient: linear-gradient(135deg, #9185de 0%, #e9a1eb 100%); /* 公式サイト準拠 */
   --gold-gradient: linear-gradient(to right, #736B32 0%, #D9CA5E 20%, #FFFFFF 30%, #D9CA5E 50%, #736B32 90%);
   /* ページの隙間（画面の端・時間割と会場一覧の間・時間割の上下・下のバーとの間など）。ここだけ変えればそろって変わる。
-     グッズマップ（test_sm26goodsmap/）もこの style.css を読むので同じ値になる。持ち手の位置の計算（app.js・goodsmap.js）もこれを読む */
+     グッズマップ（goodsmap/）もこの style.css を読むので同じ値になる。持ち手の位置の計算（app.js・goodsmap.js）もこれを読む */
   --gap: 10px;
   /* 画面の下端の安全な余白（iPhone のホームバーなど）。下のバーの位置・高さはこれを使う */
   --safe-b: env(safe-area-inset-bottom, 0px);
@@ -1823,7 +1823,57 @@ button { font: inherit; color: inherit; }
   .install { left: 8px; right: 8px; width: auto; bottom: calc(76px + var(--safe-b)); }
 }
 
-/* ---------- サイドバー（nav.js。data.js の nav.enabled のときだけ html に .has-nav が付く） ---------- */
+/* ---------- 引っ越しの案内（pwa.js。github.io で data.js の migrate.enabled のときだけ） ---------- */
+/* 画面を暗くして真ん中に出す。閉じればカレンダーはそのまま使える */
+.migrate {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(79 69 143 / .45);
+  animation: install-in .3s ease-out;
+}
+.migrate__card {
+  position: relative;
+  width: min(400px, 100%);
+  padding: 20px 18px 18px;
+  border-radius: 16px;
+  text-align: center;
+  background: var(--col-paper);
+  box-shadow: 0 10px 30px rgb(79 69 143 / .3);
+}
+.migrate__title { margin: 0 24px 8px; font-size: 1.05rem; font-weight: 900; line-height: 1.4; color: var(--col-primary-dark); }
+/* 今のアイコン ⇒ 新しいアイコン */
+.migrate__icons { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 12px; font-size: 1.3rem; font-weight: 900; color: var(--col-secondary); }
+.migrate__icons img { width: 56px; height: 56px; border-radius: 22%; box-shadow: 0 2px 8px rgb(79 69 143 / .25); }
+.migrate__text { margin: 0 0 14px; font-size: .88rem; line-height: 1.6; }
+.migrate__btn {
+  display: inline-block;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-weight: 900;
+  color: var(--col-paper);
+  text-decoration: none;
+  background: var(--brand-gradient);
+}
+.migrate__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  font-size: .95rem;
+  line-height: 1;
+  background: var(--col-secondary-lighter);
+  cursor: pointer;
+}
+
+/* ---------- サイドバー（nav.js。html に .has-nav、切り替えボタンを出すとき（github.io 以外）は .has-views も付く） ---------- */
 /* PCは左上に浮かぶ縦のバー、スマホは上に貼り付くヘッダー。切り替え先（.app-view）は iframe で、カレンダーの上に重ねる */
 .app-nav__item {
   display: flex;
@@ -1944,7 +1994,7 @@ button { font: inherit; color: inherit; }
     --glass-radius: 999px;
     --nav-h: calc(var(--glass-h) + var(--glass-gap) * 2 + var(--safe-b));
   }
-  /* 切り替えボタンが無いとき（data.js の nav.enabled が false）は、日付のバーを画面の下端の近くまで下げる */
+  /* 切り替えボタンが無いとき（github.io。precache.js の SM27_SITE が "pages"）は、日付のバーを画面の下端の近くまで下げる */
   .has-nav:not(.has-views) { --nav-h: calc(var(--glass-gap) + var(--safe-b)); }
   /* 切り替えボタンは画面の一番下（日付ボタンのバーの下）に固定する。会場一覧までスクロールしても残る。
      背景は持たず、ガラスのバーだけを時間割・会場一覧・マップなどの上に直接重ねる（バーの外は下を押せる） */

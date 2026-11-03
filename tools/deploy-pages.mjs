@@ -5,6 +5,7 @@
 //         --dry-run を付けると push も起動もせず、確認だけ行う。
 
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 const WORKFLOW_FILE = "deploy-pages.yml";
 const BRANCH = "main";
@@ -73,8 +74,10 @@ async function api(method, path, body) {
 
 const runsPath = `/actions/workflows/${WORKFLOW_FILE}/runs`;
 const pagesUrl = `https://${owner}.github.io/${repo}/`;
-// 公開URL（GitHub Pages と Vercel）。どちらも新しくなるまで待つ
-const siteUrls = [pagesUrl, "https://sm27app.realryo1.jp/"];
+// 公開URL（GitHub Pages と Vercel）。どちらも新しくなるまで待つ。Vercel の URL はワークフローの APP_URL（コードには置かない）
+const appUrl = readFileSync(new URL(`../.github/workflows/${WORKFLOW_FILE}`, import.meta.url), "utf8").match(/^\s*APP_URL:\s*(\S+)/m)?.[1];
+if (!appUrl) die(`${WORKFLOW_FILE} に APP_URL が見つかりません。`);
+const siteUrls = [pagesUrl, appUrl];
 
 // 公開中の data.js の版（updatedAt はデプロイのたびにワークフローが書き換える。同じ分に2回デプロイしても区別できるよう Last-Modified も見る）。
 // ワークフローが終わっても CDN（Fastly）が古いファイルを返すことがあり、その間はアプリの更新ボタンを押しても反映されないため、変わるまで待つのに使う

@@ -62,19 +62,28 @@ window.TT_DATA = {
     updatedPrefix: "最終情報更新：",
   },
 
+  // github.io の引っ越しの案内（pwa.js）。enabled: true にすると、github.io で開くたびに出す（×で閉じられる。新しいドメインでは出さない。手元では見た目の確認のため出す）。
+  // 新しいドメインの URL（appUrl）はコードに置かず、デプロイ時に deploy-pages.yml が入れる
+  migrate: {
+    enabled: false,
+    appUrl: "",
+    title: "【 大規模アップデートのお知らせ 】",
+    text: "グッズ一覧・マップ・運行情報を追加しました！<br>新しいURLでホーム画面に追加し直してください。<br>※このアプリは12月末で終了します",
+    button: "新しいページを開く",
+  },
+
   // サイドバー（スマホは画面の下のバー）で、カレンダーからマップ・グッズ・運行情報に切り替える（nav.js）。
-  // マップ・グッズ・運行情報は仮実装のため、enabled: false で切り替えボタンを出さない（日付のガラスのバーは出す）。先頭の項目（url なし）がカレンダー。
+  // 新しいドメインと手元だけで出し、github.io では切り替えボタンを出さない（日付のガラスのバーは出す。precache.js の SM27_SITE）。先頭の項目（url なし）がカレンダー。
   // url のページは iframe で重ねて表示する（?embed=1 で、向こうのページのカレンダーへ戻るリンクなどを隠す）。
   // localUrl は、手元（localhost・127.0.0.1）で開いたときに url の代わりに開くページ（運行情報は、公開前の変更を手元の hokkaido_delay/ で確かめるため）。
   // preload: true は、開く前に裏で読み込んでおく（運行情報は1分ごとに取得し続けるので、押そうとしたときだけ読み込む）。
   // pass は、カレンダーの URL からそのページへ渡す引数（ほしいものリストのリンク ?view=goods&wish=… の wish と、年の year）
   nav: {
-    enabled: false,
     label: "表示の切り替え",
     items: [
       { id: "calendar", label: "カレンダー", icon: "calendar" },
-      { id: "map", label: "マップ", icon: "map", url: "test_sm26goodsmap/?embed=1", preload: true },
-      { id: "goods", label: "グッズ", icon: "bag", url: "test_sm26goodsmap/?embed=1&page=goods", preload: true, pass: ["year", "wish"] },
+      { id: "map", label: "マップ", icon: "map", url: "goodsmap/?embed=1", preload: true },
+      { id: "goods", label: "グッズ", icon: "bag", url: "goodsmap/?embed=1&page=goods", preload: true, pass: ["year", "wish"] },
       { id: "delay", label: "運行情報", icon: "train", url: "https://realryo1.github.io/hokkaido_delay/?embed=1", localUrl: "/hokkaido_delay/website/?embed=1" },
     ],
   },

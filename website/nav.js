@@ -1,11 +1,11 @@
 // サイドバー（スマホは画面の下のバー）：日付のボタンをガラスのバーにし、カレンダーのまま、マップ・グッズ・運行情報に切り替える（data.js の nav）。
-// 切り替え（nav.enabled）は仮実装なので、無効のときは切り替えボタンを出さず、日付のガラスのバーだけにする（html に .has-views が付かない）。
+// 切り替えは新しいドメインと手元だけで出す。github.io（precache.js の SM27_SITE が "pages"）では切り替えボタンを出さず、日付のガラスのバーだけにする（html に .has-views が付かない）。
 // 切り替え先は別ページだが、iframe で画面に重ねて出し、カレンダーは裏に残す（戻ったときにスクロール位置・拡大率がそのまま）。
 // URL は ?view=○○ にして（history.pushState）、戻るボタンでカレンダーに戻れるようにする。
 // app.js より先に読み込む（.has-nav で時間割の高さ・幅が変わるので、app.js が測る前に付けておく）
 (() => {
   const nav = window.TT_DATA.nav ?? {};
-  const enabled = !!nav.enabled;
+  const enabled = self.SM27_SITE !== "pages";
   const items = enabled ? nav.items : [];
   const home = items[0];
   const { esc } = window.TT_UTIL;
@@ -211,7 +211,7 @@
   new MutationObserver(syncDay).observe($days, { subtree: true, childList: true, attributeFilter: ["class"] });
   syncDay();
 
-  // 表示の中のページから、別の表示へ移る（グッズ一覧 test_sm26goodsmap/?page=goods のブースの番号 → マップのそのブース）。
+  // 表示の中のページから、別の表示へ移る（グッズ一覧 goodsmap/?page=goods のブースの番号 → マップのそのブース）。
   // { type: "sm27-view", view: "map", search: "year=2026", hash: "#booth-11" } を postMessage で受け取る。
   // search（年など）が今の iframe と違えば読み込み直し、同じならハッシュだけ変える（マップは hashchange でそのブースを開く）
   if (enabled)

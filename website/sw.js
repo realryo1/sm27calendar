@@ -1,9 +1,9 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v18";
+const VERSION = "v19";
 const CACHE = `sm27-${VERSION}`;
-importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）
+importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）・self.SM27_SITE（公開先）
 const PRECACHE = self.PRECACHE;
 // フォント（Google Fonts）も保存してオフラインで使う。大きくて変わらないので、版を付けない別のキャッシュに持ち、
 // 版の更新でも更新ボタン（app.js の hardRefresh）でも消さない
@@ -33,6 +33,8 @@ self.addEventListener("fetch", (event) => {
   if (sameOrigin && url.pathname.includes("/delay/")) return;
   // test_ で始まるフォルダは試験ページ（グッズマップなど）。PWA の対象外で、キャッシュを通すとカレンダーが返るので、そのまま取得させる
   if (sameOrigin && url.pathname.includes("/test_")) return;
+  // github.io ではグッズマップを保存しない（precache.js）。サイドバーを出さないので、直接開かれたときもそのまま取得させる
+  if (sameOrigin && self.SM27_SITE === "pages" && url.pathname.includes("/goodsmap/")) return;
 
   // index.html はデプロイのたびに自サイトのファイルへ ?v=（版）を付けて読み込む（deploy-pages.yml）。キャッシュは版を外した URL で持つ
   const plain = sameOrigin ? url.origin + url.pathname : req;
@@ -54,8 +56,8 @@ self.addEventListener("fetch", (event) => {
         if (res.ok) cache.put(plain, res.clone());
         return res;
       }
-      // ?at= などのクエリ付きでもページ本体はキャッシュを使う
-      const key = sameOrigin && req.mode === "navigate" ? "index.html" : plain;
+      // ?at= などのクエリ付きでもページ本体はキャッシュを使う。ページはフォルダごとの index.html（カレンダーと goodsmap/。iframe もここを通る）
+      const key = sameOrigin && req.mode === "navigate" && url.pathname.endsWith("/") ? new URL("index.html", url).href : plain;
       const cached = await cache.match(key, { ignoreSearch: sameOrigin });
       const network = fetch(req)
         .then((res) => {

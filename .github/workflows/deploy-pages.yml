@@ -1,4 +1,4 @@
-name: Deploy website to GitHub Pages
+name: Deploy website to GitHub Pages and Vercel
 
 on:
   workflow_dispatch:
@@ -11,6 +11,10 @@ permissions:
 concurrency:
   group: pages
   cancel-in-progress: false
+
+# 新しいドメイン（Vercel）の URL。コードやドキュメントには置かず、ここだけに書く（github.io の引っ越しの案内の行き先・F5 の反映待ち）
+env:
+  APP_URL: https://sm27app.realryo1.jp/
 
 jobs:
   deploy:
@@ -41,24 +45,45 @@ jobs:
           sed -i -E "s/(src|href)=\"(style\.css|[a-z-]+\.js)\"/\1=\"\2?v=${v}\"/g" website/index.html
           grep -o -E "(src|href)=\"[a-z.-]+\?v=[0-9]+\"" website/index.html
 
-      # 公開するファイルだけ JS / CSS を圧縮する（リポジトリのソースは読みやすいまま）。updatedAt の書き換えより後に行う
-      - name: Minify JS / CSS
-        run: npx -y esbuild@0.25.10 website/*.js website/style.css website/test_sm26goodsmap/*.js website/test_sm26goodsmap/*.css --minify --charset=utf8 --outdir=website --allow-overwrite --log-level=warning
+      # 公開先ごとに分ける。website/ は新しいドメイン（Vercel）、_pages/ は github.io（GitHub Pages）。
+      # precache.js の SM27_SITE（サイドバー・保存する範囲・引っ越しの案内）と、github.io の引っ越しの案内の行き先（data.js の migrate.appUrl）を書き換える。
+      # 新しいドメインのアイコン（website/image/app/）があれば image/ の同じ名前のファイルに上書きする（github.io は今のアイコンのまま。
+      # github.io では引っ越しの案内に新しいアイコンを出すので image/app/ を残す）
+      - name: Split sites
+        run: |
+          cp -r website _pages
+          sed -i 's/^self.SM27_SITE = "dev";/self.SM27_SITE = "app";/' website/precache.js
+          sed -i 's/^self.SM27_SITE = "dev";/self.SM27_SITE = "pages";/' _pages/precache.js
+          grep -q 'SM27_SITE = "app"' website/precache.js
+          grep -q 'SM27_SITE = "pages"' _pages/precache.js
+          sed -i -E "s#^(    appUrl: \")[^\"]*(\",)#\1${APP_URL}\2#" _pages/data.js
+          grep -q "appUrl: \"${APP_URL}\"" _pages/data.js
+          if [ -d website/image/app ]; then cp website/image/app/* website/image/; fi
+          rm -rf website/image/app
 
-      - name: Upload website directory
+      # 公開するファイルだけ JS / CSS を圧縮する（リポジトリのソースは読みやすいまま）。updatedAt・公開先の書き換えより後に行う
+      - name: Minify JS / CSS
+        run: |
+          for d in website _pages; do
+            npx -y esbuild@0.25.10 $d/*.js $d/style.css $d/goodsmap/*.js $d/goodsmap/*.css --minify --charset=utf8 --outdir=$d --allow-overwrite --log-level=warning
+          done
+
+      - name: Upload github.io directory
         uses: actions/upload-pages-artifact@v3
         with:
-          path: website
+          path: _pages
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # 同じ加工済みのファイルを Vercel（sm27app.realryo1.jp）にも公開する。
+      # 新しいドメイン用の website/ を Vercel に公開する（リポジトリのルートから送り、Vercel が Root Directory の website/ を出す）。
       # Vercel のプロジェクト設定で Root Directory を website にし、Git 連携は切っておく（加工前のリポジトリが公開されないように）。
       # Secrets：VERCEL_TOKEN、VERCEL_ORG_ID、VERCEL_PROJECT_ID
       - name: Deploy to Vercel
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: npx -y vercel@64.5.0 deploy --prod --yes --token="${{ secrets.VERCEL_TOKEN }}"
+        run: |
+          rm -rf _pages
+          npx -y vercel@64.5.0 deploy --prod --yes --token="${{ secrets.VERCEL_TOKEN }}"

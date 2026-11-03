@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- ブースマップのエディタ。website/test_sm26goodsmap/ のデータ（data-○○○○.js）の floors の配置（view・tile・areas・booths）を
+<!-- ブースマップのエディタ。website/goodsmap/ のデータ（data-○○○○.js）の floors の配置（view・tile・areas・booths）を
      ドラッグで直し、そのファイルに書き戻す。書き戻すのは数字だけで、コメントや並びはそのまま残す。
      手元専用（tools/ はデプロイしない）。Chrome・Edge で開く（file:// でも LiveServer でも可）。既定は27年（data-2027.js）。上のデータの選択（または ?data=）でデータを変えられる。
      フロアが複数あるデータは、その隣の選択でフロアを切り替える（ウイングベイ・チ・カ・ホなど） -->
@@ -169,7 +169,7 @@
 </main>
 <script>
 (() => {
-  const DATA_SRC = new URLSearchParams(location.search).get("data") ?? "../website/test_sm26goodsmap/data-2027.js";
+  const DATA_SRC = new URLSearchParams(location.search).get("data") ?? "../website/goodsmap/data-2027.js";
   // goodsmap.js と同じ値
   const INSET = 2.5;
   const GROW = 12;
@@ -1216,8 +1216,8 @@
   // データの選択。選ぶと、そのデータで読み込み直す（未保存の変更があれば確かめる）
   {
     const SRCS = [
-      ["../website/test_sm26goodsmap/data-2027.js", "2027"],
-      ["../website/test_sm26goodsmap/data-2026fix.js", "2026（前年の見本）"],
+      ["../website/goodsmap/data-2027.js", "2027"],
+      ["../website/goodsmap/data-2026fix.js", "2026（前年の見本）"],
     ];
     if (!SRCS.some(([src]) => src === DATA_SRC)) SRCS.push([DATA_SRC, DATA_SRC.split("/").pop()]);
     $("data").innerHTML = SRCS.map(([src, name]) => `<option value="${esc(src)}"${src === DATA_SRC ? " selected" : ""}>${esc(name)}</option>`).join("");
