@@ -260,315 +260,338 @@
   const MIN_ITEMS = 180;
   const clampMin = (min) => Math.min(LAST_H * 60, Math.max(FIRST_H * 60, min));
 
-  // ---------- 描画 ----------
-  $root.innerHTML = `
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tlBrandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9185de"/><stop offset="1" stop-color="#e9a1eb"/></linearGradient></defs></svg>
-    <div class="tl-grid">
-    <div class="tl-side">
-    <h4 class="train-live__title">${nl(TEXT.title)}<small>${nl(TEXT.titleSub)}</small></h4>
-    <p class="vc-ev__note">${nl(TEXT.note)}</p>
-    <div class="tl-controls">
-      <button type="button" class="tl-now" id="tlNow">${nl(TEXT.now)}</button>
-      <input type="date" class="tl-date" id="tlDate" min="${T.period.start}" max="${T.period.end}" aria-label="${TEXT.dateLabel}">
-    </div>
-    <div class="tl-time">
-      <button type="button" class="tl-step" data-step="-30" aria-label="30分前">- 30</button>
-      <div class="tl-wheel" role="group" aria-label="${TEXT.timeLabel}">
-        <div class="tl-wheel__band" aria-hidden="true"></div>
-        <div class="tl-wheel__col" id="tlHour" role="listbox" tabindex="0" aria-label="時">${Array.from({ length: HOUR_ITEMS }, (_, i) => `<div class="tl-wheel__item" role="option">${FIRST_H + i}</div>`).join("")}</div>
-        <span class="tl-wheel__colon" aria-hidden="true">:</span>
-        <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: MIN_ITEMS }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i % 60).padStart(2, "0")}</div>`).join("")}</div>
+  // 欄（会場一覧の雪ミク電車のカード）が画面に近づくまで作らない。起動のときに、路線図・時刻のホイール・駅名標を作ってレイアウトするのを避けるため。
+  // 作るのは欄の600px手前から。#train-live へのリンクで飛ぶときも、欄の位置は作る前と変わらない（欄の上に何も足さない）
+  let visible = false;
+  const start = () => {
+    // ---------- 描画 ----------
+    $root.innerHTML = `
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tlBrandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9185de"/><stop offset="1" stop-color="#e9a1eb"/></linearGradient></defs></svg>
+      <div class="tl-grid">
+      <div class="tl-side">
+      <h4 class="train-live__title">${nl(TEXT.title)}<small>${nl(TEXT.titleSub)}</small></h4>
+      <p class="vc-ev__note">${nl(TEXT.note)}</p>
+      <div class="tl-controls">
+        <button type="button" class="tl-now" id="tlNow">${nl(TEXT.now)}</button>
+        <input type="date" class="tl-date" id="tlDate" min="${T.period.start}" max="${T.period.end}" aria-label="${TEXT.dateLabel}">
       </div>
-      <button type="button" class="tl-step" data-step="30" aria-label="30分後">+ 30</button>
-    </div>
-      <div class="tl-status" id="tlStatus"></div>
-    </div>
-      <div class="tl-map-wrap">${buildMapSvg()}</div>
-    </div>
-    <details class="tl-trips">
-      <summary>${nl(TEXT.tripsSummary)}</summary>
-      <div id="tlTrips"></div>
-    </details>
-  `;
+      <div class="tl-time">
+        <button type="button" class="tl-step" data-step="-30" aria-label="30分前">- 30</button>
+        <div class="tl-wheel" role="group" aria-label="${TEXT.timeLabel}">
+          <div class="tl-wheel__band" aria-hidden="true"></div>
+          <div class="tl-wheel__col" id="tlHour" role="listbox" tabindex="0" aria-label="時">${Array.from({ length: HOUR_ITEMS }, (_, i) => `<div class="tl-wheel__item" role="option">${FIRST_H + i}</div>`).join("")}</div>
+          <span class="tl-wheel__colon" aria-hidden="true">:</span>
+          <div class="tl-wheel__col" id="tlMin" role="listbox" tabindex="0" aria-label="分">${Array.from({ length: MIN_ITEMS }, (_, i) => `<div class="tl-wheel__item" role="option">${String(i % 60).padStart(2, "0")}</div>`).join("")}</div>
+        </div>
+        <button type="button" class="tl-step" data-step="30" aria-label="30分後">+ 30</button>
+      </div>
+        <div class="tl-status" id="tlStatus"></div>
+      </div>
+        <div class="tl-map-wrap">${buildMapSvg()}</div>
+      </div>
+      <details class="tl-trips">
+        <summary>${nl(TEXT.tripsSummary)}</summary>
+        <div id="tlTrips"></div>
+      </details>
+    `;
 
-  const $now = document.getElementById("tlNow");
-  const $date = document.getElementById("tlDate");
-  const $hour = document.getElementById("tlHour");
-  const $min = document.getElementById("tlMin");
-  const $status = document.getElementById("tlStatus");
-  const $map = document.getElementById("tlMap");
-  const $train = document.getElementById("tlTrain");
-  const $heading = document.getElementById("tlHeading");
-  const $times = [...$map.querySelectorAll("[data-time]")];
-  const $sts = [...$map.querySelectorAll("[data-st]")];
-  const $trips = document.getElementById("tlTrips");
+    const $now = document.getElementById("tlNow");
+    const $date = document.getElementById("tlDate");
+    const $hour = document.getElementById("tlHour");
+    const $min = document.getElementById("tlMin");
+    const $status = document.getElementById("tlStatus");
+    const $map = document.getElementById("tlMap");
+    const $train = document.getElementById("tlTrain");
+    const $heading = document.getElementById("tlHeading");
+    const $times = [...$map.querySelectorAll("[data-time]")];
+    const $sts = [...$map.querySelectorAll("[data-st]")];
+    const $trips = document.getElementById("tlTrips");
 
-  // 電車マーカーは線路に沿ってアニメーション（直線補間だと角で線路から外れるため）
-  const anim = { dist: null, gap: 0, raf: 0 };
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const placeTrain = (dist, gap) => {
-    const p = pointAt(dist, gap);
-    $train.setAttribute("transform", `translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
-    // 進行方向の矢印: 外回りは線路順、内回りはその逆向き（駅ちょうどでは手前の区間の向き）
-    const angle = gap >= 0 ? p.angle : pointAt(dist - 0.5, gap).angle + 180;
-    $heading.setAttribute("transform", `rotate(${angle.toFixed(1)})`);
-    anim.dist = dist;
-    anim.gap = gap;
-  };
-  // travel: 路線の進行方向に沿って動かす向き（+1 線路順 / -1 逆順）。null なら近い方向へ
-  function moveTrain(dist, gap, travel = null) {
-    cancelAnimationFrame(anim.raf);
-    if (anim.dist == null || reduceMotion) return placeTrain(dist, gap);
-    let delta = (((dist - anim.dist) % TOTAL) + TOTAL) % TOTAL;
-    if (travel != null && Math.sign(gap) === Math.sign(anim.gap)) {
-      if (travel < 0 && delta > 0) delta -= TOTAL;
-    } else if (delta > TOTAL / 2) delta -= TOTAL;
-    const from = anim.dist;
-    const fromGap = anim.gap;
-    const t0 = performance.now();
-    const dur = 450;
-    const step = (now) => {
-      const e = Math.min(1, (now - t0) / dur);
-      const k = 1 - (1 - e) ** 3;
-      placeTrain(from + delta * k, fromGap + (gap - fromGap) * k);
-      if (e < 1) anim.raf = requestAnimationFrame(step);
+    // 電車マーカーは線路に沿ってアニメーション（直線補間だと角で線路から外れるため）
+    const anim = { dist: null, gap: 0, raf: 0 };
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const placeTrain = (dist, gap) => {
+      const p = pointAt(dist, gap);
+      $train.setAttribute("transform", `translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
+      // 進行方向の矢印: 外回りは線路順、内回りはその逆向き（駅ちょうどでは手前の区間の向き）
+      const angle = gap >= 0 ? p.angle : pointAt(dist - 0.5, gap).angle + 180;
+      $heading.setAttribute("transform", `rotate(${angle.toFixed(1)})`);
+      anim.dist = dist;
+      anim.gap = gap;
     };
-    anim.raf = requestAnimationFrame(step);
-  }
+    // travel: 路線の進行方向に沿って動かす向き（+1 線路順 / -1 逆順）。null なら近い方向へ
+    function moveTrain(dist, gap, travel = null) {
+      cancelAnimationFrame(anim.raf);
+      if (anim.dist == null || reduceMotion) return placeTrain(dist, gap);
+      let delta = (((dist - anim.dist) % TOTAL) + TOTAL) % TOTAL;
+      if (travel != null && Math.sign(gap) === Math.sign(anim.gap)) {
+        if (travel < 0 && delta > 0) delta -= TOTAL;
+      } else if (delta > TOTAL / 2) delta -= TOTAL;
+      const from = anim.dist;
+      const fromGap = anim.gap;
+      const t0 = performance.now();
+      const dur = 450;
+      const step = (now) => {
+        const e = Math.min(1, (now - t0) / dur);
+        const k = 1 - (1 - e) ** 3;
+        placeTrain(from + delta * k, fromGap + (gap - fromGap) * k);
+        if (e < 1) anim.raf = requestAnimationFrame(step);
+      };
+      anim.raf = requestAnimationFrame(step);
+    }
 
-  const cache = {};
-  const keypoints = (type) => (cache[type] ??= buildKeypoints(type));
+    const cache = {};
+    const keypoints = (type) => (cache[type] ??= buildKeypoints(type));
 
-  const DIR = {
-    outer: { name: "外回り", en: "Outer Loop", step: 1 },
-    inner: { name: "内回り", en: "Inner Loop", step: -1 },
-  };
+    const DIR = {
+      outer: { name: "外回り", en: "Outer Loop", step: 1 },
+      inner: { name: "内回り", en: "Inner Loop", step: -1 },
+    };
 
-  // 駅名標風の表示。center を中央（この駅）に、進行方向の前後の停留場を左右に置く。
-  // trainAt: 左の停留場(0)〜中央(1) の間の電車位置（走行中のみ。丸と重ならない範囲に収める）
-  // times: [前駅, 当駅, 次駅] の [時刻, 説明] （無い場合は null）
-  function stationSign(direction, center, trainAt, here, times) {
-    const dir = DIR[direction];
-    const at = (i) => ((i % N) + N) % N;
-    const prev = at(center - dir.step);
-    const next = at(center + dir.step);
-    const side = (i, cls) => `<div class="tl-sign__st tl-sign__st--${cls}">
-        <span class="tl-sign__num">SC<br>${SC(i)}</span>
-        <b style="--len:${T.stations[i].name.length}">${T.stations[i].name}</b><small${T.stations[i].roma.length > 24 ? " class=\"is-long\"" : ""}>${T.stations[i].roma}</small>
+    // 駅名標風の表示。center を中央（この駅）に、進行方向の前後の停留場を左右に置く。
+    // trainAt: 左の停留場(0)〜中央(1) の間の電車位置（走行中のみ。丸と重ならない範囲に収める）
+    // times: [前駅, 当駅, 次駅] の [時刻, 説明] （無い場合は null）
+    function stationSign(direction, center, trainAt, here, times) {
+      const dir = DIR[direction];
+      const at = (i) => ((i % N) + N) % N;
+      const prev = at(center - dir.step);
+      const next = at(center + dir.step);
+      const side = (i, cls) => `<div class="tl-sign__st tl-sign__st--${cls}">
+          <span class="tl-sign__num">SC<br>${SC(i)}</span>
+          <b style="--len:${T.stations[i].name.length}">${T.stations[i].name}</b><small${T.stations[i].roma.length > 24 ? " class=\"is-long\"" : ""}>${T.stations[i].roma}</small>
+        </div>`;
+      const train =
+        trainAt != null
+          ? `<svg class="tl-sign__train" style="--p:${(0.29 + trainAt * 0.04).toFixed(3)}" viewBox="-16 -16 32 32" aria-hidden="true">${trainMark(false)}</svg>`
+          : "";
+      return `<div class="tl-sign tl-sign--${direction}${here ? " is-here" : ""} notranslate" translate="no">
+        <div class="tl-sign__top">
+          <p class="tl-sign__name" style="--len:${T.stations[center].name.length}">${T.stations[center].name}</p>
+          <p class="tl-sign__roma" style="--rlen:${T.stations[center].roma.length}">${T.stations[center].roma}</p>
+        </div>
+        <div class="tl-sign__times">${times
+          .map((t, k) => `<span class="${k === 1 ? "is-cur" : ""}">${t ? `${t[0] ? fmt(t[0]) : ""}<small>${t[1]}</small>` : ""}</span>`)
+          .join("")}</div>
+        <div class="tl-sign__mid">
+          <svg class="tl-sign__arrow" viewBox="0 0 20 40" aria-hidden="true"><polyline points="3,3 17,20 3,37"/></svg>
+          ${side(prev, "prev")}
+          <div class="tl-sign__st tl-sign__st--cur"><span class="tl-sign__num">SC<br>${SC(center)}</span></div>
+          ${side(next, "next")}
+          ${train}
+        </div>
+        <p class="tl-sign__dir">${dir.name}<span>${dir.en}</span></p>
       </div>`;
-    const train =
-      trainAt != null
-        ? `<svg class="tl-sign__train" style="--p:${(0.29 + trainAt * 0.04).toFixed(3)}" viewBox="-16 -16 32 32" aria-hidden="true">${trainMark(false)}</svg>`
-        : "";
-    return `<div class="tl-sign tl-sign--${direction}${here ? " is-here" : ""} notranslate" translate="no">
-      <div class="tl-sign__top">
-        <p class="tl-sign__name" style="--len:${T.stations[center].name.length}">${T.stations[center].name}</p>
-        <p class="tl-sign__roma" style="--rlen:${T.stations[center].roma.length}">${T.stations[center].roma}</p>
-      </div>
-      <div class="tl-sign__times">${times
-        .map((t, k) => `<span class="${k === 1 ? "is-cur" : ""}">${t ? `${t[0] ? fmt(t[0]) : ""}<small>${t[1]}</small>` : ""}</span>`)
-        .join("")}</div>
-      <div class="tl-sign__mid">
-        <svg class="tl-sign__arrow" viewBox="0 0 20 40" aria-hidden="true"><polyline points="3,3 17,20 3,37"/></svg>
-        ${side(prev, "prev")}
-        <div class="tl-sign__st tl-sign__st--cur"><span class="tl-sign__num">SC<br>${SC(center)}</span></div>
-        ${side(next, "next")}
-        ${train}
-      </div>
-      <p class="tl-sign__dir">${dir.name}<span>${dir.en}</span></p>
-    </div>`;
-  }
-
-  let lastMin = state.min;
-  function render() {
-    if (state.live) Object.assign(state, nowJST());
-    const prevMin = lastMin;
-    lastMin = state.min;
-    $now.classList.toggle("is-active", state.live);
-    $date.value = state.dateId;
-    setWheel(Math.floor(state.min));
-
-    const type = dayType(state.dateId);
-
-    $sts.forEach((g) => g.classList.remove("is-current", "is-next"));
-    if (!type) {
-      $map.dataset.dir = "";
-      $status.innerHTML = `<p class="tl-off">${nl(TEXT.offPeriod)}（${ymd(T.period.start)}〜${ymd(T.period.end)}）</p>`;
-      $train.style.display = "none";
-      $times.forEach((t) => (t.textContent = ""));
-      $trips.innerHTML = "";
-      return;
     }
 
-    const cfg = T[type];
-    const kps = keypoints(type);
-    const loc = locate(kps, state.min);
-    const next = nextTimes(kps, state.min);
-    $map.dataset.dir = cfg.direction;
-
-    // 駅名標の中央に出す停留場（停車中＝その駅、走行中＝次の駅、運行前後＝始発／終着）
-    let center;
-    let trainAt = null;
-    let curTime; // 当駅の時刻 [時刻, 説明]
-    if (loc.state === "before") {
-      center = kps[0].pos % N;
-      curTime = [kps[0].t, "発"];
-    } else if (loc.state === "after") {
-      center = kps[kps.length - 1].pos % N;
-      curTime = [null, "運行終了"];
-    } else if (loc.state === "stop") {
-      center = loc.pos % N;
-      curTime = [loc.until.t, "発"];
-    } else {
-      center = loc.to.pos % N;
-      trainAt = loc.frac;
-      curTime = [loc.to.t, "着"];
-    }
-    // 前駅＝直近にその駅を出た時刻、次駅＝当駅の後に着く時刻
-    const step = DIR[cfg.direction].step;
-    const prevPos = (center - step + N) % N;
-    const nextPos = (center + step + N) % N;
-    const prevDep = kps.filter((k) => k.pos % N === prevPos && k.t <= state.min).at(-1);
-    const after = curTime[0] ?? state.min;
-    const nextArr = loc.state === "after" ? null : kps.find((k) => k.pos % N === nextPos && k.t > after);
-    const times = [prevDep && [prevDep.t, "発"], curTime, nextArr && [nextArr.t, "着"]];
-    $status.innerHTML = stationSign(cfg.direction, center, trainAt, loc.state === "stop", times);
-
-    $times.forEach((t) => {
-      const v = next[Number(t.dataset.time)];
-      t.textContent = v != null ? fmt(v) : "";
-    });
-
-    if (loc.state === "stop" || loc.state === "run") {
-      const dist = posDist(loc.pos);
-      const gap = cfg.direction === "outer" ? GAP : -GAP;
-      $train.style.display = "";
-      // 時刻を進めたら路線の進行方向へ、戻したらその逆へ動かす（30分送り・戻しで逆走して見えないように）
-      const dirSign = cfg.direction === "outer" ? 1 : -1;
-      const dt = state.min - prevMin;
-      moveTrain(dist, gap, dt === 0 || Math.abs(dt) > 60 ? null : dt > 0 ? dirSign : -dirSign);
-      if (loc.state === "stop") $sts[loc.pos % N].classList.add("is-current");
-      else $sts[loc.to.pos % N].classList.add("is-next");
-    } else {
-      $train.style.display = "none";
-      anim.dist = null;
-    }
-
-    const [h1, h2] = cfg.direction === "outer" ? ["西4丁目発", "すすきの発"] : ["すすきの発", "西4丁目発"];
-    $trips.innerHTML = `<table class="tl-table">
-      <thead><tr><th>${h1}</th><th>${h2}</th></tr></thead>
-      <tbody>${cfg.trips
-        .map(
-          ([a, b], k) => `<tr class="${k === loc.trip ? "is-current" : ""}"><td>${a}</td><td>${b}${
-            k === cfg.trips.length - 1 ? ` <small>${T.lastStop}行</small>` : ""
-          }</td></tr>`
-        )
-        .join("")}</tbody></table>`;
-  }
-
-  $now.addEventListener("click", () => {
-    state.live = true;
-    render();
-  });
-  $date.addEventListener("change", () => {
-    if (!$date.value) return;
-    state.live = false;
-    state.dateId = $date.value;
-    render();
-  });
-  // ---------- 時刻のホイール（タイマー設定のように、時と分の縦のリストを回して合わせる） ----------
-  const wheelItem = () => $hour.firstElementChild.offsetHeight;
-  let ignoreScroll = 0; // render からの位置合わせで起きる scroll では状態を書き換えない（時刻 ms まで）
-  let userUntil = 0; // 指で操作している間は、render からの位置合わせをしない（時刻 ms まで）
-  let wheelRaf = 0;
-  let wheelSettle = 0;
-  let drag = null; // マウスでドラッグ中の { $col, y, top }
-  let dragMoved = false;
-  const wheelIndex = ($col, max) => Math.min(max, Math.max(0, Math.round($col.scrollTop / wheelItem())));
-  const markSelected = () => {
-    [[$hour, HOUR_ITEMS - 1], [$min, MIN_ITEMS - 1]].forEach(([$col, max]) => {
-      const sel = wheelIndex($col, max);
-      [...$col.children].forEach(($i, k) => $i.classList.toggle("is-sel", k === sel));
-    });
-  };
-  function setWheel(min) {
-    if (performance.now() < userUntil) return;
-    const item = wheelItem();
-    ignoreScroll = performance.now() + 150;
-    $hour.scrollTop = (Math.floor(min / 60) - FIRST_H) * item;
-    $min.scrollTop = (60 + (min % 60)) * item; // 分は 00〜59 を3周ぶん並べ、真ん中の周に置く
-    markSelected();
-  }
-  const onWheelScroll = () => {
-    if (performance.now() < ignoreScroll) return;
-    userUntil = performance.now() + 400;
-    cancelAnimationFrame(wheelRaf);
-    wheelRaf = requestAnimationFrame(() => {
-      markSelected();
-      // 分のリストは3周ぶんあり、前後の周に入った分は時に繰り上げ／繰り下げる（13:00 から 12:59 へ回せる）
-      const mi = wheelIndex($min, MIN_ITEMS - 1);
-      const min = clampMin((FIRST_H + wheelIndex($hour, HOUR_ITEMS - 1)) * 60 + (mi % 60) + (Math.floor(mi / 60) - 1) * 60);
-      if (min === Math.floor(state.min)) return; // 位置合わせで起きた scroll（時刻が変わっていない）では、「いま」の追従を止めない
-      state.live = false;
-      state.min = min;
-      render();
-    });
-    // 操作が止まったら、時・分のリストを今の時刻の位置（分は真ん中の周）へ置き直す
-    clearTimeout(wheelSettle);
-    wheelSettle = setTimeout(() => {
-      if (drag) return;
-      userUntil = 0;
+    let lastMin = state.min;
+    function render() {
+      if (state.live) Object.assign(state, nowJST());
+      const prevMin = lastMin;
+      lastMin = state.min;
+      $now.classList.toggle("is-active", state.live);
+      $date.value = state.dateId;
       setWheel(Math.floor(state.min));
-    }, 180);
-  };
-  // 30分前／30分後ボタン（範囲は FIRST_H〜LAST_H 時）
-  $root.querySelectorAll(".tl-step").forEach(($b) =>
-    $b.addEventListener("click", () => {
-      state.live = false;
-      state.min = clampMin(Math.floor(state.min) + Number($b.dataset.step));
-      render();
-    })
-  );
-  [$hour, $min].forEach(($col) => {
-    $col.addEventListener("scroll", onWheelScroll, { passive: true });
-    // 項目をタップ／クリックすると、そこへ回る（ドラッグ直後のクリックは無視）
-    $col.addEventListener("click", (ev) => {
-      if (dragMoved) return;
-      const $i = ev.target.closest(".tl-wheel__item");
-      if ($i) $col.scrollTo({ top: [...$col.children].indexOf($i) * wheelItem(), behavior: "smooth" });
-    });
-    // マウスはホイールではなくドラッグで回す（タッチは標準のスクロール）。ホイールはページのスクロールに回す
-    $col.addEventListener("wheel", (ev) => {
-      ev.preventDefault();
-      window.scrollBy({ left: ev.deltaX, top: ev.deltaY });
-    }, { passive: false });
-    $col.addEventListener("pointerdown", (ev) => {
-      if (ev.pointerType !== "mouse" || ev.button !== 0) return;
-      drag = { $col, y: ev.clientY, top: $col.scrollTop };
-      dragMoved = false;
-      try {
-        $col.setPointerCapture(ev.pointerId);
-      } catch {}
-      $col.style.scrollSnapType = "none"; // ドラッグ中は吸着させない
-      $col.classList.add("is-dragging");
-    });
-    $col.addEventListener("pointermove", (ev) => {
-      if (!drag || drag.$col !== $col) return;
-      if (Math.abs(ev.clientY - drag.y) > 4) dragMoved = true;
-      $col.scrollTop = drag.top - (ev.clientY - drag.y);
-    });
-    const endDrag = () => {
-      if (!drag || drag.$col !== $col) return;
-      drag = null;
-      $col.classList.remove("is-dragging");
-      // 一番近い項目へ吸着させる（吸着を戻してから動かす）
-      $col.style.scrollSnapType = "";
-      $col.scrollTo({ top: Math.round($col.scrollTop / wheelItem()) * wheelItem(), behavior: "smooth" });
-      setTimeout(() => (dragMoved = false), 0);
-    };
-    ["pointerup", "pointercancel"].forEach((t) => $col.addEventListener(t, endDrag));
-  });
 
-  render();
-  setInterval(() => state.live && render(), 15 * 1000);
+      const type = dayType(state.dateId);
+
+      $sts.forEach((g) => g.classList.remove("is-current", "is-next"));
+      if (!type) {
+        $map.dataset.dir = "";
+        $status.innerHTML = `<p class="tl-off">${nl(TEXT.offPeriod)}（${ymd(T.period.start)}〜${ymd(T.period.end)}）</p>`;
+        $train.style.display = "none";
+        $times.forEach((t) => (t.textContent = ""));
+        $trips.innerHTML = "";
+        return;
+      }
+
+      const cfg = T[type];
+      const kps = keypoints(type);
+      const loc = locate(kps, state.min);
+      const next = nextTimes(kps, state.min);
+      $map.dataset.dir = cfg.direction;
+
+      // 駅名標の中央に出す停留場（停車中＝その駅、走行中＝次の駅、運行前後＝始発／終着）
+      let center;
+      let trainAt = null;
+      let curTime; // 当駅の時刻 [時刻, 説明]
+      if (loc.state === "before") {
+        center = kps[0].pos % N;
+        curTime = [kps[0].t, "発"];
+      } else if (loc.state === "after") {
+        center = kps[kps.length - 1].pos % N;
+        curTime = [null, "運行終了"];
+      } else if (loc.state === "stop") {
+        center = loc.pos % N;
+        curTime = [loc.until.t, "発"];
+      } else {
+        center = loc.to.pos % N;
+        trainAt = loc.frac;
+        curTime = [loc.to.t, "着"];
+      }
+      // 前駅＝直近にその駅を出た時刻、次駅＝当駅の後に着く時刻
+      const step = DIR[cfg.direction].step;
+      const prevPos = (center - step + N) % N;
+      const nextPos = (center + step + N) % N;
+      const prevDep = kps.filter((k) => k.pos % N === prevPos && k.t <= state.min).at(-1);
+      const after = curTime[0] ?? state.min;
+      const nextArr = loc.state === "after" ? null : kps.find((k) => k.pos % N === nextPos && k.t > after);
+      const times = [prevDep && [prevDep.t, "発"], curTime, nextArr && [nextArr.t, "着"]];
+      $status.innerHTML = stationSign(cfg.direction, center, trainAt, loc.state === "stop", times);
+
+      $times.forEach((t) => {
+        const v = next[Number(t.dataset.time)];
+        t.textContent = v != null ? fmt(v) : "";
+      });
+
+      if (loc.state === "stop" || loc.state === "run") {
+        const dist = posDist(loc.pos);
+        const gap = cfg.direction === "outer" ? GAP : -GAP;
+        $train.style.display = "";
+        // 時刻を進めたら路線の進行方向へ、戻したらその逆へ動かす（30分送り・戻しで逆走して見えないように）
+        const dirSign = cfg.direction === "outer" ? 1 : -1;
+        const dt = state.min - prevMin;
+        moveTrain(dist, gap, dt === 0 || Math.abs(dt) > 60 ? null : dt > 0 ? dirSign : -dirSign);
+        if (loc.state === "stop") $sts[loc.pos % N].classList.add("is-current");
+        else $sts[loc.to.pos % N].classList.add("is-next");
+      } else {
+        $train.style.display = "none";
+        anim.dist = null;
+      }
+
+      const [h1, h2] = cfg.direction === "outer" ? ["西4丁目発", "すすきの発"] : ["すすきの発", "西4丁目発"];
+      $trips.innerHTML = `<table class="tl-table">
+        <thead><tr><th>${h1}</th><th>${h2}</th></tr></thead>
+        <tbody>${cfg.trips
+          .map(
+            ([a, b], k) => `<tr class="${k === loc.trip ? "is-current" : ""}"><td>${a}</td><td>${b}${
+              k === cfg.trips.length - 1 ? ` <small>${T.lastStop}行</small>` : ""
+            }</td></tr>`
+          )
+          .join("")}</tbody></table>`;
+    }
+
+    $now.addEventListener("click", () => {
+      state.live = true;
+      render();
+    });
+    $date.addEventListener("change", () => {
+      if (!$date.value) return;
+      state.live = false;
+      state.dateId = $date.value;
+      render();
+    });
+    // ---------- 時刻のホイール（タイマー設定のように、時と分の縦のリストを回して合わせる） ----------
+    // 1項目の高さ（CSS の --item）は変わらないので、1回だけ測る
+    let itemH = 0;
+    const wheelItem = () => itemH || (itemH = $hour.firstElementChild.offsetHeight);
+    let ignoreScroll = 0; // render からの位置合わせで起きる scroll では状態を書き換えない（時刻 ms まで）
+    let userUntil = 0; // 指で操作している間は、render からの位置合わせをしない（時刻 ms まで）
+    let wheelRaf = 0;
+    let wheelSettle = 0;
+    let drag = null; // マウスでドラッグ中の { $col, y, top }
+    let dragMoved = false;
+    const wheelIndex = ($col, max) => Math.min(max, Math.max(0, Math.round($col.scrollTop / wheelItem())));
+    const markSelected = () => {
+      [[$hour, HOUR_ITEMS - 1], [$min, MIN_ITEMS - 1]].forEach(([$col, max]) => {
+        const sel = wheelIndex($col, max);
+        [...$col.children].forEach(($i, k) => $i.classList.toggle("is-sel", k === sel));
+      });
+    };
+    function setWheel(min) {
+      if (performance.now() < userUntil) return;
+      const item = wheelItem();
+      ignoreScroll = performance.now() + 150;
+      $hour.scrollTop = (Math.floor(min / 60) - FIRST_H) * item;
+      $min.scrollTop = (60 + (min % 60)) * item; // 分は 00〜59 を3周ぶん並べ、真ん中の周に置く
+      markSelected();
+    }
+    const onWheelScroll = () => {
+      if (performance.now() < ignoreScroll) return;
+      userUntil = performance.now() + 400;
+      cancelAnimationFrame(wheelRaf);
+      wheelRaf = requestAnimationFrame(() => {
+        markSelected();
+        // 分のリストは3周ぶんあり、前後の周に入った分は時に繰り上げ／繰り下げる（13:00 から 12:59 へ回せる）
+        const mi = wheelIndex($min, MIN_ITEMS - 1);
+        const min = clampMin((FIRST_H + wheelIndex($hour, HOUR_ITEMS - 1)) * 60 + (mi % 60) + (Math.floor(mi / 60) - 1) * 60);
+        if (min === Math.floor(state.min)) return; // 位置合わせで起きた scroll（時刻が変わっていない）では、「いま」の追従を止めない
+        state.live = false;
+        state.min = min;
+        render();
+      });
+      // 操作が止まったら、時・分のリストを今の時刻の位置（分は真ん中の周）へ置き直す
+      clearTimeout(wheelSettle);
+      wheelSettle = setTimeout(() => {
+        if (drag) return;
+        userUntil = 0;
+        setWheel(Math.floor(state.min));
+      }, 180);
+    };
+    // 30分前／30分後ボタン（範囲は FIRST_H〜LAST_H 時）
+    $root.querySelectorAll(".tl-step").forEach(($b) =>
+      $b.addEventListener("click", () => {
+        state.live = false;
+        state.min = clampMin(Math.floor(state.min) + Number($b.dataset.step));
+        render();
+      })
+    );
+    [$hour, $min].forEach(($col) => {
+      $col.addEventListener("scroll", onWheelScroll, { passive: true });
+      // 項目をタップ／クリックすると、そこへ回る（ドラッグ直後のクリックは無視）
+      $col.addEventListener("click", (ev) => {
+        if (dragMoved) return;
+        const $i = ev.target.closest(".tl-wheel__item");
+        if ($i) $col.scrollTo({ top: [...$col.children].indexOf($i) * wheelItem(), behavior: "smooth" });
+      });
+      // マウスはホイールではなくドラッグで回す（タッチは標準のスクロール）。ホイールはページのスクロールに回す
+      $col.addEventListener("wheel", (ev) => {
+        ev.preventDefault();
+        window.scrollBy({ left: ev.deltaX, top: ev.deltaY });
+      }, { passive: false });
+      $col.addEventListener("pointerdown", (ev) => {
+        if (ev.pointerType !== "mouse" || ev.button !== 0) return;
+        drag = { $col, y: ev.clientY, top: $col.scrollTop };
+        dragMoved = false;
+        try {
+          $col.setPointerCapture(ev.pointerId);
+        } catch {}
+        $col.style.scrollSnapType = "none"; // ドラッグ中は吸着させない
+        $col.classList.add("is-dragging");
+      });
+      $col.addEventListener("pointermove", (ev) => {
+        if (!drag || drag.$col !== $col) return;
+        if (Math.abs(ev.clientY - drag.y) > 4) dragMoved = true;
+        $col.scrollTop = drag.top - (ev.clientY - drag.y);
+      });
+      const endDrag = () => {
+        if (!drag || drag.$col !== $col) return;
+        drag = null;
+        $col.classList.remove("is-dragging");
+        // 一番近い項目へ吸着させる（吸着を戻してから動かす）
+        $col.style.scrollSnapType = "";
+        $col.scrollTo({ top: Math.round($col.scrollTop / wheelItem()) * wheelItem(), behavior: "smooth" });
+        setTimeout(() => (dragMoved = false), 0);
+      };
+      ["pointerup", "pointercancel"].forEach((t) => $col.addEventListener(t, endDrag));
+    });
+
+
+    render();
+    // 15秒ごとの更新は、欄が画面の近くにあって、ページを見ているあいだだけ
+    setInterval(() => state.live && visible && !document.hidden && render(), 15 * 1000);
+    // 画面の外にいたあいだに時刻が進んでいるので、近づいたときに合わせる
+    return () => state.live && render();
+  };
+  let sync = null;
+  const io = new IntersectionObserver(
+    ([entry]) => {
+      visible = entry.isIntersecting;
+      if (!visible) return;
+      if (sync) sync();
+      else sync = start();
+    },
+    { rootMargin: "600px 0px" }
+  );
+  io.observe($root);
+  document.addEventListener("visibilitychange", () => !document.hidden && visible && sync?.());
 })();

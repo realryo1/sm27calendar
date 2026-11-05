@@ -169,45 +169,11 @@
     state.q = $query.value;
     applyFilter();
   });
-  // 2カラムの持ち手：goodsmap.js・カレンダー（app.js）と同じ操作・同じ処理。ドラッグ（ダブルクリックで既定、← → キーでも動く）で一覧の幅（割合）を変え、この端末に覚える。
+  // 2カラムの持ち手：goodsmap.js・カレンダー（app.js）と同じ操作・同じ処理（util.js の splitter）。ドラッグ（ダブルクリックで既定、← → キーでも動く）で一覧の幅（割合）を変え、この端末に覚える。
   // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。手を止めたら組み直す
   {
-    const $split = $("gdSplit");
     const $cols = document.querySelector(".gd-cols");
     const $side = document.querySelector(".gd-main");
-    const KEY = "sm27-goods-w";
-    const DEFAULT = 60;
-    const MIN_LIST = 320; // 一覧とほしいものリストが読める幅の下限（px）
-    const MIN_WISH = 300;
-    let rect = null; // ドラッグ中は変わらないので押した時に1回だけ測る
-    const gap = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--gap")) || 16;
-    const setW = (pct, save) => {
-      const total = rect?.width || $cols.clientWidth || innerWidth;
-      const w = Math.min(100 - ((MIN_WISH + gap()) / total) * 100, Math.max((MIN_LIST / total) * 100, pct));
-      $cols.style.setProperty("--gd-list-w", `${w}%`);
-      $split.setAttribute("aria-valuenow", String(Math.round(w)));
-      if (!save) return;
-      try {
-        localStorage.setItem(KEY, String(Math.round(w * 10) / 10));
-      } catch {
-        // 保存できなくても、幅は変えられる
-      }
-    };
-    let saved = NaN;
-    try {
-      saved = parseFloat(localStorage.getItem(KEY));
-    } catch {
-      saved = NaN;
-    }
-    setW(Number.isFinite(saved) ? saved : DEFAULT, false);
-    const cur = () => parseFloat($cols.style.getPropertyValue("--gd-list-w"));
-    // 持ち手の列（幅は --gap）の中央を指の位置に合わせる
-    const pctAt = (x) => {
-      const r = rect ?? $cols.getBoundingClientRect();
-      return ((x - r.left - gap() / 2) / r.width) * 100;
-    };
-    const SETTLE = 200;
-    let settle = 0;
     const freeze = () => {
       if ($side.classList.contains("is-frozen")) return;
       $side.querySelectorAll(".gm-card").forEach((card) => {
@@ -217,57 +183,11 @@
       $side.classList.add("is-frozen");
     };
     const thaw = () => $side.classList.remove("is-frozen");
-    let moveX = 0;
-    let moveRaf = 0; // 幅の変更は1フレームに1回だけにまとめる
-    $split.addEventListener("pointerdown", (ev) => {
-      ev.preventDefault();
-      rect = $cols.getBoundingClientRect();
-      freeze();
-      $split.setPointerCapture(ev.pointerId);
-      $split.classList.add("is-dragging");
-      document.documentElement.classList.add("is-resizing");
-    });
-    $split.addEventListener("pointermove", (ev) => {
-      if (!$split.hasPointerCapture(ev.pointerId)) return;
-      moveX = ev.clientX;
-      if (!moveRaf)
-        moveRaf = requestAnimationFrame(() => {
-          moveRaf = 0;
-          freeze();
-          setW(pctAt(moveX), false);
-          clearTimeout(settle);
-          settle = setTimeout(thaw, SETTLE);
-        });
-    });
-    const end = (ev) => {
-      if (!$split.hasPointerCapture(ev.pointerId)) return;
-      cancelAnimationFrame(moveRaf);
-      moveRaf = 0;
-      clearTimeout(settle);
-      $split.releasePointerCapture(ev.pointerId);
-      $split.classList.remove("is-dragging");
-      document.documentElement.classList.remove("is-resizing");
-      setW(pctAt(ev.clientX), true);
-      thaw();
-      rect = null;
-    };
-    $split.addEventListener("pointerup", end);
-    $split.addEventListener("pointercancel", end);
-    const jump = (pct) => {
-      freeze();
-      setW(pct, true);
-      thaw();
-    };
-    $split.addEventListener("dblclick", () => jump(DEFAULT));
-    $split.addEventListener("keydown", (ev) => {
-      const step = { ArrowLeft: -2, ArrowRight: 2 }[ev.key];
-      if (!step) return;
-      ev.preventDefault();
-      jump(cur() + step);
-    });
+    // 一覧とほしいものリストが読める幅の下限は、一覧320px・リスト300px
+    const sp = TT_UTIL.splitter({ $split: $("gdSplit"), $main: $cols, cssVar: "--gd-list-w", key: "sm27-goods-w", def: 60, minA: 320, minB: 300, freeze, thaw });
     // 高さは dvh ではなく innerHeight で決める（goodsmap.css の --app-h。goodsmap.js・カレンダーと同じ）。画面の幅が変わったら下限をかけ直す
     const resize = () => {
-      setW(cur(), false);
+      sp.setW(sp.cur(), false);
       $cols.style.setProperty("--app-h", `${innerHeight}px`);
     };
     window.addEventListener("resize", resize);

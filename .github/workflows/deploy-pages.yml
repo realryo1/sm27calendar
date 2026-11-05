@@ -42,7 +42,7 @@ jobs:
       - name: Version asset URLs
         run: |
           v="$(date -u '+%Y%m%d%H%M%S')"
-          sed -i -E "s/(src|href)=\"(style\.css|[a-z-]+\.js)\"/\1=\"\2?v=${v}\"/g" website/index.html
+          sed -i -E "s/(src|href)=\"((base|style)\.css|[a-z-]+\.js)\"/\1=\"\2?v=${v}\"/g" website/index.html
           grep -o -E "(src|href)=\"[a-z.-]+\?v=[0-9]+\"" website/index.html
 
       # 公開先ごとに分ける。website/ は新しいドメイン（Vercel）、_pages/ は github.io（GitHub Pages）。
@@ -65,7 +65,7 @@ jobs:
       - name: Minify JS / CSS
         run: |
           for d in website _pages; do
-            npx -y esbuild@0.25.10 $d/*.js $d/style.css $d/goodsmap/*.js $d/goodsmap/*.css --minify --charset=utf8 --outdir=$d --allow-overwrite --log-level=warning
+            npx -y esbuild@0.25.10 $d/*.js $d/base.css $d/style.css $d/goodsmap/*.js $d/goodsmap/*.css --minify --charset=utf8 --outdir=$d --allow-overwrite --log-level=warning
           done
 
       - name: Upload github.io directory

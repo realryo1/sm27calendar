@@ -5,6 +5,8 @@
   const D = window.GM_DATA;
   if (!D) return;
   const E = D.event;
+  // 書き写しの確認（コンソールの警告）は、手元で開いたときだけ行う。公開版では毎回は行わない
+  const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
 
   // 会場のタブ。index.html の GM_TABS（年ごとのデータをまたいで並べる）。無ければ、このデータのフロア
   const TABS = window.GM_TABS ?? D.floors.map((f) => ({ year: D.year, floor: f.id, label: f.label }));
@@ -57,7 +59,7 @@
   const theme = (kind) => `theme-${{ sale: "pink", exhibit: "violet", gift: "orange" }[kind]}`;
 
   // 書き写しの確認（27年のデータを作るときに、ブースの割り当て漏れ・重複・マップとのずれに気づけるように）。画面には出さない
-  {
+  if (DEV) {
     const warn = (msg) => console.warn(`[goodsmap] ${msg}`);
     const ids = new Set();
     for (const g of D.goods) {
@@ -138,7 +140,7 @@
     const walls = f.areas.map((a) => ({ x: a.x + INSET, y: a.y + INSET, w: a.w - INSET * 2, h: a.h - INSET * 2 }));
     const near = (a, b) => overlapX(a, b) || overlapY(a, b);
     const gapOf = (a, b) => Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), b.y - (a.y + a.h), a.y - (b.y + b.h));
-    for (const [no, g] of big) {
+    if (DEV) for (const [no, g] of big) {
       const t = tiles.find((x) => x.no === no);
       const edge = Math.min(g.x - vx, vx + vw - g.x - g.w, g.y - vy, vy + vh - g.y - g.h);
       if (edge < AISLE / 2) console.warn(`[goodsmap] ブース ${no} を大きくすると、マップの端に近すぎます（${r1(edge)}）`);
@@ -777,47 +779,13 @@
     initialZoom();
   });
 
-  // 2カラムの持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）でマップの幅を変え、この端末に覚える（カレンダーの持ち手と同じ操作・同じ処理）
+  // 2カラムの持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）でマップの幅を変え、この端末に覚える（カレンダーの持ち手と同じ操作・同じ処理。util.js の splitter）
   {
-    const $split = $("gmSplit");
     const $main = $("gmMain");
-    const KEY = "sm27-goodsmap-w";
-    const DEFAULT = 50;
-    const MIN_MAP = 300; // マップと一覧が読める幅の下限（px）。カレンダーの持ち手と同じ（641px でも両方が収まる）
-    const MIN_LIST = 260;
-    // .gm-main の位置と幅はドラッグ中は変わらないので押した時に1回だけ測る（動かすたびに測ると、直前の幅の変更をその場でレイアウトさせて重い）
-    let rect = null;
-    // 持ち手の列の幅＝ページの隙間（カレンダーの style.css の --gap）
-    const gap = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--gap")) || 16;
-    const setW = (pct, save) => {
-      const total = rect?.width || $main.clientWidth || innerWidth;
-      const w = Math.min(100 - ((MIN_LIST + gap()) / total) * 100, Math.max((MIN_MAP / total) * 100, pct));
-      $main.style.setProperty("--gm-map-w", `${w}%`);
-      $split.setAttribute("aria-valuenow", String(Math.round(w)));
-      if (!save) return;
-      try {
-        localStorage.setItem(KEY, String(Math.round(w * 10) / 10));
-      } catch {
-        // 保存できなくても、幅は変えられる
-      }
-    };
-    let saved = NaN;
-    try {
-      saved = parseFloat(localStorage.getItem(KEY));
-    } catch {
-      saved = NaN;
-    }
-    setW(Number.isFinite(saved) ? saved : DEFAULT, false);
-    // 持ち手の列（幅は --gap）の中央を指の位置に合わせる
-    const pctAt = (x) => {
-      const r = rect ?? $main.getBoundingClientRect();
-      return ((x - r.left - gap() / 2) / r.width) * 100;
-    };
+    // MIN_MAP・MIN_LIST：マップと一覧が読める幅の下限（px）。カレンダーの持ち手と同じ（641px でも両方が収まる）
     // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。
-    // 動かす手を止めたら（SETTLE ms）、その幅で中身も組み直す
+    // 動かす手を止めたら、その幅で中身も組み直す
     const $side = $("booths");
-    const SETTLE = 200;
-    let settle = 0;
     const freeze = () => {
       if ($side.classList.contains("is-frozen")) return;
       $side.querySelectorAll(".gm-card").forEach((card) => {
@@ -842,66 +810,18 @@
         settleMap(); // 止めた幅でマップを1回だけ測り直す（回すときと同じ動きで）
       });
     };
-    // 持ち手を選ぶ・外すと列が広がる・戻るので、そのあいだ中身を止めておく（ドラッグ中は pointerdown からの処理に任せる）
-    const hold = () => {
-      if ($split.classList.contains("is-dragging")) return;
-      freeze();
-      clearTimeout(settle);
-      settle = setTimeout(thaw, SETTLE);
-    };
-    for (const type of ["pointerenter", "pointerleave", "focus", "blur"]) $split.addEventListener(type, hold);
-    // 幅の変更は1フレームに1回だけにまとめる
-    let moveX = 0;
-    let moveRaf = 0;
-    $split.addEventListener("pointerdown", (ev) => {
-      ev.preventDefault();
-      rect = $main.getBoundingClientRect();
-      freeze();
-      $split.setPointerCapture(ev.pointerId);
-      $split.classList.add("is-dragging");
-      document.documentElement.classList.add("is-resizing");
-    });
-    $split.addEventListener("pointermove", (ev) => {
-      if (!$split.hasPointerCapture(ev.pointerId)) return;
-      moveX = ev.clientX;
-      if (!moveRaf)
-        moveRaf = requestAnimationFrame(() => {
-          moveRaf = 0;
-          freeze();
-          moved = true;
-          setW(pctAt(moveX), false);
-          clearTimeout(settle);
-          settle = setTimeout(thaw, SETTLE);
-        });
-    });
-    const end = (ev) => {
-      if (!$split.hasPointerCapture(ev.pointerId)) return;
-      cancelAnimationFrame(moveRaf);
-      moveRaf = 0;
-      clearTimeout(settle);
-      $split.releasePointerCapture(ev.pointerId);
-      $split.classList.remove("is-dragging");
-      document.documentElement.classList.remove("is-resizing");
-      moved = true;
-      setW(pctAt(ev.clientX), true);
-      thaw(); // 離した幅が決まってから、マップを測り直す
-      rect = null;
-    };
-    $split.addEventListener("pointerup", end);
-    $split.addEventListener("pointercancel", end);
-    // ダブルクリックと矢印キーも、ドラッグと同じく枠だけ先に動かし、マップは測り直して動かす
-    const jump = (pct) => {
-      freeze();
-      moved = true;
-      setW(pct, true);
-      thaw();
-    };
-    $split.addEventListener("dblclick", () => jump(DEFAULT));
-    $split.addEventListener("keydown", (ev) => {
-      const step = { ArrowLeft: -2, ArrowRight: 2 }[ev.key];
-      if (!step) return;
-      ev.preventDefault();
-      jump(parseFloat($main.style.getPropertyValue("--gm-map-w")) + step);
+    const sp = TT_UTIL.splitter({
+      $split: $("gmSplit"),
+      $main,
+      cssVar: "--gm-map-w",
+      key: "sm27-goodsmap-w",
+      def: 50,
+      minA: 300,
+      minB: 260,
+      hold: true,
+      freeze,
+      thaw,
+      onChange: () => (moved = true),
     });
     // 2カラムの高さは dvh ではなく innerHeight で決める（goodsmap.css の --app-h。カレンダーと同じ）。
     // Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、resize の後も直らないことがある
@@ -909,7 +829,7 @@
     setAppH();
     // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す
     window.addEventListener("resize", () => {
-      setW(parseFloat($main.style.getPropertyValue("--gm-map-w")), false);
+      sp.setW(sp.cur(), false);
       setAppH();
     });
   }
@@ -926,6 +846,8 @@
   const boxStyle = $mapbox.style;
   const toolsStyle = $tools.style;
   const secStyle = $sec.style;
+  let top0Cache = null; // マップの列の上端（offsetTop）。測るとレイアウトを確かめるので、スクロールのたびには測らない
+  const put = (style, k, v) => style.getPropertyValue(k) !== v && style.setProperty(k, v); // 変わらないときは書かない
   let fitTimer = 0; // スクロールのあいだ止めているマップの測り直し（下の shrink）を、止まってからやる
   let scrolled = false; // 次の shrink がスクロール（か、プレビューを開く動き）によるもの
   let preview = false; // プレビューのあいだは拡大縮小しない（小さすぎて操作しにくい）
@@ -948,15 +870,15 @@
     }
     if (full) return sizeMap();
     // 開いたときの高さ：画面の上半分（マップと一覧が上下1:1。これがマップの列の高さになる）。マップはその中に収まる大きさで描く
-    const top0 = $sec.offsetTop; // ページの中での、マップの列の上端
+    const top0 = (top0Cache ??= $sec.offsetTop); // ページの中での、マップの列の上端（画面の大きさが変わったときだけ測り直す）
     const H = Math.round(window.innerHeight / 2 - top0);
-    secStyle.setProperty("--gm-sec-h", `${H}px`);
+    put(secStyle, "--gm-sec-h", `${H}px`);
     const y = window.scrollY;
     if (expanded != null && Math.abs(y - expanded) > 4) expanded = null;
     const h = expanded != null ? H : Math.max(PREVIEW, H - Math.max(0, y - top0));
-    boxStyle.setProperty("--gm-map-top", `${Math.max(0, top0 - y)}px`);
-    boxStyle.setProperty("--gm-map-h", `${h}px`);
-    toolsStyle.setProperty("--gm-pv", `${h}px`); // 検索欄は、この高さの下に貼り付く
+    put(boxStyle, "--gm-map-top", `${Math.max(0, top0 - y)}px`);
+    put(boxStyle, "--gm-map-h", `${h}px`);
+    put(toolsStyle, "--gm-pv", `${h}px`); // 検索欄は、この高さの下に貼り付く
     preview = h <= PREVIEW;
     $mapbox.classList.toggle("is-shrunk", h < H);
     $mapbox.classList.toggle("is-preview", preview);
@@ -1076,8 +998,12 @@
     },
     { passive: true }
   );
-  window.addEventListener("resize", requestShrink);
+  window.addEventListener("resize", () => {
+    top0Cache = null;
+    requestShrink();
+  });
   twoCol.addEventListener("change", () => {
+    top0Cache = null;
     setFull(false);
     requestShrink();
   });

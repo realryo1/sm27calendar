@@ -23,7 +23,7 @@ window.GM_LIST = (D, { boothNo }) => {
     where: { official: "公式物販", live: "ライブ物販", loose: "売り場の記載なし" },
   };
 
-  const yen = (n) => `¥${n.toLocaleString("ja-JP")}`;
+  const yen = (n) => `¥${n.toLocaleString("ja-JP")}`; // ほしいものリスト（wishlist.js）も使う
   // 品名の先頭の「SNOW MIKU 2026」は、ほとんどに付くので表示では省く（検索は元の名前で）
   const short = (name) => name.replace(/^「?SNOW MIKU \d{4}」?\s*/, "");
   // 検索用：全角半角・大文字小文字・カタカナとひらがなの違いと、空白・中黒を無視する

@@ -27,53 +27,19 @@
   const $tt = document.getElementById("tt");
   const $venueList = document.getElementById("venueList");
   const $toBoard = document.getElementById("toBoard");
+  // 2カラム（641px〜）か。幅の測定は2カラムのときだけ行う（1カラムでは要らないのに、読み込み中のレイアウトを強制するため）
+  const twoCol = window.matchMedia("(min-width: 641px)");
+  // 画面の大きさが変わったときに持ち手の幅と時間割の高さを合わせる処理（下の持ち手の中で入れる。resize のまとめ処理が呼ぶ）
+  let syncSplit = null;
 
-  // 2カラム表示の持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）で時間割の幅を変え、この端末に覚える
+  // 2カラム表示の持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）で時間割の幅を変え、この端末に覚える（処理は util.js の splitter。グッズマップ・グッズ一覧と共通）。
+  // 幅の下限は px で決める（2カラムは幅641px〜。横向きのスマホやiPad miniでも、時間割・会場一覧とも読める幅を残す）
   const $split = document.getElementById("split");
   if ($split) {
     const $main = $split.parentElement;
-    const KEY = "sm27-board-w";
-    // 幅の下限は px で決める（2カラムは幅641px〜。横向きのスマホやiPad miniでも、時間割・会場一覧とも読める幅を残す）
-    const MIN_BOARD = 300;
-    const MIN_SIDE = 260;
-    // .main の位置と幅はドラッグ中は変わらないので押した時に1回だけ測る（動かすたびに測ると、直前の幅の変更をその場でレイアウトさせて重い）
-    let rect = null;
-    // 持ち手の列の幅＝ページの隙間（style.css の --gap）
-    const gap = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--gap")) || 16;
-    const setW = (pct, save) => {
-      const total = rect?.width || $main.clientWidth || window.innerWidth;
-      const lo = (MIN_BOARD / total) * 100;
-      const hi = 100 - ((MIN_SIDE + gap()) / total) * 100;
-      // 表示は丸めない（0.1% 刻みだと、ゆっくり動かしたとき 1〜2px ずつ段になって動く）。覚えるときだけ丸める
-      const w = Math.min(hi, Math.max(lo, pct));
-      $main.style.setProperty("--board-w", `${w}%`);
-      $split.setAttribute("aria-valuenow", String(Math.round(w)));
-      if (!save) return;
-      // 幅が決まったら、予定カードの収まりを測り直す（ドラッグ中は重いので測らない。下の fitEvents）
-      $split.dispatchEvent(new Event("resized"));
-      try {
-        localStorage.setItem(KEY, String(Math.round(w * 10) / 10));
-      } catch {
-        // 保存できなくても、幅は変えられる
-      }
-    };
-    let saved = NaN;
-    try {
-      saved = parseFloat(localStorage.getItem(KEY));
-    } catch {
-      saved = NaN;
-    }
-    setW(Number.isFinite(saved) ? saved : 50, false);
-    // 持ち手の列（幅は --gap）の中央を指の位置に合わせる
-    const pctAt = (x) => {
-      const r = rect ?? $main.getBoundingClientRect();
-      return ((x - r.left - gap() / 2) / r.width) * 100;
-    };
     // ドラッグ中は会場カードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（時間割だけを毎フレーム組み直す。style.css の .is-frozen）。
-    // 動かす手を止めたら（SETTLE ms）、その幅で中身も組み直す
+    // 動かす手を止めたら、その幅で中身も組み直す
     const $side = $main.querySelector(".main__inner");
-    const SETTLE = 200;
-    let settle = 0;
     const freeze = () => {
       if ($side.classList.contains("is-frozen")) return;
       $side.querySelectorAll(".venue-card").forEach((card) => {
@@ -83,70 +49,37 @@
       $side.classList.add("is-frozen");
     };
     const thaw = () => $side.classList.remove("is-frozen");
-    // 持ち手を選ぶ・外すと持ち手の列が広がる・戻る（style.css の --split-extra）ので、そのあいだ会場カードの中身を止めておく
-    // （ドラッグ中は pointerdown からの処理に任せる）
-    const hold = () => {
-      if ($split.classList.contains("is-dragging")) return;
-      freeze();
-      clearTimeout(settle);
-      settle = setTimeout(thaw, SETTLE);
-    };
-    for (const type of ["pointerenter", "pointerleave", "focus", "blur"]) $split.addEventListener(type, hold);
-    // 幅の変更は1フレームに1回だけにまとめる
-    let moveX = 0;
-    let moveRaf = 0;
-    $split.addEventListener("pointerdown", (ev) => {
-      ev.preventDefault();
-      rect = $main.getBoundingClientRect();
-      freeze();
-      $split.setPointerCapture(ev.pointerId);
-      $split.classList.add("is-dragging");
-      document.documentElement.classList.add("is-resizing");
+    const sp = TT_UTIL.splitter({
+      $split,
+      $main,
+      cssVar: "--board-w",
+      key: "sm27-board-w",
+      def: 50,
+      minA: 300,
+      minB: 260,
+      hold: true, // 持ち手を選ぶ・外すと持ち手の列が広がる・戻る（style.css の --split-extra）ので、そのあいだも会場カードの中身を止める
+      freeze,
+      thaw,
+      onSave: () => $split.dispatchEvent(new Event("resized")), // 幅が決まったら、予定カードの収まりを測り直す（ドラッグ中は重いので測らない。下の fitEvents）
     });
-    $split.addEventListener("pointermove", (ev) => {
-      if (!$split.hasPointerCapture(ev.pointerId)) return;
-      moveX = ev.clientX;
-      if (!moveRaf)
-        moveRaf = requestAnimationFrame(() => {
-          moveRaf = 0;
-          freeze();
-          setW(pctAt(moveX), false);
-          clearTimeout(settle);
-          settle = setTimeout(thaw, SETTLE);
-        });
-    });
-    const end = (ev) => {
-      if (!$split.hasPointerCapture(ev.pointerId)) return;
-      cancelAnimationFrame(moveRaf);
-      moveRaf = 0;
-      clearTimeout(settle);
-      thaw();
-      $split.releasePointerCapture(ev.pointerId);
-      $split.classList.remove("is-dragging");
-      document.documentElement.classList.remove("is-resizing");
-      setW(pctAt(ev.clientX), true);
-      rect = null;
-    };
-    $split.addEventListener("pointerup", end);
-    $split.addEventListener("pointercancel", end);
-    $split.addEventListener("dblclick", () => setW(50, true));
-    // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す
     // 時間割と持ち手の高さは dvh ではなく innerHeight で決める（style.css の --app-h）。
     // Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、resize の後も直らないことがある（日付ボタンが画面の下にはみ出した）
+    let appH = 0;
     const setAppH = () => {
-      for (const el of [$main.querySelector(".board"), $split]) el.style.setProperty("--app-h", `${innerHeight}px`);
+      if (appH === innerHeight) return;
+      appH = innerHeight;
+      for (const el of [$main.querySelector(".board"), $split]) el.style.setProperty("--app-h", `${appH}px`);
     };
     setAppH();
-    window.addEventListener("resize", () => {
-      setW(parseFloat($main.style.getPropertyValue("--board-w")), false);
+    // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す
+    let appW = innerWidth;
+    syncSplit = () => {
+      if (appW !== innerWidth) {
+        appW = innerWidth;
+        sp.setW(sp.cur(), false);
+      }
       setAppH();
-    });
-    $split.addEventListener("keydown", (ev) => {
-      const step = { ArrowLeft: -2, ArrowRight: 2 }[ev.key];
-      if (!step) return;
-      ev.preventDefault();
-      setW(parseFloat($main.style.getPropertyValue("--board-w")) + step, true);
-    });
+    };
   }
 
   const toHour = (hhmm) => toMin(hhmm) / 60;
@@ -578,8 +511,18 @@
   // 日付ジャンプ: 該当日の本体の先頭が日付帯の直下に来るようにスクロール
   // 各日の時刻軸（埋め草の日を除く）
   const axes = () => [...$tt.querySelectorAll(".tt-axis:not(.tt-ghost)")];
-  const stickyOffset = () =>
-    $tt.querySelector(".tt-head-cell").offsetHeight + $tt.querySelector(".tt-day").offsetHeight;
+  // 測った値（帯・見出しの高さ、各日の位置）は覚えておき、画面の大きさ・拡大縮小・フォントの読み込みのときだけ測り直す
+  // （スクロールのたびに測ると、そのたびにレイアウトを確かめることになる）
+  let measured = null;
+  const invalidate = () => (measured = null);
+  const measure = () => {
+    if (measured) return measured;
+    const list = axes();
+    const bandH = $tt.querySelector(".tt-day").offsetHeight;
+    const headH = $tt.querySelector(".tt-head-cell").offsetHeight;
+    return (measured = { bands: $tt.querySelectorAll(".tt-day"), tops: list.map((a) => a.offsetTop), bandH, headH, sticky: headH + bandH });
+  };
+  const stickyOffset = () => measure().sticky;
 
   function scrollToDay(id, hour, behavior = "smooth") {
     const col = axes()[dayIndex(id)];
@@ -598,8 +541,19 @@
   let labelRaf = 0;
   const lift = [];
   const out = [];
+  let labelInit = true;
   function setLabelDay(i) {
-    if (i === labelDay && lift.length) return;
+    // 最初の1回は動かさずに、そのまま目標の位置に置く（開いたときの動きは見せない。毎コマの測り直しも避ける）
+    if (labelInit) {
+      labelInit = false;
+      labelDay = i;
+      $tt.querySelectorAll(".tt-day").forEach((_, k) => {
+        lift[k] = k <= i ? 1 : 0;
+        out[k] = k < i ? 1 : 0;
+      });
+      return;
+    }
+    if (i === labelDay) return;
     labelDay = i;
     if (!labelRaf) labelRaf = requestAnimationFrame(stepLabels);
   }
@@ -620,30 +574,36 @@
     paintLabels();
     if (moving) labelRaf = requestAnimationFrame(stepLabels);
   }
+  const painted = [];
   function paintLabels() {
-    const bands = $tt.querySelectorAll(".tt-day");
-    const bandH = bands[0].offsetHeight;
-    const headH = $tt.querySelector(".tt-head-cell").offsetHeight;
+    const { bands, bandH, headH } = measure();
     bands.forEach((band, i) => {
       // 2日目以降の帯は CSS で会場見出しの高さ分だけ早く上端に貼り付く（スクロールと同じ動きなので震えない）。
       // ラベルは自然な位置（見出しの高さ分下）から、時間で上端へ上がる。スクロール位置は使わない
       const dy = (i ? headH * (1 - (lift[i] ?? 0)) : 0) - bandH * (out[i] ?? 0);
-      band.firstElementChild.style.transform = dy ? `translateY(${dy}px)` : "";
+      const v = dy ? `translateY(${dy}px)` : "";
+      if (painted[i] === v) return; // 変わらないときは書かない
+      painted[i] = v;
+      band.firstElementChild.style.transform = v;
     });
   }
 
+  let shownChip = -1;
   function updateActiveChip() {
     const top = $scroll.scrollTop;
-    const list = axes();
+    const { tops, sticky } = measure();
     let active = 0;
-    list.forEach((a, i) => {
-      if (a.offsetTop - stickyOffset() <= top + 1) active = i;
+    tops.forEach((t, i) => {
+      if (t - sticky <= top + 1) active = i;
     });
     // 下端まで来ていれば最後の日
-    if ($scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 2) active = list.length - 1;
+    if ($scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 2) active = tops.length - 1;
     if (pinnedDay != null) active = pinnedDay; // 日付ボタンで移動中は、着いてからではなく押した時点から日付バーを動かす
     setLabelDay(active);
-    $dayNav.querySelectorAll(".day-chip").forEach((c, i) => c.classList.toggle("is-active", i === active));
+    if (active !== shownChip) {
+      shownChip = active;
+      $dayNav.querySelectorAll(".day-chip").forEach((c, i) => c.classList.toggle("is-active", i === active));
+    }
     paintLabels();
   }
 
@@ -657,7 +617,19 @@
   const unpin = () => (pinnedDay = null);
   ["touchstart", "wheel", "keydown", "pointerdown"].forEach((t) => $scroll.addEventListener(t, unpin, { passive: true }));
 
-  $scroll.addEventListener("scroll", () => requestAnimationFrame(updateActiveChip), { passive: true });
+  // スクロールのたびに積まず、1フレームに1回だけ更新する
+  let chipRaf = 0;
+  $scroll.addEventListener(
+    "scroll",
+    () => {
+      if (chipRaf) return;
+      chipRaf = requestAnimationFrame(() => {
+        chipRaf = 0;
+        updateActiveChip();
+      });
+    },
+    { passive: true }
+  );
 
   $tt.addEventListener("click", (ev) => {
     if (ev.target.closest("[data-refresh]")) return hardRefresh();
@@ -697,7 +669,7 @@
   // 最後の日の先頭を上端に出せるだけ、次の日（ghost）で下を埋める。1日分でも足りない高い画面では、残りを余白にする
   const fitTail = () => {
     const last = axes().at(-1);
-    const bandH = $tt.querySelector(".tt-day").offsetHeight;
+    const bandH = measure().bandH;
     const fill = Math.ceil($scroll.clientHeight - stickyOffset() - last.offsetHeight - bandH);
     const show = fill > 0;
     $tt.classList.toggle("no-ghost", !show);
@@ -708,10 +680,9 @@
 
   // 縮小時は予定ブロックの表示を簡略化する。
   // live（ピンチの途中）は予定カードの収まりを測らない（全カードを何度も測るので、毎コマだとコマ落ちする）。指を離したときに測る
-  const updateDensity = (live = false) => {
-    fitTail();
-    const h = hourPx();
-    $tt.dataset.density = h < 44 ? "tight" : h < 60 ? "compact" : "";
+  // skipTail: 呼ぶ前に fitTail をすませているとき（拡大縮小。1コマの中で2回測らない）
+  const updateDensity = (live = false, skipTail = false) => {
+    if (!skipTail) fitTail();
     if (!live) fitEvents();
   };
 
@@ -756,12 +727,13 @@
     const col = clamp(base.col * kx, ZOOM.col);
     $tt.style.setProperty("--hour", `${hour}px`);
     $tt.style.setProperty("--colmin", `${col.toFixed(1)}px`);
+    invalidate();
+    const rx = colWidth() / base.col; // 列の幅を測ってから（測ったあとに書くと、もう一度レイアウトが走る）
     fitTail(); // スクロール位置を入れる前に余白を直す（足りないと下端で切られる）
     const ry = hour / base.hour;
-    const rx = colWidth() / base.col;
     $scroll.scrollTop = zoomedY(base, base.top + from.y - rect.top, ry) - (anchor.y - rect.top);
     $scroll.scrollLeft = zoomedX(base, base.left + from.x - rect.left, rx) - (anchor.x - rect.left);
-    updateDensity(live);
+    updateDensity(live, true);
   }
 
   // 表の中の座標が、拡大後にどこへ移るか。伸び縮みするのは各日の時間の部分と会場列だけで、
@@ -905,7 +877,6 @@
   // PC: マウスホイールも同様。overscroll-behavior: none のため、表の下端（と、ページが下がっている間の上向き）はページ側へ渡す
   // 下向きは表→ページ、上向きはページ→表の順に、渡された量を使い切る
   // PC の2カラム表示では右カラムが別のスクロールなので、表の端でつながない
-  const twoCol = window.matchMedia("(min-width: 641px)");
   const wheelChain = (dy) => {
     if (twoCol.matches) {
       $scroll.scrollTop += dy;
@@ -1004,14 +975,31 @@
   renderNav();
   renderBoard();
   updateDensity();
+  // resize は1フレームに1回にまとめる（スマホはアドレスバーの出入りでも起きる）。予定カードの収まりは、幅が変わったときだけ測り直す
+  // （高さだけが変わったときは、カードの大きさは変わらない）
+  let resizeRaf = 0;
+  let fitW = innerWidth;
   window.addEventListener("resize", () => {
-    fitEvents();
-    fitTail();
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = 0;
+      syncSplit?.();
+      invalidate();
+      fitTail();
+      if (fitW !== innerWidth) {
+        fitW = innerWidth;
+        fitEvents();
+      }
+    });
   });
   document.getElementById("split")?.addEventListener("resized", fitEvents);
   // Webフォント読み込みで文字の大きさが変わるため（フォントの CSS は後から非同期で読み込むので、読み込み完了のたびに測り直す）
-  document.fonts?.ready.then(fitEvents);
-  document.fonts?.addEventListener?.("loadingdone", fitEvents);
+  const refit = () => {
+    invalidate();
+    fitEvents();
+  };
+  document.fonts?.ready.then(refit);
+  document.fonts?.addEventListener?.("loadingdone", refit);
 
   // URL の #日付、またはイベント当日なら現在時刻付近を初期表示
   const hashId = location.hash.slice(1);

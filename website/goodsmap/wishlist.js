@@ -69,7 +69,7 @@ window.GM_WISH = (D, L) => {
   const H2C_SRI = "sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H";
 
   const goodsBy = new Map(D.goods.map((g) => [g.id, g]));
-  const yen = (n) => `¥${n.toLocaleString("ja-JP")}`;
+  const { yen } = L;
 
   // ---------- 保存（{ グッズの id: 個数 }。データに無くなった id は捨てる） ----------
   const load = () => {
@@ -184,7 +184,8 @@ window.GM_WISH = (D, L) => {
   document.body.append($fab, $dlg, $print);
   const $panel = document.getElementById("gdWish"); // グッズ一覧の右カラム。CSS が狭い画面では隠す
   const wide = window.matchMedia("(min-width: 641px)");
-  const inPanel = () => !!$panel && getComputedStyle($panel).display !== "none"; // マップのページでは隠れている
+  // 右カラムに出ているか（グッズ一覧の2カラム。goods.css の .gd-page .gd-wish と同じ条件。スタイルを測らずに分かるようにしている）
+  const inPanel = () => !!$panel && wide.matches && document.documentElement.classList.contains("gd-page");
 
   const short = (g) => L.short(g.name);
   function rowHtml(g, showWhere) {
@@ -271,8 +272,10 @@ window.GM_WISH = (D, L) => {
   };
 
   // 品の行の♡と、浮かぶボタンの件数・合計を今のリストに合わせる
-  function refresh() {
-    document.querySelectorAll(".gm-wish[data-wish]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.wish in wish)));
+  // id を渡すと、その品の♡だけ直す（全部の♡を書き直さない）。渡さないときは全部
+  function refresh(id) {
+    const sel = id == null ? ".gm-wish[data-wish]" : `.gm-wish[data-wish="${CSS.escape(id)}"]`;
+    document.querySelectorAll(sel).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.wish in wish)));
     const t = totals();
     // 何も入れていないときは「ほしいものリスト」、入れたら件数と合計だけ（2行。読み上げにはリストの名前も付ける）。
     // 「ほしいものリスト」は入れたあとも見えないまま重ねておき、ボタンの幅を変えない
@@ -282,13 +285,13 @@ window.GM_WISH = (D, L) => {
     if (t.n) $fab.setAttribute("aria-label", `${TEXT.title} ${TEXT.count(t.n)} ${yen(t.sum)}`);
     else $fab.removeAttribute("aria-label");
     $fab.classList.toggle("is-empty", !t.n);
-    if ($dlg.open || $panel) renderDialog();
+    if ($dlg.open || inPanel()) renderDialog(); // 見えていないリストは作り直さない（見えるようになったとき作る）
   }
   const setQty = (id, q) => {
     if (q > 0) wish[id] = q;
     else delete wish[id];
     save();
-    refresh();
+    refresh(id);
   };
 
   // ---------- 操作 ----------
@@ -379,21 +382,25 @@ window.GM_WISH = (D, L) => {
   });
 
   // ---------- PDF（印刷） ----------
-  let qrLib = null;
-  const loadQr = () =>
-    (qrLib ??= new Promise((ok, ng) => {
-      if (window.qrcode) return ok(window.qrcode);
-      const $s = document.createElement("script");
-      $s.src = QR_SRC;
-      $s.integrity = QR_SRI;
-      $s.crossOrigin = "anonymous";
-      $s.onload = () => ok(window.qrcode);
-      $s.onerror = () => {
-        qrLib = null; // 次に押したときにもう一度試す
-        ng(new Error("qrcode"));
-      };
-      document.head.append($s);
-    }));
+  // ライブラリを SRI 付きで読み込む。失敗したら覚えず、次に押したときにもう一度試す。QR コードと画像で保存で共通
+  const loadLib = (src, sri, name) => {
+    let p = null;
+    return () =>
+      (p ??= new Promise((ok, ng) => {
+        if (window[name]) return ok(window[name]);
+        const $s = document.createElement("script");
+        $s.src = src;
+        $s.integrity = sri;
+        $s.crossOrigin = "anonymous";
+        $s.onload = () => ok(window[name]);
+        $s.onerror = () => {
+          p = null;
+          ng(new Error(name));
+        };
+        document.head.append($s);
+      }));
+  };
+  const loadQr = loadLib(QR_SRC, QR_SRI, "qrcode");
   // QR コードの SVG（ライブラリを3秒待っても読めなければ、QR コード無しで印刷する）
   async function qrSvg(url) {
     try {
@@ -466,21 +473,7 @@ window.GM_WISH = (D, L) => {
   // ---------- 画像で保存 ----------
   // PDF（印刷）と同じ表（buildPrint）を、画面の外に A4 の幅で出して html2canvas で写し、PNG にする（goodsmap.css の .gm-wishprint.is-capture）。
   // できた画像はそのまま画面に出し、長押し（パソコンは右クリック）で保存してもらう（共有シートは、ホーム画面に追加した PWA でうまく動かないため）。パソコン向けにダウンロードのボタンも置く
-  let h2cLib = null;
-  const loadH2c = () =>
-    (h2cLib ??= new Promise((ok, ng) => {
-      if (window.html2canvas) return ok(window.html2canvas);
-      const $s = document.createElement("script");
-      $s.src = H2C_SRC;
-      $s.integrity = H2C_SRI;
-      $s.crossOrigin = "anonymous";
-      $s.onload = () => ok(window.html2canvas);
-      $s.onerror = () => {
-        h2cLib = null; // 次に押したときにもう一度試す
-        ng(new Error("html2canvas"));
-      };
-      document.head.append($s);
-    }));
+  const loadH2c = loadLib(H2C_SRC, H2C_SRI, "html2canvas");
   async function saveImage($b) {
     $b.disabled = true;
     try {
@@ -578,7 +571,10 @@ window.GM_WISH = (D, L) => {
     $ask.showModal();
   }
 
-  wide.addEventListener("change", () => $dlg.open && inPanel() && $dlg.close()); // 広くなったら、開いている dialog は閉じる（右カラムに出ている）
+  wide.addEventListener("change", () => {
+    if ($dlg.open && inPanel()) $dlg.close(); // 広くなったら、開いている dialog は閉じる（右カラムに出ている）
+    if (inPanel()) renderDialog();
+  });
   refresh();
   importFromUrl();
 };

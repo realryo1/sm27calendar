@@ -52,7 +52,7 @@
   .is-embed .gm::before,
   .is-embed .gm::after { display: none; }
 }
-/* スマホでは、カレンダーの下のバー（高さはカレンダーの style.css の --nav-h。いまは75px＋画面の下端の余白）が重なるので、それより少し多めに下を空ける */
+/* スマホでは、カレンダーの下のバー（高さはカレンダーの style.css の --nav-h。いまは70px＋画面の下端の余白）が重なるので、それより少し多めに（80px＋画面の下端の余白）下を空ける */
 @media (max-width: 640px) {
   .is-embed body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 }
@@ -196,7 +196,7 @@
 @media (max-width: 640px) {
   .gm { padding-top: 0; } /* マップを画面のいちばん上から出す */
   /* スマホ（1カラム）は、開いたときに画面の上半分（goodsmap.js の shrink が --gm-sec-h に入れる） */
-  .gm-sec--map { height: var(--gm-sec-h, calc(100svh - 32px)); }
+  .gm-sec--map { height: var(--gm-sec-h, 50svh); }
 }
 .gm-floors {
   display: flex;
@@ -391,9 +391,10 @@
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity .2s, visibility .2s;
+  content-visibility: hidden; /* 見えないあいだは中身を組まない（拡大のたびに --u が変わっても、全部のブースの文字を組み直さない） */
+  transition: opacity .2s, visibility .2s, content-visibility .2s allow-discrete;
 }
-.gm-map.is-named .gm-label { opacity: 1; visibility: visible; }
+.gm-map.is-named .gm-label { opacity: 1; visibility: visible; content-visibility: visible; }
 .gm-label.is-picked { color: var(--col-paper); } /* 選んだブースはグラデーションで塗るので白抜き */
 .gm-label__no { font-family: var(--font-display); font-weight: 400; font-size: calc(var(--u) * var(--th) * .34px); line-height: 1; }
 .gm-label__name {
@@ -425,11 +426,12 @@
   cursor: pointer;
   opacity: 0;
   visibility: hidden;
-  transition: opacity .2s, visibility .2s, box-shadow .15s;
+  content-visibility: hidden;
+  transition: opacity .2s, visibility .2s, content-visibility .2s allow-discrete, box-shadow .15s;
   -webkit-user-select: none;
   user-select: none;
 }
-.gm-map.is-detail .gm-mini { opacity: 1; visibility: visible; pointer-events: auto; }
+.gm-map.is-detail .gm-mini { opacity: 1; visibility: visible; content-visibility: visible; pointer-events: auto; }
 /* 中身が出ているあいだは、下のブースの絵（拡大されて太くなった枠線がはみ出す）を消す。押す・Tab で選ぶのはそのまま */
 .gm-tile,
 .gm-area.has-booths { transition: opacity .2s; }
@@ -794,7 +796,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
     left: 0;
     right: 0;
     z-index: 20;
-    height: var(--gm-map-h, calc(100svh - 32px));
+    height: var(--gm-map-h, 50svh);
     margin: 0;
     border-radius: 0;
     box-shadow: 0 6px 16px rgb(79 69 143 / .12);
@@ -1125,5 +1127,4 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   body::after { display: none !important; }
   body > :not(.gm-wishprint) { display: none !important; }
   .gm-wishprint { display: block; }
-}
 }

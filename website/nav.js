@@ -237,6 +237,25 @@
   // 押す前（指が触れた・マウスが乗った・Tab で選んだ時点）から読み込み始め、押したときにはなるべく表示できているようにする
   const warm = (ev) => viewFor(itemOf(ev.target));
   for (const type of ["pointerover", "touchstart", "focusin"]) $nav.addEventListener(type, warm, { passive: true });
-  // preload: true のものは、カレンダーを読み込み終えてから裏で読み込んでおく
-  window.addEventListener("load", () => setTimeout(() => items.filter((it) => it.preload).forEach(viewFor), 1000));
+  // preload: true のものは、カレンダーを読み込み終えて手が空いてから、1つずつ裏で読み込んでおく
+  // （同じスレッドで動くので、2つ同時に起こすとカレンダーの操作が止まる。通信量を抑える設定のときは先読みしない）
+  const idle = window.requestIdleCallback ? (fn) => requestIdleCallback(fn, { timeout: 5000 }) : (fn) => setTimeout(fn, 300);
+  window.addEventListener("load", () => {
+    if (navigator.connection?.saveData) return;
+    const queue = items.filter((it) => it.preload);
+    const next = () => {
+      const it = queue.shift();
+      if (!it) return;
+      const $f = viewFor(it).querySelector("iframe");
+      let done = false;
+      const go = () => {
+        if (done) return;
+        done = true;
+        idle(next);
+      };
+      $f.addEventListener("load", () => setTimeout(go, 300), { once: true });
+      setTimeout(go, 8000); // 読み込み終わりを待てないとき（すでに読み込み済みなど）
+    };
+    setTimeout(() => idle(next), 1000);
+  });
 })();

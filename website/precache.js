@@ -7,6 +7,7 @@ self.SM27_SITE = "dev";
 self.PRECACHE = [
   "./",
   "index.html",
+  "base.css",
   "style.css",
   "precache.js",
   "util.js",

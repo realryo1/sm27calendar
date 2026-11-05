@@ -1,0 +1,93 @@
+/* 共通の土台：配色・フォント・背景・フッター（カレンダーの style.css とグッズマップが読む）。
+   運行情報（hokkaido_delay）の base.css は、この配色・フォント・背景・フッターを写したもの。ここを変えたら向こうも直す */
+/* 配色は SNOW MIKU 2027 公式サイトのパレットに準拠 */
+:root {
+  --col-ink: #4F458F;
+  --col-ink-primary: #DD67E2;
+  --col-paper: #FFFFFF;
+  --col-paper-muted: #F8F8F8;
+  --col-primary: #e9a1eb;
+  --col-primary-light: #F7BFFF;
+  --col-primary-dark: #873890;
+  --col-secondary: #9185DE;
+  --col-secondary-light: #BFB5FF;
+  --col-secondary-lighter: #f4f1ff;
+  --col-secondary-dark: #6E63B3;
+  --col-link: #D08100;
+  --col-link-light: #ffc567;
+  --col-link-lighter: #ffe7b8;
+  --col-gold-dark: #736B32;
+  --col-gold: #D9CA5E;
+  --col-fan: #C2354F;
+  --brand-gradient: linear-gradient(135deg, #9185de 0%, #e9a1eb 100%); /* 公式サイト準拠 */
+  --gold-gradient: linear-gradient(to right, #736B32 0%, #D9CA5E 20%, #FFFFFF 30%, #D9CA5E 50%, #736B32 90%);
+  /* ページの隙間（画面の端・時間割と会場一覧の間・時間割の上下・下のバーとの間など）。ここだけ変えればそろって変わる。
+     グッズマップ（goodsmap/）も base.css を読むので同じ値になる。持ち手の位置の計算（app.js・goodsmap.js）もこれを読む */
+  --gap: 10px;
+  /* 画面の下端の安全な余白（iPhone のホームバーなど）。下のバーの位置・高さはこれを使う */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  /* 曜日の色（app.js が曜日の文字に付ける [data-wd]。ファイルの最後で当てる） */
+  --col-weekday: #8a8799;
+  --col-sat: #3b78d4;
+  --col-sun: #d6455e;
+  /* 本文は端末のフォント（Webフォントは読み込みが重いので、見出し用の Dela Gothic One だけ） */
+  --font-base: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
+  --font-display: "Dela Gothic One", var(--font-base);
+}
+/* アプリとして全画面で開いたとき（manifest の display: fullscreen。Android）は、ジェスチャーのバーが下端に重なるのに
+   安全な余白が 0 になり、日付のバーが画面の下端に貼り付くので、最低限の隙間を足す（iPhone はホームバーの余白のほうが大きい） */
+@media (display-mode: fullscreen) {
+  :root { --safe-b: max(env(safe-area-inset-bottom, 0px), 16px); }
+}
+
+/* 会場ごとのテーマ色 */
+.theme-pink   { --c: #DD67E2; --c-dark: #873890; --c-light: #F7BFFF; --c-tint: #fcecfd; }
+.theme-violet { --c: #9185DE; --c-dark: #6E63B3; --c-light: #BFB5FF; --c-tint: #f4f1ff; }
+.theme-orange { --c: #D08100; --c-dark: #8f5900; --c-light: #ffc567; --c-tint: #fff4dc; }
+.theme-gold   { --c: #b5a43a; --c-dark: #736B32; --c-light: #D9CA5E; --c-tint: #f8f4d8; }
+.theme-indigo { --c: #4F458F; --c-dark: #352d6b; --c-light: #9185DE; --c-tint: #ecebf7; }
+.theme-teal   { --c: #2E9CAA; --c-dark: #1d6571; --c-light: #8edbe6; --c-tint: #e6f6f8; }
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; overscroll-behavior: none; } /* iPhoneで端を越えて引っ張れる（ゴム紐のような）挙動を止める */
+html { touch-action: pan-x pan-y; } /* 二本指・ダブルタップでページ全体が拡大されないように（iPhoneで拡大のあと「繰り返しエラー」になることがある）。表とマップのピンチはJSで行う */
+
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: .04em;
+  font-feature-settings: "palt";
+  color: var(--col-ink);
+  background: var(--col-secondary-lighter);
+  min-height: 100vh;
+}
+/* 背景のぼかしは画面に固定した別のレイヤーに描く（background-attachment: fixed だと、スクロールや持ち手のドラッグのたびに画面全体を描き直すため） */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 10% 0%, var(--col-primary-light) 0, transparent 40%),
+    radial-gradient(circle at 100% 20%, var(--col-secondary-light) 0, transparent 35%);
+  will-change: transform;
+  pointer-events: none;
+}
+
+button { font: inherit; color: inherit; }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  padding: 20px 16px 32px;
+  font-size: .75rem;
+  text-align: center;
+  opacity: .8;
+}
+.site-footer__updated { margin: 0 0 6px; font-weight: 700; }
+.site-footer__repo { margin: 8px 0 0; }
+.site-footer__repo a { color: inherit; text-decoration: underline; }
