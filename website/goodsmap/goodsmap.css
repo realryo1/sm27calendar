@@ -595,6 +595,29 @@
 @media (max-width: 767px) {
   .gm-card { padding: 12px 12px 14px; }
 }
+/* 試し：スマホは、カードの隙間と角丸をなくして、閉じた行の高さをそろえる（SE のような小さい画面で縦に長すぎるため） */
+@media (max-width: 640px) {
+  .gm-list { gap: 0; }
+  .gm-card {
+    margin-inline: calc(-1 * var(--gap)); /* 左右の隙間もなくして、画面の端まで */
+    padding: 0 12px;
+    border-top: none;
+    border-left: 4px solid var(--c);
+    border-bottom: 1px solid rgb(0 0 0 / .08);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .gm-official { border-left: none; }
+  .gm-fold > summary,
+  .gm-official > .gm-official__head { min-height: 48px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; border-radius: 0; }
+  .gm-fold[open] > summary { margin-bottom: 0; }
+  .gm-fold[open] { padding-bottom: 12px; } /* 開いたとき、いちばん下（リンクのボタンなど）がカードの下端にくっつかないように */
+  .gm-links { margin-top: 10px; }
+  .gm-fold > summary .gm-card__title { padding-top: 0; } /* 上の2pxが、行の中身を下に寄せていた */
+  .gm-card:not(.gm-fold, .gm-official) { padding-top: 12px; padding-bottom: 12px; }
+  .gm-official > .gm-official__head { padding-left: 12px; padding-right: 12px; }
+  .gm-official__body { padding: 2px 12px 12px; }
+}
 .gm-card.is-picked { box-shadow: 0 0 0 2px var(--c), var(--gm-shadow); }
 .gm-card.is-flash { animation: gm-flash 1.8s ease-out; }
 @keyframes gm-flash {
@@ -702,7 +725,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-block[hidden] { display: none; }
 .gm-note { margin: 10px 0 0; padding-left: 10px; font-size: .78rem; border-left: 3px solid var(--col-gold); }
 .gm-note a { margin-left: .4em; color: var(--col-link); font-weight: 700; }
-.gm-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.gm-links { display: flex; flex-wrap: wrap; gap: 6px;}
 .gm-links a {
   padding: 4px 13px;
   border-radius: 999px;
@@ -717,29 +740,47 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 /* 開け閉めできるカード（details.gm-fold。マップとグッズ一覧（?page=goods）で共通）。初めは閉じていて、選んだ・さがした・しぼり込んだときに開く（各ページの JS）。
    見出しの行（summary.gm-card__head）を押すと開閉し、名前のすぐ右に件数（.gm-fold__n。公式物販の見出しと同じ位置）、右端に矢印（開いているときは下向き、閉じているときは右向き）。
    見出しの中のブースの番号（ボタン・リンク）は、押しても開け閉めしない（summary の中の操作できる部品は、それ自体として働くため） */
-.gm-fold > summary { list-style: none; cursor: pointer; align-items: center; }
-.gm-fold > summary::-webkit-details-marker { display: none; }
-.gm-fold > summary::after {
+.gm-fold > summary,
+.gm-official > summary { list-style: none; cursor: pointer; align-items: center; }
+.gm-fold > summary::-webkit-details-marker,
+.gm-official > summary::-webkit-details-marker { display: none; }
+.gm-fold > summary::after,
+.gm-official > summary::after {
   content: "";
   flex: none;
   width: 9px;
   height: 9px;
   margin: 0 4px 0 auto; /* 右端に寄せる */
-  border-right: 2.5px solid var(--c);
-  border-bottom: 2.5px solid var(--c);
+  border-right: 2.5px solid var(--arrow, var(--c)); /* 色はカードの色。公式物販だけ白（--arrow） */
+  border-bottom: 2.5px solid var(--arrow, var(--c));
   transform: translateY(-2px) rotate(45deg);
   transition: transform .2s;
 }
-.gm-fold:not([open]) > summary::after { transform: rotate(-45deg); }
+.gm-fold:not([open]) > summary::after,
+.gm-official:not([open]) > summary::after { transform: rotate(-45deg); }
 .gm-fold > summary:focus-visible { outline: 2px solid var(--c); outline-offset: 4px; border-radius: 8px; }
 .gm-fold[open] > summary { margin-bottom: 4px; }
 .gm-fold__n { margin-left: .5em; font-family: var(--font-display); font-size: 1.15rem; font-weight: 400; white-space: nowrap; color: var(--c); } /* 名前の行の中、すぐ右 */
+/* 開閉のアニメーション（早め）。::details-content と interpolate-size に対応したブラウザだけ動き、ほかは今まで通りすぐ開閉する */
+.gm-fold,
+.gm-official { interpolate-size: allow-keywords; }
+.gm-fold::details-content,
+.gm-official::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition: block-size .1s ease-out, content-visibility .1s allow-discrete;
+}
+.gm-fold[open]::details-content,
+.gm-official[open]::details-content { block-size: auto; }
 @media (prefers-reduced-motion: reduce) {
-  .gm-fold > summary::after { transition: none; }
+  .gm-fold::details-content,
+  .gm-official::details-content { transition: none; }
+  .gm-fold > summary::after,
+  .gm-official > summary::after { transition: none; }
 }
 
 /* 公式物販：見出しは公式2027のチケット欄と同じ向きのグラデーション、中は白 */
-.gm-official { padding: 0; overflow: hidden; border-top: none; }
+.gm-official { --arrow: var(--col-paper); padding: 0; overflow: hidden; border-top: none; }
 .gm-official__head {
   display: flex;
   align-items: center;
@@ -750,7 +791,6 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   background: linear-gradient(135deg, var(--col-secondary) 0%, var(--col-primary) 100%);
   cursor: pointer;
 }
-.gm-official__head::-webkit-details-marker { display: none; }
 .gm-official__head::before {
   content: "";
   flex: none;
@@ -760,18 +800,6 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   -webkit-mask: var(--gm-star) no-repeat center / contain;
   mask: var(--gm-star) no-repeat center / contain;
 }
-.gm-official__head::after {
-  content: "";
-  flex: none;
-  width: 9px;
-  height: 9px;
-  margin: 0 4px -2px auto;
-  border-right: 2.5px solid currentColor;
-  border-bottom: 2.5px solid currentColor;
-  transform: translateY(-3px) rotate(45deg);
-  transition: transform .2s;
-}
-.gm-official[open] .gm-official__head::after { transform: translateY(2px) rotate(225deg); }
 .gm-official__title { font-size: 1.05rem; font-weight: 900; letter-spacing: .08em; }
 .gm-official__count { font-family: var(--font-display); font-size: 1.15rem; opacity: .9; }
 .gm-official__body { padding: 2px 16px 16px; background: var(--col-paper); } /* 中は白（ほかのカードと同じ） */
