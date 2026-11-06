@@ -10,14 +10,19 @@
   const EMBED = new URLSearchParams(location.search).has("embed");
   if (EMBED) document.documentElement.classList.add("is-embed");
 
-  // 年のタブ。別の年は ?year= で読み込み直す（データのファイルが年ごとのため。グッズマップと同じ）
-  const YEARS = [
-    { year: 2027, label: "2027" },
-    { year: 2026, label: "2026（前年の見本）" },
-  ];
+  // 年は上に出さず、フッターのリンクで前年の見本（?year=2026）を開く（正式リリース時に削除）。データのファイルが年ごとなので読み込み直す
+  const SAMPLE_YEAR = 2026;
+  const yearHref = (year) => {
+    const url = new URL(location.href);
+    if (year === 2027) url.searchParams.delete("year");
+    else url.searchParams.set("year", year);
+    url.hash = "";
+    return url.search;
+  };
 
   const TEXT = {
-    years: "年",
+    sampleOpen: "前年（2026）の見本を開く",
+    sampleClose: "2027に戻る",
     // 売り場。上のしぼり込みのボタンと節の見出し
     all: "すべて",
     at: { official: "公式物販", booth: "企業ブース", live: "ライブ物販", loose: "売り場の記載なし" },
@@ -43,7 +48,7 @@
 
   // ---------- データの整理と一覧の部品（goodslist.js。マップと共通） ----------
   // ブースの番号は、マップのそのブースへのリンク。カレンダーの中では、nav.js が表示をマップに切り替えて #booth-○○ を開く（下の click）
-  const mapSearch = D.year === YEARS[0].year ? "" : `year=${D.year}`;
+  const mapSearch = D.year === 2027 ? "" : `year=${D.year}`;
   const mapHref = (no) => `./${mapSearch ? `?${mapSearch}` : ""}#booth-${encodeURIComponent(no)}`; // 同じページの ?page=goods を外したもの
   const L = window.GM_LIST(D, {
     boothNo: (b) =>
@@ -121,14 +126,6 @@
   }
 
   // ---------- 開始 ----------
-  $("gdYears").setAttribute("aria-label", TEXT.years);
-  $("gdYears").innerHTML = YEARS.map(
-    (y) => `<button type="button" class="gm-chip gm-tab" role="tab" data-year="${y.year}" aria-selected="${y.year === D.year}">${esc(y.label)}</button>`
-  ).join("");
-  if (D.notice) {
-    $("gdNotice").textContent = D.notice;
-    $("gdNotice").hidden = false;
-  }
   $("gdGuide").innerHTML = guideHtml();
   $query.placeholder = TEXT.search;
   $query.setAttribute("aria-label", TEXT.search);
@@ -142,22 +139,15 @@
   const [y, mo, d] = dateOf(D.updated);
   const sources = [...D.sources.map((s) => ({ ...s, label: `${s.label}（${E.name}）` })), ...(D.notices ?? []).filter((n) => n.kind === "maker")];
   $("gdFooter").innerHTML = `
+    ${D.notice ? `<p>${esc(D.notice)}</p>` : ""}
     <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
     <p>${br(TEXT.disclaimer)}</p>
     <p class="gm-sources">${esc(TEXT.sources)}：${sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)} ↗</a>`).join("／")}</p>
+    <p class="site-footer__repo"><a href="${esc(yearHref(D.year === SAMPLE_YEAR ? 2027 : SAMPLE_YEAR))}">${esc(D.year === SAMPLE_YEAR ? TEXT.sampleClose : TEXT.sampleOpen)}</a></p>
     ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
   applyFilter();
 
   // ---------- 操作 ----------
-  $("gdYears").addEventListener("click", (ev) => {
-    const b = ev.target.closest("[data-year]");
-    if (!b || Number(b.dataset.year) === D.year) return;
-    const url = new URL(location.href);
-    if (Number(b.dataset.year) === YEARS[0].year) url.searchParams.delete("year");
-    else url.searchParams.set("year", b.dataset.year);
-    url.hash = "";
-    location.href = url.href;
-  });
   // 売り場のボタン：その売り場にしぼる。一覧はすぐ下なので、スクロールはしない
   $("gdGuide").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-at]");

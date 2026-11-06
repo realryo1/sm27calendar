@@ -19,7 +19,6 @@
 @property --gm-sec-h { syntax: "*"; inherits: false; }
 
 .gm { padding: var(--gap) var(--gap) 0; } /* 隙間はカレンダーの style.css の --gap */
-.gm-notice[hidden],
 .gm-floors[hidden],
 .gm-tools[hidden],
 .gm-empty[hidden] { display: none; }
@@ -55,19 +54,6 @@
 /* スマホでは、カレンダーの下のバー（高さはカレンダーの style.css の --nav-h。いまは70px＋画面の下端の余白）が重なるので、それより少し多めに（80px＋画面の下端の余白）下を空ける */
 @media (max-width: 640px) {
   .is-embed body { padding-bottom: calc(80px + var(--safe-b)); }
-}
-
-/* 試験版の注意。カレンダーの「時間仮」と同じく破線の枠で、確定情報ではないことを示す */
-.gm-notice {
-  margin: 0 0 10px;
-  padding: 5px 12px;
-  border: 1.5px dashed var(--col-link);
-  border-radius: 12px;
-  font-size: .74rem;
-  font-weight: 700;
-  line-height: 1.5;
-  color: #8f5900;
-  background: rgb(255 255 255 / .85);
 }
 
 /* ---------- 並べ方 ---------- */
@@ -205,7 +191,7 @@
   min-width: 0; /* 拡大したマップの大きさで、列が広がらないように */
 }
 @media (max-width: 640px) {
-  .gm { padding-top: 0; } /* マップを画面のいちばん上から出す */
+  html:not(.gd-page) .gm { padding-top: 0; } /* （グッズ一覧は上の隙間を残す）マップを画面のいちばん上から出す */
   /* スマホ（1カラム）は、開いたときに画面の上半分（goodsmap.js の shrink が --gm-sec-h に入れる） */
   .gm-sec--map { height: var(--gm-sec-h, 50svh); }
 }

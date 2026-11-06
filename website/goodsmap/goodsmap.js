@@ -8,8 +8,15 @@
   // 書き写しの確認（コンソールの警告）は、手元で開いたときだけ行う。公開版では毎回は行わない
   const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
 
-  // 会場のタブ。index.html の GM_TABS（年ごとのデータをまたいで並べる）。無ければ、このデータのフロア
-  const TABS = window.GM_TABS ?? D.floors.map((f) => ({ year: D.year, floor: f.id, label: f.label }));
+  // 会場のタブ（このデータのフロア）
+  const TABS = D.floors.map((f) => ({ floor: f.id, label: f.label }));
+  // 前年（2026）の見本へのリンク（正式リリース時に削除）。データのファイルが年ごとなので読み込み直す
+  const sampleHref = (() => {
+    const url = new URL(location.href);
+    if (D.year === 2026) url.searchParams.delete("year");
+    else url.searchParams.set("year", 2026);
+    return url.search || "?";
+  })();
   // カレンダーのサイドバーから iframe で開いたとき（?embed=1。カレンダーの nav.js）。カレンダーへ戻るリンクを出さない
   const EMBED = new URLSearchParams(location.search).has("embed");
   if (EMBED) document.documentElement.classList.add("is-embed"); // goodsmap.css（左右の金の帯を消す）
@@ -37,6 +44,8 @@
       "本ページは非公式の試験版です。\nこのページの問い合わせはx.com/realryo1にお願いします。\n情報の正確性には留意していますが、最終的な判断は利用者が行ってください。\n商品の写真は、品名のリンクから公式サイトで見られます。",
     sources: "出典",
     calendar: "非公式カレンダーへ戻る",
+    sampleOpen: "前年（2026）の見本を開く",
+    sampleClose: "2027に戻る",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -326,11 +335,11 @@
   function renderMap() {
     shown = turned(floor, rot);
     $("gmFloorLabel").innerHTML = `${esc(floor.label)}${floor.sub ? `<small>${esc(floor.sub)}</small>` : ""}`;
-    // 会場（ウイングベイ・チ・カ・ホ・前年のウイングベイ）はタブで切り替える。同じ年のデータの中はそのまま切り替え、別の年のタブは、その年のデータで読み込み直す
+    // 会場（ウイングベイ・チ・カ・ホ）はタブで切り替える
     const $floors = $("gmFloors");
     $floors.hidden = TABS.length < 2;
     $floors.innerHTML = TABS.map(
-      (t) => `<button type="button" class="gm-chip gm-tab" role="tab" data-year="${t.year}" data-floor="${esc(t.floor)}" aria-selected="${t.year === D.year && t.floor === floor.id}">${esc(t.label)}</button>`
+      (t) => `<button type="button" class="gm-chip gm-tab" role="tab" data-floor="${esc(t.floor)}" aria-selected="${t.floor === floor.id}">${esc(t.label)}</button>`
     ).join("");
     $("gmMapHint").textContent = floor.hint ?? (booths.length ? (matchMedia("(pointer: coarse)").matches ? TEXT.mapHint : TEXT.mapHintMouse) : "");
     // マップの絵（SVG）と、拡大したときにブースの上に出す中身（HTML）を、同じ大きさの台に重ねる
@@ -686,10 +695,6 @@
 
   // ---------- 固定の文言 ----------
   function renderStatic() {
-    if (D.notice) {
-      $("gmNotice").textContent = D.notice;
-      $("gmNotice").hidden = false;
-    }
     $("gmZoom").innerHTML =
       `<button type="button" class="gm-turn" data-turn aria-label="${esc(TEXT.turn[1])}">${esc(TEXT.turn[0])}</button>` +
       Object.entries(TEXT.zoom)
@@ -708,6 +713,7 @@
     $("gmEmpty").textContent = TEXT.empty;
     const [y, mo, d] = D.updated.split("-").map(Number);
     $("gmFooter").innerHTML = `
+      ${D.notice ? `<p>${esc(D.notice)}</p>` : ""}
       <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
       <p>${br(TEXT.disclaimer)}</p>
       <p>${esc(D.mapNote ?? TEXT.mapNote)}${[].concat(D.officialMap)
@@ -717,6 +723,7 @@
       <p class="gm-sources">${esc(TEXT.sources)}：${D.sources
         .map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(`${s.label}（${E.name}）`)} ↗</a>`)
         .join("／")}</p>
+      <p class="site-footer__repo"><a href="${esc(sampleHref)}">${esc(D.year === 2026 ? TEXT.sampleClose : TEXT.sampleOpen)}</a></p>
       ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
   }
 
@@ -772,8 +779,6 @@
   $("gmFloors").addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-floor]");
     if (!el) return;
-    // 別の年のデータのタブは、その年のデータで読み込み直す
-    if (+el.dataset.year !== D.year) return location.assign(`?year=${el.dataset.year}${EMBED ? "&embed=1" : ""}#map-${el.dataset.floor}`);
     floor = D.floors.find((f) => f.id === el.dataset.floor) ?? floor;
     history.replaceState(null, "", `#map-${floor.id}`);
     renderMap();

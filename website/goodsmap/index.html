@@ -53,12 +53,6 @@
       addEventListener("resize", sync);
       window.GM_SYNC = sync; // 全画面にするとき（goodsmap.js の setFull）にも測り直す
     }
-    // 会場のタブ（年のデータをまたいで並べる。goodsmap.js）。別の年のタブは、その年のデータで読み込み直す
-    window.GM_TABS = [
-      { year: 2027, floor: "wingbay", label: "2027 ウイングベイ" },
-      { year: 2027, floor: "chikaho", label: "2027 チ・カ・ホ" },
-      { year: 2026, floor: "6-4f", label: "2026 ウイングベイ" },
-    ];
     document.write(`<script src="${new URLSearchParams(location.search).get("year") === "2026" ? "data-2026fix.js" : "data-2027.js"}" defer><\/script>`);
   </script>
   <script src="../util.js" defer></script>
@@ -103,7 +97,6 @@
         </div>
         <!-- 2カラムでは、検索欄の下だけがスクロールする（検索欄の角の外にカードが見えないように） -->
         <div class="gm-scroll">
-          <p class="gm-notice" id="gmNotice" hidden></p>
           <p class="gm-lead" id="gmLead"></p>
           <div class="gm-list" id="gmList"></div>
           <p class="gm-empty" id="gmEmpty" hidden></p>
@@ -115,8 +108,6 @@
     <div class="gd-cols">
     <main class="gd-main">
       <h1 class="gm-visually-hidden">グッズ一覧</h1>
-      <div class="gm-chips gd-years" id="gdYears" role="tablist"></div>
-      <p class="gm-notice" id="gdNotice" hidden></p>
       <!-- 検索と、売り場（すべて・公式物販・企業ブース・ライブ物販）のしぼり込み -->
       <section class="gd-guide" aria-label="さがす・しぼり込む">
         <label class="gm-search">

@@ -50,8 +50,6 @@ html:not(.gd-page) .gd-cols { display: none; }
 .gm-card[hidden],
 .gm-item[hidden] { display: none; }
 
-.gd-years { margin: 0 0 10px; }
-
 /* ---------- 検索・売り場のしぼり込み ---------- */
 .gd-guide {
   margin: 0 0 14px;

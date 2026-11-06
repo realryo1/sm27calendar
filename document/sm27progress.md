@@ -8,6 +8,8 @@
 
 - [ ] 一挙公開のときに公開URLを新しいドメインに差し替える：`data.js`の`migrate.enabled`を`true`に（github.ioに引っ越しの案内）、`index.html`のcanonical・`og:url`・`og:image`・`twitter:image`、READMEの公開URL、`goodsmap.md`の公開URL。github.ioはゆくゆく廃止し、PWAをすべて消して新しいドメインへ転送する`index.html`と解除用の`sw.js`だけにする（READMEの「公開先」）。ほしいものリストは一挙公開から出すので引き継がない
 - [ ] グッズマップの`noindex`を外すか
+- [ ] 正式リリース時に、前年の見本を削除する：グッズマップ・グッズ一覧のフッターのリンク（`goodsmap.js`の`sampleHref`、`goods.js`の`yearHref`）、`data-2026fix.js`、`index.html`の`?year=2026`の読み込み
+- [ ] 前年の見本のリンクを実機で確かめる（カレンダーの中のiframeで、`?embed=1`を保ったまま読み込み直せるか）
 - [ ] グッズ一覧（`goodsmap/?page=goods`）を実機で確かめる（スマホの下のバーが4つになった幅、ブースの番号からマップへ移る）
 - [ ] マップのブースのカードが、企業のお品書きの品で長くなる（26年のコスパは41品）。カードは閉じた状態から始まるようにしたが、開いたときの長さはそのまま
 - [ ] マップのカードからグッズ一覧のそのブースへ戻るリンク
