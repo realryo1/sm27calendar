@@ -32,6 +32,27 @@
       document.documentElement.classList.add("gd-page");
       document.title = "グッズ一覧（試験版）";
     }
+    // カレンダーの中（?embed=1）のとき、下の安全な余白（--safe-b）は親のものを使う。
+    // iframe の中は env(safe-area-inset-bottom) が 0 になるので、そのままだと浮かぶボタンなどが親の下のバーに重なる
+    // （スマホのブラウザは親が 24px。アプリ表示は親も iframe も fullscreen の最低 16px で偶然そろう）
+    if (new URLSearchParams(location.search).has("embed")) {
+      const sync = () => {
+        try {
+          const cs = getComputedStyle(parent.document.documentElement);
+          const st = document.documentElement.style;
+          st.setProperty("--safe-b", cs.getPropertyValue("--safe-b"));
+          // 下のバーの帯（.app-nav。ボタンの10px上から色がつく）に iframe が重なっている高さ（スマホは帯全体、2カラムはバーの上で止まるので帯の上の余白の分）。
+          // 全画面のマップがバーの上で止まるのに使う。下にバーが無いPCの縦バーのときは 0
+          const bar = parent.document.querySelector(".app-nav");
+          const over = bar && cs.getPropertyValue("--nav-w").trim() === "0px" ? Math.max(0, frameElement.getBoundingClientRect().bottom - bar.getBoundingClientRect().top) : 0;
+          st.setProperty("--embed-nav-h", `${Math.round(over)}px`);
+          document.documentElement.classList.toggle("is-embed-bar", over > 0); // 下に帯があるとき（goodsmap.css の浮かぶボタンの右端をバーにそろえる）
+        } catch {}
+      };
+      sync();
+      addEventListener("resize", sync);
+      window.GM_SYNC = sync; // 全画面にするとき（goodsmap.js の setFull）にも測り直す
+    }
     // 会場のタブ（年のデータをまたいで並べる。goodsmap.js）。別の年のタブは、その年のデータで読み込み直す
     window.GM_TABS = [
       { year: 2027, floor: "wingbay", label: "2027 ウイングベイ" },

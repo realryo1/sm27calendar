@@ -19,6 +19,7 @@
     mapNote: "公式の会場マップをもとに描いた略図です。",
     floors: "会場",
     mapHint: "二本指で拡大するとブースの中身が出ます",
+    mapHintMouse: "ホイールで拡大するとブースの中身が出ます", // マウスのとき（指で触る端末は mapHint）
     officialMap: "公式の会場マップ（画像）",
     fullOn: "全画面で表示",
     fullOff: "全画面を閉じる",
@@ -331,7 +332,7 @@
     $floors.innerHTML = TABS.map(
       (t) => `<button type="button" class="gm-chip gm-tab" role="tab" data-year="${t.year}" data-floor="${esc(t.floor)}" aria-selected="${t.year === D.year && t.floor === floor.id}">${esc(t.label)}</button>`
     ).join("");
-    $("gmMapHint").textContent = floor.hint ?? (booths.length ? TEXT.mapHint : "");
+    $("gmMapHint").textContent = floor.hint ?? (booths.length ? (matchMedia("(pointer: coarse)").matches ? TEXT.mapHint : TEXT.mapHintMouse) : "");
     // マップの絵（SVG）と、拡大したときにブースの上に出す中身（HTML）を、同じ大きさの台に重ねる
     $map.innerHTML = `<div class="gm-canvas">${mapSvg(shown)}<div class="gm-minis" aria-hidden="true">${labelsHtml(shown)}${minisHtml(shown)}</div></div>`;
     sizeMap();
@@ -838,7 +839,7 @@
   // マップは画面の上に貼り付き、ページを下へスクロールするほど低くなり（下端は一覧と一緒に上がる）、最後は検索欄の上の細いプレビュー（PREVIEW px）で残る。
   // 全画面は、＋の右のボタンを押したときだけにする（拡大しても自動では切り替えない）。もう一度押すと元に戻る。
   // プレビューはどこを押しても、一覧はそのままでマップだけが大きくなる（一覧をスクロールすると、またプレビューに戻る）。カードの番号を押せばプレビューの中で光る。
-  // 2カラムではマップが常に見えているので、どれも使わない
+  // 2カラムではマップが常に見えているので、縮むプレビューは使わない（全画面だけ使える）
   const $sec = $("map");
   const PREVIEW = 160; // goodsmap.css の --gm-preview と合わせる
   // 縮む高さと位置は、使う要素に直接入れる（:root に入れると、スクロールのたびにページ全体のスタイルを計算し直して重い。goodsmap.css の @property）
@@ -893,8 +894,8 @@
   }
   // 全画面にする・戻す。拡大率はそのまま。全画面のあいだ、うしろのページはスクロールさせない
   function setFull(on) {
-    on = on && !twoCol.matches;
     if (on === full) return;
+    if (on) window.GM_SYNC?.(); // カレンダーの中なら、下のバーの位置を測り直す
     full = on;
     $mapbox.classList.toggle("is-full", on);
     document.documentElement.classList.toggle("gm-noscroll", on);
@@ -1001,6 +1002,9 @@
   window.addEventListener("resize", () => {
     top0Cache = null;
     requestShrink();
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && full) setFull(false); // PCのキーボードで全画面を閉じる
   });
   twoCol.addEventListener("change", () => {
     top0Cache = null;
