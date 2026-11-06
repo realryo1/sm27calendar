@@ -218,6 +218,25 @@ window.GM_LIST = (D, { boothNo }) => {
     delete $el.dataset.auto;
   };
 
+  // 見出しを押して開いたら、そのカードの頭が見える位置（検索欄の下。scroll-margin-top）までスクロールする。
+  // しぼり込み・検索・マップから開いたときは動かさない（押した見出しのカードだけ）。動きを減らす設定のときは、すぐ移る
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  let tapped = null;
+  document.addEventListener("click", (ev) => {
+    const card = ev.target.closest("summary.gm-card__head, summary.gm-official__head")?.parentElement;
+    tapped = card && !card.open && !ev.target.closest(".gm-no") ? card : null; // 番号（マップへ移るボタン・リンク）は開け閉めしない
+  });
+  document.addEventListener(
+    "toggle",
+    (ev) => {
+      const card = ev.target;
+      if (card !== tapped || !card.open) return;
+      tapped = null;
+      requestAnimationFrame(() => card.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" }));
+    },
+    true
+  );
+
   return {
     TEXT, norm, short, yen, srcOf, urlOf, onSale, boothBy, noticeBy, goodsAt, official, live, loose, info, boothLabel, boothName,
     tag, byTags, tagKeys, tagHtml, rank, tagsOf, whereOf, priceOf, goodsRow, textRow, block, linkList, foldCard, boothCard, officialCard, looseCard, fold, openCard,

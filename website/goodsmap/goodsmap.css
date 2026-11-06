@@ -580,44 +580,39 @@
   background: var(--col-paper);
 }
 
-.gm-list {
-  display: grid;
-  gap: 14px;
-}
+.gm-list { display: grid; }
+/* カードは、隙間と角丸をなくして、閉じた行の高さをそろえる（幅によらず共通。SE のような小さい画面で縦に長すぎるため） */
 .gm-card {
-  padding: 14px 16px 16px;
-  border-top: 6px solid var(--c);
-  border-radius: 16px;
+  padding: 0 12px;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c) 28%, transparent); /* 区切りの線。border-bottom だと左の色の帯（番号）を横切って見える */
   background: var(--col-paper);
-  box-shadow: var(--gm-shadow);
   scroll-margin-top: 132px; /* 上に貼り付く検索欄の分 */
 }
-@media (max-width: 767px) {
-  .gm-card { padding: 12px 12px 14px; }
+/* 開いたカードだけ、上下の行から切り離す（影をつけ、上下に間を空ける。角丸はなし） */
+.gm-fold[open],
+.gm-official[open] {
+  margin-block: 8px;
+  box-shadow: var(--gm-shadow);
 }
-/* 試し：スマホは、カードの隙間と角丸をなくして、閉じた行の高さをそろえる（SE のような小さい画面で縦に長すぎるため） */
+/* 先頭のカードには、上にも区切りの線（閉じているとき。開いているときは影で区切る） */
+.gm-list > .gm-card:first-child:not([open]) {
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--c) 28%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--c) 28%, transparent);
+}
+/* 開いたカードが続くときは、間を二重に空けない */
+:is(.gm-fold, .gm-official)[open] + :is(.gm-fold, .gm-official)[open] { margin-top: 0; }
 @media (max-width: 640px) {
-  .gm-list { gap: 0; }
-  .gm-card {
-    margin-inline: calc(-1 * var(--gap)); /* 左右の隙間もなくして、画面の端まで */
-    padding: 0 12px;
-    border-top: none;
-    border-left: 4px solid var(--c);
-    border-bottom: 1px solid rgb(0 0 0 / .08);
-    border-radius: 0;
-    box-shadow: none;
-  }
-  .gm-official { border-left: none; }
-  .gm-fold > summary,
-  .gm-official > .gm-official__head { min-height: 48px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; border-radius: 0; }
-  .gm-fold[open] > summary { margin-bottom: 0; }
-  .gm-fold[open] { padding-bottom: 12px; } /* 開いたとき、いちばん下（リンクのボタンなど）がカードの下端にくっつかないように */
-  .gm-links { margin-top: 10px; }
-  .gm-fold > summary .gm-card__title { padding-top: 0; } /* 上の2pxが、行の中身を下に寄せていた */
-  .gm-card:not(.gm-fold, .gm-official) { padding-top: 12px; padding-bottom: 12px; }
-  .gm-official > .gm-official__head { padding-left: 12px; padding-right: 12px; }
-  .gm-official__body { padding: 2px 12px 12px; }
+  .gm-card { margin-inline: calc(-1 * var(--gap)); } /* スマホは左右の隙間もなくして、画面の端まで */
 }
+.gm-card:not(.gm-official):not(:has(.gm-no)) { border-left: 4px solid var(--c); } /* 番号の帯が無いカードだけ、左に色の線 */
+.gm-fold > summary,
+.gm-official > .gm-official__head { min-height: 48px; padding-top: 6px; padding-bottom: 6px; box-sizing: border-box; border-radius: 0; }
+.gm-fold[open] > summary { margin-bottom: 0; }
+.gm-fold[open] { padding-bottom: 12px; } /* 開いたとき、いちばん下（リンクのボタンなど）がカードの下端にくっつかないように */
+.gm-links { margin-top: 10px; }
+.gm-fold > summary .gm-card__title { padding-top: 0; } /* 上の2pxが、行の中身を下に寄せていた */
+.gm-card:not(.gm-fold, .gm-official) { padding-top: 12px; padding-bottom: 12px; }
+.gm-official > .gm-official__head { padding-left: 12px; padding-right: 12px; }
+.gm-official > .gm-official__body { padding: 2px 12px 12px; }
 .gm-card.is-picked { box-shadow: 0 0 0 2px var(--c), var(--gm-shadow); }
 .gm-card.is-flash { animation: gm-flash 1.8s ease-out; }
 @keyframes gm-flash {
@@ -628,23 +623,26 @@
 .gm-card__title { flex: 1; min-width: 0; padding-top: 2px; }
 .gm-card__name { margin: 0; font-size: 1rem; font-weight: 900; line-height: 1.45; color: var(--c-dark); overflow-wrap: anywhere; }
 .gm-card__org { margin: 1px 0 0; font-size: .72rem; font-weight: 700; color: var(--c); }
-/* ブースの番号（押すとマップでそのブースを示す）。ガチャは文字なので横に伸びる */
+.gm-fold:not([open]) .gm-card__org { display: none; } /* 企業名は開いたときだけ（閉じた行の高さをそろえる） */
+/* ブースの番号（押すとマップでそのブースを示す）。カードの左の色の線の代わりに、行の高さいっぱいの帯の中に番号を入れる。ガチャは文字なので横に伸びる。
+   帯はカードの左端から始まるので、左に -12px（カードの余白の分）、上下に -6px（見出しの余白の分）はみ出させる */
 .gm-no {
   flex: none;
   display: inline-grid;
   place-items: center;
-  min-width: 2.3rem;
-  height: 2.3rem;
-  padding: 0 .55rem;
+  align-self: stretch;
+  box-sizing: border-box;
+  min-width: calc(12px + 3rem); /* 余白込み。1桁・2桁でも幅をそろえる（ガチャなど長い文字だけ伸びる） */
+  margin: -6px 0 -6px -12px;
+  padding: 0 calc(.6rem + 6px) 0 calc(6px + .35rem); /* 数字を左に寄せる分、右を広げて帯の幅は同じ */
   border: none;
-  border-radius: 999px;
+  border-radius: 0 999px 999px 0; /* 右側面は半円（行の高さの半分が半径） */
   font-family: var(--font-display);
   font-size: 1rem;
   line-height: 1;
   letter-spacing: 0;
   color: var(--col-paper);
   background: linear-gradient(135deg, var(--c-light), var(--c));
-  box-shadow: 0 3px 8px rgb(79 69 143 / .18), inset 0 -2px 2px rgb(0 0 0 / .1), inset 0 2px 2px rgb(255 255 255 / .4);
 }
 button.gm-no { cursor: pointer; }
 button.gm-no:hover { filter: brightness(1.06); }
@@ -761,20 +759,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-fold > summary:focus-visible { outline: 2px solid var(--c); outline-offset: 4px; border-radius: 8px; }
 .gm-fold[open] > summary { margin-bottom: 4px; }
 .gm-fold__n { margin-left: .5em; font-family: var(--font-display); font-size: 1.15rem; font-weight: 400; white-space: nowrap; color: var(--c); } /* 名前の行の中、すぐ右 */
-/* 開閉のアニメーション（早め）。::details-content と interpolate-size に対応したブラウザだけ動き、ほかは今まで通りすぐ開閉する */
-.gm-fold,
-.gm-official { interpolate-size: allow-keywords; }
-.gm-fold::details-content,
-.gm-official::details-content {
-  block-size: 0;
-  overflow: clip;
-  transition: block-size .1s ease-out, content-visibility .1s allow-discrete;
-}
-.gm-fold[open]::details-content,
-.gm-official[open]::details-content { block-size: auto; }
 @media (prefers-reduced-motion: reduce) {
-  .gm-fold::details-content,
-  .gm-official::details-content { transition: none; }
   .gm-fold > summary::after,
   .gm-official > summary::after { transition: none; }
 }
