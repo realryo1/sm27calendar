@@ -657,10 +657,11 @@
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v));
   // スマホで開いたときは、会場列の幅も1時間の高さも、最小の縮小から始める
   // （横スクロールを減らし、1日の流れと会場を一目で見渡せるように）
-  if (matchMedia("(max-width: 640px)").matches) {
-    $tt.style.setProperty("--colmin", `${ZOOM.col[0]}px`);
-    $tt.style.setProperty("--hour", `${ZOOM.hour[0]}px`);
-  }
+  // （2カラムでも、1時間の高さは最小の縮小から始める。会場列の幅はそのまま）
+  if (matchMedia("(max-width: 640px)").matches) $tt.style.setProperty("--colmin", `${ZOOM.col[0]}px`);
+  // スマホは最小、2カラムは最小から1段階（1段階＝1.2倍）広げた高さ（偶数pxに丸める）
+  const startHour = matchMedia("(max-width: 640px)").matches ? ZOOM.hour[0] : Math.round((ZOOM.hour[0] * 1.2) / 2) * 2;
+  $tt.style.setProperty("--hour", `${startHour}px`);
   const cssPx = (name) => parseFloat(getComputedStyle($tt).getPropertyValue(name));
   const colWidth = () => $tt.querySelector(".tt-col").getBoundingClientRect().width;
   const hourPx = () => cssPx("--hour");
