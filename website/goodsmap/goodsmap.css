@@ -826,12 +826,15 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   .gm-mapbox.is-preview { padding: 4px 0; }
   /* 検索欄はマップの下に貼り付く（--gm-pv はいまのマップの高さ） */
   .gm-tools { top: var(--gm-pv, 0px); }
+  .gm-tools.is-animating { transition: top .25s ease-out; } /* 検索欄が貼り付く位置も、枠の高さと同じ動きで（先に動くと、枠と重なる・すき間ができる） */
   .gm-card { scroll-margin-top: calc(var(--gm-preview) + 132px); }
   /* プレビューを押して大きくするときだけ、高さをなめらかに変える（スクロールで縮むときは指に合わせるので動かさない） */
-  .gm-mapbox.is-animating { transition: height .25s ease-out; }
+  .gm-mapbox.is-animating,
+  .gm-sec--map.is-animating { transition: height .25s ease-out; }
+  html:not(.gd-page) { overflow-anchor: none; } /* 一覧の場所が枠と一緒に動くので、ブラウザにスクロール位置を直させない */
   /* プレビューは、どこを押してもマップだけが大きくなる（goodsmap.js の expand） */
-  .gm-mapbox.is-preview .gm-map,
-  .gm-mapbox.is-preview .gm-map * { cursor: pointer; }
+  .gm-mapbox.is-preview .gm-map { cursor: pointer; }
+  .gm-mapbox.is-preview .gm-map * { cursor: pointer; pointer-events: none; } /* プレビューのタッチは拡大専用：ブースは押せず、押下・ホバーの色も付かない（押すと .gm-map のクリックで大きくなる） */
 }
 
 /* ---------- フッター ---------- */

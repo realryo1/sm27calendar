@@ -369,11 +369,11 @@
   const DETAIL = 140;
   let zoom = 1;
   const clampZoom = (z) => Math.min(ZOOM.max, Math.max(ZOOM.min, z));
-  function sizeMap() {
+  function sizeMap(w = $map.clientWidth, hh = $map.clientHeight) {
     const $canvas = $map.firstElementChild;
     if (!$canvas) return;
     const [, , vw, vh] = shown.view;
-    const fit = Math.min($map.clientWidth / vw, $map.clientHeight / vh);
+    const fit = Math.min(w / vw, hh / vh);
     const u = fit * zoom; // マップの1単位の、画面での px
     $canvas.style.width = `${vw * u}px`;
     $canvas.style.height = `${vh * u}px`;
@@ -612,6 +612,7 @@
     if (!$card) return;
     if ($card.hidden) resetFilter();
     L.openCard($card); // 選んで開いたので、しぼり込みを外しても閉じない
+    holdPreview();
     $card.scrollIntoView({ behavior: instant ? "auto" : behavior, block: "start" });
     $card.classList.remove("is-flash");
     void $card.offsetWidth;
@@ -740,6 +741,7 @@
     if (el) activate(el);
   });
   $map.addEventListener("keydown", (ev) => {
+    if (preview) return; // プレビューは拡大専用
     const el = ev.target.closest("[data-pick]");
     if (!el || (ev.key !== "Enter" && ev.key !== " ")) return;
     ev.preventDefault();
@@ -854,20 +856,49 @@
   const secStyle = $sec.style;
   let top0Cache = null; // マップの列の上端（offsetTop）。測るとレイアウトを確かめるので、スクロールのたびには測らない
   const put = (style, k, v) => style.getPropertyValue(k) !== v && style.setProperty(k, v); // 変わらないときは書かない
-  let fitTimer = 0; // スクロールのあいだ止めているマップの測り直し（下の shrink）を、止まってからやる
-  let scrolled = false; // 次の shrink がスクロール（か、プレビューを開く動き）によるもの
   let preview = false; // プレビューのあいだは拡大縮小しない（小さすぎて操作しにくい）
   let expanded = null; // プレビューを押して大きくしたときの、ページのスクロール位置（一覧をスクロールしたら、プレビューに戻す）
   let full = false;
   let shrinkRaf = 0;
-  // deferMs：枠の高さが動いているあいだはマップの絵（SVG とブースの文字）を描き直さず、枠で切るだけにして、止まってから1回だけ測り直す
-  // （描き直すのは枠の高さが変わる毎フレームだと重く、スクロールがガクガクする。測り直しは settleMap。大きさが変わらなければ何も動かない）
-  const FIT_SCROLL = 150;
-  const FIT_EXPAND = 300; // プレビューを開く動き（.is-animating の 0.25 秒）が終わってから
+  let lastH = null; // 前に入れたマップの枠の高さ（変わったときだけ、まん中を保つ）
+  let small = false; // プレビューの高さか
+  const SHRINK_AT = 60; // これより下へスクロールしたらプレビューに縮む
+  const OPEN_AT = 24; // ページの先頭付近（ここまで戻ったら開く）
+  const GLIDE_MS = 300; // .is-animating の 0.25 秒より少し長く
+  let glideTimer = 0;
+  let heldAt = null; // カードへ移り終わったときのスクロール位置（そこから動かしていないあいだは、プレビューのまま）
+  let holdSmall = false; // 一覧のカードへ移っているあいだ、プレビューに保つ
+  let jump = false; // 次の shrink は、動かさずにすぐ切り替える
+  // 一覧のカードへ移る前に、プレビューにすぐ切り替えておく（切り替えで一覧の場所が動くので、先に済ませてから目的の位置を計算する）。
+  // 移り終わったら（scrollend。無い環境は時間で）手放す
+  function holdPreview() {
+    if (twoCol.matches || full) return;
+    holdSmall = true;
+    heldAt = null;
+    jump = true;
+    clearTimeout(glideTimer);
+    resizing = false;
+    $mapbox.classList.remove("is-animating");
+    $sec.classList.remove("is-animating");
+    $tools.classList.remove("is-animating");
+    $map.firstElementChild.style.marginBottom = "";
+    shrink();
+    jump = false;
+    let done = false;
+    const release = () => {
+      if (done) return;
+      done = true;
+      removeEventListener("scrollend", release);
+      holdSmall = false;
+      heldAt = window.scrollY;
+      requestShrink();
+    };
+    addEventListener("scrollend", release);
+    setTimeout(release, 1500);
+  }
+  // 枠の高さが変わるときは、マップ本体も同じフレームで合わせて大きさを変える（止まってから測り直す2段階にしない）
   function shrink() {
     shrinkRaf = 0;
-    const deferMs = scrolled ? (expanded != null && $mapbox.classList.contains("is-animating") ? FIT_EXPAND : FIT_SCROLL) : 0;
-    scrolled = false;
     if (twoCol.matches) {
       for (const style of [boxStyle, toolsStyle, secStyle]) for (const k of ["--gm-map-top", "--gm-map-h", "--gm-pv", "--gm-sec-h"]) style.removeProperty(k);
       $mapbox.classList.remove("is-shrunk", "is-preview");
@@ -878,24 +909,80 @@
     // 開いたときの高さ：画面の上半分（マップと一覧が上下1:1。これがマップの列の高さになる）。マップはその中に収まる大きさで描く
     const top0 = (top0Cache ??= $sec.offsetTop); // ページの中での、マップの列の上端（画面の大きさが変わったときだけ測り直す）
     const H = Math.round(window.innerHeight / 2 - top0);
-    put(secStyle, "--gm-sec-h", `${H}px`);
     const y = window.scrollY;
     if (expanded != null && Math.abs(y - expanded) > 4) expanded = null;
-    const h = expanded != null ? H : Math.max(PREVIEW, H - Math.max(0, y - top0));
+    if (heldAt != null && !holdSmall && Math.abs(y - heldAt) > 4) heldAt = null; // 利用者が動かしたら、ふつうの切り替えに戻る
+    // 高さは2段階だけ：開いた高さ H と、プレビューの高さ PREVIEW。下へ SHRINK_AT px スクロールしたらプレビューに、先頭付近（OPEN_AT px 以内）まで戻ったら開く
+    // （そのあいだは今の状態のまま。行き来で揺れない）。プレビューを押して開いたあと（expanded）は、スクロールしたらまたプレビューに戻る
+    if (holdSmall) small = true; // カードへ移るあいだは、プレビューのまま（スクロールの途中で開くと、一覧の場所が動いて目的の位置からずれる）
+    else if (heldAt != null && Math.abs(y - heldAt) <= 4) small = true; // 移り終わったあとも、利用者がスクロールするまでプレビューのまま（先頭のカードだと位置が先頭付近になり、すぐ開いてしまうため）
+    else if (expanded != null) small = false;
+    else if (y > SHRINK_AT) small = true;
+    else if (y <= OPEN_AT) small = false;
+    const h = small ? PREVIEW : H;
+    const resized = h !== lastH && lastH != null;
+    lastH = h;
+    // 枠の高さが変わるときだけ、マップ本体を1回だけ、変わったあとの大きさに描き直す（枠は CSS が動かす。毎フレームは測らない）。
+    // まん中に見えていたところをまん中に保つ（右下寄せのときは右下）
+    let keep = null;
+    if (resized && !anchored && $map.firstElementChild) {
+      const r0 = $map.firstElementChild.getBoundingClientRect();
+      const m = $map.getBoundingClientRect();
+      const [vx, vy, vw, vh] = shown.view;
+      keep = [vx + Math.min(1, Math.max(0, (m.left + m.width / 2 - r0.left) / r0.width)) * vw, vy + Math.min(1, Math.max(0, (m.top + m.height / 2 - r0.top) / r0.height)) * vh];
+    }
+    if (resized && !jump) {
+      resizing = true; // 動いているあいだ、ResizeObserver は測り直さない（描き直しは下の1回だけ）
+      $mapbox.classList.add("is-animating");
+      $sec.classList.add("is-animating");
+      $tools.classList.add("is-animating");
+    }
+    // 一覧の頭は、枠の高さの分だけ下にある（枠と同じ高さで一覧の場所も変えるので、枠と検索欄のあいだにすき間ができない）
+    put(secStyle, "--gm-sec-h", `${h}px`);
     put(boxStyle, "--gm-map-top", `${Math.max(0, top0 - y)}px`);
     put(boxStyle, "--gm-map-h", `${h}px`);
     put(toolsStyle, "--gm-pv", `${h}px`); // 検索欄は、この高さの下に貼り付く
-    preview = h <= PREVIEW;
-    $mapbox.classList.toggle("is-shrunk", h < H);
+    preview = small;
+    $mapbox.classList.toggle("is-shrunk", small);
     $mapbox.classList.toggle("is-preview", preview);
-    if (!deferMs) return sizeMap();
-    resizing = true; // 枠の大きさが変わっても、ResizeObserver は測り直さない
-    clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => {
+    if (!resized) return resizing ? undefined : sizeMap(); // 動いているあいだは、途中の大きさで描かない
+    if (jump) {
+      // すぐ切り替える（動かさない）：描き直しは1回、まん中を保つ
+      sizeMap();
+      if (anchored) toCorner();
+      else if (keep) centerOn(keep);
+      return;
+    }
+    // 変わったあとの枠の大きさで描く。枠の高さはまだ動き始めの値なので、枠の高さと地図の高さの差（ボタンなどの分。上で切り替えた状態のもの）を測り、変わったあとの高さから引く。
+    // （動き始めの高さで描くと、いったん小さく描かれて、終わってから大きくなる）
+    const wf = $map.clientWidth;
+    const hf = h - ($mapbox.offsetHeight - $map.clientHeight);
+    sizeMap(wf, hf);
+    // スクロールの位置も、変わったあとの枠に合わせた値を最初に入れる（終わってから直すと、カクッと動く）。
+    // 縮むときは、枠がまだ大きいあいだはスクロールできる幅が足りず、入れた位置が途中で切られるので、マップの絵の下に余白を足して足りるようにしておく（終わったら外す。
+    // 枠（.gm-map）の padding に足すと、枠が余白の分だけ高くなって下の一覧にはみ出すので、中の絵に足す）
+    const $canvas = $map.firstElementChild;
+    const cw = $canvas.offsetWidth;
+    const ch = $canvas.offsetHeight;
+    let sx = Math.max(0, cw - wf);
+    let sy = Math.max(0, ch - hf);
+    if (!anchored && keep) {
+      const [vx, vy, vw, vh] = shown.view;
+      sx = Math.min(sx, Math.max(0, ((keep[0] - vx) / vw) * cw - wf / 2));
+      sy = Math.min(sy, Math.max(0, ((keep[1] - vy) / vh) * ch - hf / 2));
+    }
+    $canvas.style.marginBottom = `${Math.max(0, sy + $map.clientHeight - ch)}px`;
+    $map.scrollLeft = sx;
+    $map.scrollTop = sy;
+    clearTimeout(glideTimer);
+    glideTimer = setTimeout(() => {
       resizing = false;
-      settleMap();
-    }, deferMs);
-    if (anchored) toCorner(); // 右下寄せは枠の動きに合わせて保つ
+      $map.firstElementChild.style.marginBottom = "";
+      $mapbox.classList.remove("is-animating");
+      $sec.classList.remove("is-animating");
+      $tools.classList.remove("is-animating");
+      sizeMap(); // 描いた大きさと同じはず（ずれたときだけ直る）
+    }, GLIDE_MS);
   }
   // 全画面にする・戻す。拡大率はそのまま。全画面のあいだ、うしろのページはスクロールさせない
   function setFull(on) {
@@ -985,23 +1072,18 @@
       turning = 0;
     }, TURN);
   }
-  // プレビューを押したとき：一覧はそのまま、マップだけを開いたときの高さに戻す（大きさの変わり目だけ、なめらかに動かす）
+  // プレビューを押したとき：一覧はそのまま、マップだけを開いたときの高さに戻す（大きさの変わり目は shrink がなめらかに動かす）
   function expand() {
     expanded = window.scrollY;
-    $mapbox.classList.add("is-animating");
-    scrolled = true;
+    heldAt = null;
     shrink();
-    setTimeout(() => $mapbox.classList.remove("is-animating"), 300);
   }
   const requestShrink = () => {
     if (!shrinkRaf) shrinkRaf = requestAnimationFrame(shrink);
   };
   window.addEventListener(
     "scroll",
-    () => {
-      scrolled = true;
-      requestShrink();
-    },
+    () => requestShrink(),
     { passive: true }
   );
   window.addEventListener("resize", () => {
