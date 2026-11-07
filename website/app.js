@@ -511,8 +511,10 @@
       e.open && [L.open, fmtTime(e, "open")],
       [
         e.open ? L.startWithOpen : L.startOnly,
-        e.allDay ? L.unannounced : opts.simple && e.tentative ? `${fmtTime(e, "start")} 〜` : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`,
+        e.allDay ? L.unannounced : opts.simple && e.showEnd ? fmtTime(e, "start") : opts.simple && e.tentative ? `${fmtTime(e, "start")} 〜` : `${fmtTime(e, "start")} – ${fmtTime(e, "end")}`,
       ],
+      // showEnd：終演を開演とは別の行で出す（仮の終演は斜線を使わず「（目安）」を付ける）
+      opts.simple && e.showEnd && [L.endTime, e.tentative ? `${hm(e.end)}<span class="vc-time__note">（目安）</span>` : hm(e.end)],
       e.lastEntry && [L.lastEntry, hm(e.lastEntry)],
     ].filter(Boolean);
     const wait = e.wait

@@ -40,6 +40,7 @@ window.TT_DATA = {
       startWithOpen: "開演",
       startOnly: "時間",
       lastEntry: "最終入場",
+      endTime: "終演",
       unannounced: "未発表",
       allDayUnannounced: "時間<wbr>未発表",
     },
@@ -218,9 +219,12 @@ window.TT_DATA = {
       official: false,
       // 終演時刻は主催者も「目安」としているので、終演のみ仮
       tentative: "end",
-      note: "<strong>ファン主催の非公式イベントです。</strong><br>終演時刻はあくまで目安です。正確な情報とは限りません。<br>北海道大学ボーカロイド同好会様からの掲載許可を頂いています。",
+      // 予定の中に終演時刻を別の行で出す（仮の終演は「（目安）」を付ける）
+      showEnd: true,
+      note: "<strong>ファン主催の非公式イベントです。</strong><br>終演時刻はあくまで目安です。<br>北海道大学ボーカロイド同好会様からの掲載許可を頂いています。",
       links: [
         { label: "開催告知ポスト", url: "https://x.com/HatsuneGinkasai/status/2112861563627679930" },
+        { label: "時間発表ポスト", url: "https://x.com/HatsuneGinkasai/status/2119006961656033512" },
         { label: "北海道大学ボーカロイド同好会 X", url: "https://x.com/Hokkaidouniv_VC" },
       ],
       // 昼・夜の2公演（開場は各30分前）

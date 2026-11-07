@@ -1568,6 +1568,8 @@
 .vc-ev__times div { display: flex; gap: 6px; align-items: baseline; }
 .vc-ev__times dt { font-size: .85rem; font-weight: 700; color: var(--c); }
 .vc-ev__times dd { margin: 0; font-family: var(--font-display); font-size: 1.3rem; color: var(--c-dark); }
+/* 「（目安）」は時刻の表示フォント（Dela Gothic One）を使わず、本文のフォントで小さく */
+.vc-time__note { font-family: var(--font-base); font-weight: 400; font-size: .8rem; }
 .vc-ev__note { margin: 8px 0 0; padding-left: 10px; font-size: .78rem; border-left: 3px solid var(--col-gold); }
 .vc-ev__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .vc-ev__links a {
