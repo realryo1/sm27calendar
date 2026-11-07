@@ -486,14 +486,20 @@
   height: var(--divider);
   pointer-events: none;
 }
-.tt-day-tools .tt-refresh { pointer-events: auto; }
-.tt-refresh {
+/* 並べ替えと更新のボタンを右端にまとめて貼り付ける */
+.tt-tools {
   position: sticky;
   right: 6px;
   z-index: 1;
   flex: none;
+  display: flex;
+  gap: 6px;
   margin-left: auto;
   margin-right: 6px;
+}
+.tt-tools .tt-refresh { pointer-events: auto; }
+.tt-refresh {
+  flex: none;
   padding: 8px 14px;
   border: 2px solid transparent;
   border-radius: 999px;
@@ -2094,3 +2100,46 @@
 .glass-bar .day-chip.is-active [data-wd="weekday"] { color: var(--col-weekday); }
 .glass-bar .day-chip.is-active [data-wd="sat"] { color: var(--col-sat); }
 .glass-bar .day-chip.is-active [data-wd="sun"] { color: var(--col-sun); }
+
+/* 並べ替えモード：列の見出しをつかんで動かす */
+.tt.is-sorting .tt-head-cell,
+.tt.is-sorting .tt-col { cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; } /* 縦はスクロール、横は列を持ち上げる */
+.tt.is-sorting .tt-col .ev,
+.tt.is-sorting .tt-col .ev-wait { pointer-events: none; }
+.tt-head-cell.is-off > .tt-head { opacity: .35; }
+.tt-col.is-off { background: var(--col-paper-muted); }
+.tt-col.is-off > * { opacity: .35; }
+.tt-vis {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 6px;
+  right: 6px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 3.6em; /* 文字が1行でも2行でも、表示・非表示で大きさを変えない */
+  padding: 4px;
+  border: 2px solid var(--col-secondary-dark);
+  border-radius: 12px;
+  font-size: .75rem;
+  font-weight: 900;
+  line-height: 1.3;
+  text-align: center;
+  word-break: keep-all; /* <wbr> の位置でだけ折る（日本語は何もしないと文字の途中で折れる） */
+  overflow-wrap: anywhere;
+  color: var(--col-secondary-dark);
+  background: var(--col-paper);
+  box-shadow: 0 2px 6px rgb(79 69 143 / .25);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.tt-head-cell.is-off .tt-vis { color: var(--col-paper); background: var(--col-secondary-dark); }
+.tt-vis:disabled { opacity: .45; cursor: default; }
+.tt-head-cell.is-making-way,
+.tt-col.is-making-way { transition: transform .15s ease; }
+.tt-head-cell.is-lifted,
+.tt-col.is-lifted { z-index: 8; cursor: grabbing; filter: drop-shadow(0 6px 10px rgb(79 69 143 / .35)); }
+.tt-col.is-lifted { opacity: .92; }
+.tt-sort.is-on { color: var(--col-paper); background: var(--brand-gradient); }

@@ -22,6 +22,31 @@
   // 会場は各イベントの会場フィールドから重複を除いて集め、letter 順に並べる
   const venues = [...new Map(events.map((e) => [e.letter, e])).values()].sort((x, y) => x.letter.localeCompare(y.letter));
 
+  // カレンダーの列の並びと表示・非表示（並べ替えボタンで変える。この端末に覚える）。下の会場カードは変えない
+  const PREF_KEY = "sm27-venue-pref";
+  const loadPref = () => {
+    try {
+      const p = JSON.parse(localStorage.getItem(PREF_KEY));
+      return { order: Array.isArray(p?.order) ? p.order : [], hidden: Array.isArray(p?.hidden) ? p.hidden : [] };
+    } catch {
+      return { order: [], hidden: [] };
+    }
+  };
+  const pref = loadPref();
+  const savePref = () => {
+    try {
+      if (!pref.order.length && !pref.hidden.length) localStorage.removeItem(PREF_KEY);
+      else localStorage.setItem(PREF_KEY, JSON.stringify(pref));
+    } catch {}
+  };
+  // 覚えた並び（なくなった会場は捨て、新しい会場は末尾に足す）
+  const orderedVenues = () => {
+    const by = new Map(venues.map((v) => [v.letter, v]));
+    const first = pref.order.filter((l) => by.has(l));
+    return [...new Set([...first, ...venues.map((v) => v.letter)])].map((l) => by.get(l));
+  };
+  const boardVenues = () => orderedVenues().filter((v) => !pref.hidden.includes(v.letter));
+
   const $dayNav = document.getElementById("dayNav");
   const $scroll = document.getElementById("ttScroll");
   const $tt = document.getElementById("tt");
@@ -149,6 +174,12 @@
   }
 
   function renderBoard() {
+    const shown = sorting ? orderedVenues() : boardVenues();
+    const off = (v) => sorting && pref.hidden.includes(v.letter);
+    const visCount = shown.filter((v) => !off(v)).length;
+    // 並べ替え中、見出しの真下にくっつけて出す表示・非表示のボタン（列ごとに1つ。見出しと一緒に貼り付く）
+    const visBtn = (v) => `<button type="button" class="tt-vis" data-vis="${v.letter}" aria-pressed="${!off(v)}" ${!off(v) && visCount <= 1 ? "disabled" : ""}><span>${off(v) ? "表示<wbr>する" : "非表示<wbr>にする"}</span></button>`;
+    $tt.classList.toggle("is-sorting", sorting);
     const hours = [];
     for (let h = range.start; h <= range.end; h++) hours.push(h);
 
@@ -160,13 +191,13 @@
       )
       .join("")}</div>`;
 
-    const heads = `<div class="tt-corner"></div>${venues
+    const heads = `<div class="tt-corner"></div>${shown
       .map(
-        (v) => `<div class="tt-head-cell"><div class="tt-head theme-${v.theme}">
+        (v) => `<div class="tt-head-cell${off(v) ? " is-off" : ""}" data-l="${v.letter}"><div class="tt-head theme-${v.theme}">
           <span class="tt-head__letter">${v.letter}</span>
           <span class="tt-head__name" style="--nl:${nameWidth(v)}" title="${esc(v.name)}">${headName(v)}</span>
           <span class="tt-head__kind tt-head__kind--${v.fan ? "fan" : "official"}">${v.fan ? B.fan : B.official}</span>
-        </div></div>`
+        </div>${sorting ? visBtn(v) : ""}</div>`
       )
       .join("")}`;
 
@@ -174,19 +205,19 @@
       .map((d, i) => {
         const dayEvents = events.filter((e) => e.days.includes(d.id));
         // 1日目の左端から予定のない列が2つ以上続くとき、その列をまたいで「下へスクロール」の案内を置く
-        const empty = venues.findIndex((v) => dayEvents.some((e) => e.letter === v.letter));
-        const hintSpan = i === 0 && site.scrollHint ? (empty < 0 ? venues.length : empty) : 0;
+        const empty = shown.findIndex((v) => dayEvents.some((e) => e.letter === v.letter));
+        const hintSpan = i === 0 && site.scrollHint && !sorting ? (empty < 0 ? shown.length : empty) : 0;
         const hint =
           hintSpan >= 2
             ? `<div class="tt-hint" style="--span:${hintSpan}"><p class="tt-hint__card">${br(site.scrollHint)}<span class="tt-hint__arrow" aria-hidden="true">↓</span></p></div>`
             : "";
-        const cols = venues
+        const cols = shown
           .map((v, vi) => {
             const blocks = dayEvents
               .filter((e) => e.letter === v.letter)
               .map((e) => renderEvent(e))
               .join("");
-            return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}${i > 0 ? " tt-col--round" : ""}" style="grid-row:${bodyRow(i)}">${vi === 0 ? hint : ""}${blocks}</div>`;
+            return `<div class="tt-col theme-${v.theme}${v.fan ? " tt-fan" : ""}${i > 0 ? " tt-col--round" : ""}${off(v) ? " is-off" : ""}" data-l="${v.letter}" style="grid-row:${bodyRow(i)}">${vi === 0 ? hint : ""}${blocks}</div>`;
           })
           .join("");
         // 日付帯は日ごとに上へ貼り付く。次の日の帯が下から来て、前の日の帯を押し上げて入れ替わる（updateActiveChip）
@@ -198,15 +229,15 @@
     // 最終日の次の日（2/8）は、最終日の日付帯を上端まで届かせるための埋め草。画面に収まる分だけ見せる（fitTail）
     const n = days.length;
     const ghostDay = dayOf(new Date(Date.parse(days[n - 1].id) + 864e5).toISOString().slice(0, 10));
-    const ghostCols = venues
-      .map((v) => `<div class="tt-col tt-ghost theme-${v.theme}${v.fan ? " tt-fan" : ""} tt-col--round" style="grid-row:${bodyRow(n)}"></div>`)
+    const ghostCols = shown
+      .map((v) => `<div class="tt-col tt-ghost theme-${v.theme}${v.fan ? " tt-fan" : ""} tt-col--round${off(v) ? " is-off" : ""}" data-l="${v.letter}" style="grid-row:${bodyRow(n)}"></div>`)
       .join("");
     const ghost = `<div class="tt-day tt-ghost" style="grid-row:${dayRow(n)}">${dayBand(ghostDay)}</div>${axis(bodyRow(n), " tt-ghost")}${ghostCols}`;
 
-    $tt.style.setProperty("--cols", venues.length);
+    $tt.style.setProperty("--cols", shown.length);
     const body = `calc(${range.end - range.start} * var(--hour))`;
     $tt.style.gridTemplateRows = `var(--divider) var(--head) ${body} repeat(${n - 1}, var(--divider) ${body}) var(--ghost-band, 0px) var(--ghost, 0px)`;
-    $tt.innerHTML = `${heads}${sections}${ghost}<div class="tt-day-tools">${refreshBtn}</div><div class="tt-now" hidden></div>`;
+    $tt.innerHTML = `${heads}${sections}${ghost}<div class="tt-day-tools"><div class="tt-tools">${sortBtnHtml()}${refreshBtn}</div></div><div class="tt-now" hidden></div>`;
 
     renderVenues();
     updateNow();
@@ -221,9 +252,126 @@
 
   // 右端の更新ボタン：ページと画像のキャッシュを消して読み込み直す
   const refreshBtn = `<button type="button" class="tt-refresh" data-refresh aria-label="キャッシュを消して更新">更新</button>`;
+  // 更新ボタンの左隣：並べ替えモードの入り切り（モードの中は下の sorting 以降）
+  const sortBtnHtml = () => `<button type="button" class="tt-refresh tt-sort${sorting ? " is-on" : ""}" data-sort aria-pressed="${sorting}" aria-label="${sorting ? "並べ替えを終える" : "会場の表示と順序を変える"}">${sorting ? "完了" : "並べ替え"}</button>`;
+
+  // 並べ替えモード：カレンダーの列をそのまま持ち上げて動かす（見出しをつかんで左右へ）。非表示の列も薄く出し、見出しの ×・＋ で表示を切り替える。
+  // 変えたらすぐ覚える（pref）。更新ボタンは使えるまま
+  let sorting = false;
+  const columnsOf = (l) => [...$tt.querySelectorAll(`[data-l="${l}"]`)];
+  const rerender = () => {
+    renderBoard();
+    invalidate();
+    updateDensity();
+    // 描き直した日付ラベルには位置の指定（translateY）が残っていないので、覚えている値を捨てて塗り直す
+    painted.length = 0;
+    updateActiveChip();
+  };
+  function toggleSort() {
+    sorting = !sorting;
+    rerender();
+    if (sorting) toast("列をドラッグして並び替え", 5000, "[data-sort]");
+    else document.querySelector(".toast")?.setAttribute("hidden", "");
+  }
+  function toggleVenue(l) {
+    const all = orderedVenues().map((v) => v.letter);
+    const on = !pref.hidden.includes(l);
+    if (on && all.filter((x) => !pref.hidden.includes(x)).length <= 1) return; // 最後の1つは隠せない
+    pref.order = all;
+    pref.hidden = on ? [...pref.hidden, l] : pref.hidden.filter((x) => x !== l);
+    savePref();
+    rerender();
+  }
+  // 見出しをつかんだ列を、指・ポインタに合わせて動かす。ほかの列は動かす先の位置へ避ける
+  function startDrag(ev) {
+    const cell = ev.target.closest("[data-l]");
+    if (!sorting || !cell || ev.target.closest("[data-vis]") || (ev.pointerType === "mouse" && ev.button !== 0)) return;
+    const heads = [...$tt.querySelectorAll(".tt-head-cell")];
+    const from = heads.findIndex((h) => h.dataset.l === cell.dataset.l);
+    const sl = () => $scroll.scrollLeft;
+    const rects = heads.map((h) => {
+      const r = h.getBoundingClientRect();
+      return { left: r.left + sl(), w: r.width };
+    });
+    const startX = ev.clientX + sl();
+    const letters = heads.map((h) => h.dataset.l);
+    const groups = letters.map(columnsOf);
+    const startY = ev.clientY;
+    let lifted = false;
+    // 列のどこをつかんでも持ち上げられる。縦に動かしたときはスクロールなので持ち上げず、横に少し動かしてから持ち上げる
+    const lift = () => {
+      lifted = true;
+      groups[from].forEach((el) => el.classList.add("is-lifted"));
+      groups.forEach((g, i) => i !== from && g.forEach((el) => el.classList.add("is-making-way")));
+      raf = requestAnimationFrame(auto);
+    };
+    let clientX = ev.clientX;
+    let target = from;
+    let raf = 0;
+    const place = () => {
+      const dx = clientX + sl() - startX;
+      const lo = rects[0].left - rects[from].left;
+      const hi = rects.at(-1).left + rects.at(-1).w - rects[from].left - rects[from].w;
+      const mx = Math.min(hi, Math.max(lo, dx));
+      groups[from].forEach((el) => (el.style.transform = `translateX(${mx}px)`));
+      // 持ち上げた列の中心がどの位置にあるかで、行き先を決める
+      const center = rects[from].left + rects[from].w / 2 + mx;
+      target = 0;
+      rects.forEach((r, i) => i !== from && r.left + r.w / 2 < center && target++);
+      // 避ける列は、行き先に応じて動かした列の幅（+列の間）だけ左右へずれる
+      const gap = rects.length > 1 ? Math.abs(rects[1].left - rects[0].left) - rects[0].w : 0;
+      const shift = rects[from].w + gap;
+      groups.forEach((g, i) => {
+        if (i === from) return;
+        const idx = i - (i > from ? 1 : 0); // 持ち上げた列を抜いたときの位置
+        const s = from < target ? (i > from && idx < target ? -shift : 0) : i < from && idx >= target ? shift : 0;
+        g.forEach((el) => (el.style.transform = s ? `translateX(${s}px)` : ""));
+      });
+    };
+    // 端に近づいたら自動でスクロールする
+    const auto = () => {
+      const r = $scroll.getBoundingClientRect();
+      const edge = 48;
+      const v = clientX < r.left + edge ? -12 : clientX > r.right - edge ? 12 : 0;
+      if (v) {
+        $scroll.scrollLeft += v;
+        place();
+      }
+      raf = requestAnimationFrame(auto);
+    };
+    const move = (e) => {
+      clientX = e.clientX;
+      if (!lifted) {
+        if (Math.abs(e.clientX - ev.clientX) < 6 || Math.abs(e.clientX - ev.clientX) < Math.abs(e.clientY - startY)) return;
+        lift();
+        cell.setPointerCapture?.(ev.pointerId);
+      }
+      place();
+    };
+    const end = (e) => {
+      cell.releasePointerCapture?.(ev.pointerId);
+      removeEventListener("pointermove", move);
+      removeEventListener("pointerup", end);
+      removeEventListener("pointercancel", end);
+      cancelAnimationFrame(raf);
+      if (!lifted) return;
+      if (e.type === "pointerup" && target !== from) {
+        const order = [...letters];
+        order.splice(target, 0, order.splice(from, 1)[0]);
+        // 非表示の列も含めた並びを覚える（sorting 中は全列が出ている）
+        pref.order = order;
+        savePref();
+      }
+      rerender();
+    };
+    addEventListener("pointermove", move);
+    addEventListener("pointerup", end);
+    addEventListener("pointercancel", end);
+  }
+  $tt.addEventListener("pointerdown", startDrag);
 
   let toastTimer;
-  function toast(msg, ms = 6000) {
+  function toast(msg, ms = 6000, anchor = "[data-refresh]") {
     let $t = document.querySelector(".toast");
     if (!$t) {
       $t = document.createElement("div");
@@ -233,8 +381,8 @@
     }
     $t.textContent = msg;
     $t.hidden = false;
-    // 更新ボタンの真下に、ボタンを指す吹き出しとして出す
-    const r = document.querySelector("[data-refresh]")?.getBoundingClientRect();
+    // 指定のボタン（初期は更新ボタン）の真下に、ボタンを指す吹き出しとして出す
+    const r = document.querySelector(anchor)?.getBoundingClientRect();
     if (r) {
       $t.style.top = `${r.bottom + 12}px`;
       $t.style.right = `${Math.max(8, innerWidth - r.right)}px`;
@@ -633,6 +781,10 @@
 
   $tt.addEventListener("click", (ev) => {
     if (ev.target.closest("[data-refresh]")) return hardRefresh();
+    if (ev.target.closest("[data-sort]")) return toggleSort();
+    const vis = ev.target.closest("[data-vis]");
+    if (vis) return toggleVenue(vis.dataset.vis);
+    if (sorting) return; // 並べ替え中は予定を開かない
     const wait = ev.target.closest("[data-wait]");
     if (wait) return showWait(wait.dataset.wait);
     const btn = ev.target.closest("[data-ev]");
