@@ -178,7 +178,8 @@
     const off = (v) => sorting && pref.hidden.includes(v.letter);
     const visCount = shown.filter((v) => !off(v)).length;
     // 並べ替え中、見出しの真下にくっつけて出す表示・非表示のボタン（列ごとに1つ。見出しと一緒に貼り付く）
-    const visBtn = (v) => `<button type="button" class="tt-vis" data-vis="${v.letter}" aria-pressed="${!off(v)}" ${!off(v) && visCount <= 1 ? "disabled" : ""}><span>${off(v) ? "表示<wbr>する" : "非表示<wbr>にする"}</span></button>`;
+    const visBtn = (v) => `<button type="button" class="tt-vis" data-vis="${v.letter}" aria-pressed="${!off(v)}" ${!off(v) && visCount <= 1 ? "disabled" : ""}><span>${off(v) ? "表示<wbr>する" : "非表示<wbr>にする"}</span></button>
+      <span class="tt-move"><button type="button" data-move="${v.letter}:-1" aria-label="${esc(v.short ?? v.name)}を左へ" ${shown[0] === v ? "disabled" : ""}>← 左</button><button type="button" data-move="${v.letter}:1" aria-label="${esc(v.short ?? v.name)}を右へ" ${shown.at(-1) === v ? "disabled" : ""}>右 →</button></span>`;
     $tt.classList.toggle("is-sorting", sorting);
     const hours = [];
     for (let h = range.start; h <= range.end; h++) hours.push(h);
@@ -255,10 +256,9 @@
   // 更新ボタンの左隣：並べ替えモードの入り切り（モードの中は下の sorting 以降）
   const sortBtnHtml = () => `<button type="button" class="tt-refresh tt-sort${sorting ? " is-on" : ""}" data-sort aria-pressed="${sorting}" aria-label="${sorting ? "並べ替えを終える" : "会場の表示と順序を変える"}">${sorting ? "完了" : "並べ替え"}</button>`;
 
-  // 並べ替えモード：カレンダーの列をそのまま持ち上げて動かす（見出しをつかんで左右へ）。非表示の列も薄く出し、見出しの ×・＋ で表示を切り替える。
+  // 並べ替えモード：見出しの下のボタンで、列を左右へ動かす・表示と非表示を切り替える（ドラッグは、ピンチや横スクロールと混ざるので使わない）。非表示の列も薄く出す。
   // 変えたらすぐ覚える（pref）。更新ボタンは使えるまま
   let sorting = false;
-  const columnsOf = (l) => [...$tt.querySelectorAll(`[data-l="${l}"]`)];
   const rerender = () => {
     renderBoard();
     invalidate();
@@ -270,8 +270,6 @@
   function toggleSort() {
     sorting = !sorting;
     rerender();
-    if (sorting) toast("列をドラッグして並び替え", 5000, "[data-sort]");
-    else document.querySelector(".toast")?.setAttribute("hidden", "");
   }
   function toggleVenue(l) {
     const all = orderedVenues().map((v) => v.letter);
@@ -282,96 +280,29 @@
     savePref();
     rerender();
   }
-  // 見出しをつかんだ列を、指・ポインタに合わせて動かす。ほかの列は動かす先の位置へ避ける
-  function startDrag(ev) {
-    const cell = ev.target.closest("[data-l]");
-    if (!sorting || !cell || ev.target.closest("[data-vis]") || (ev.pointerType === "mouse" && ev.button !== 0)) return;
-    const heads = [...$tt.querySelectorAll(".tt-head-cell")];
-    const from = heads.findIndex((h) => h.dataset.l === cell.dataset.l);
-    const sl = () => $scroll.scrollLeft;
-    const rects = heads.map((h) => {
-      const r = h.getBoundingClientRect();
-      return { left: r.left + sl(), w: r.width };
-    });
-    const startX = ev.clientX + sl();
-    const letters = heads.map((h) => h.dataset.l);
-    const groups = letters.map(columnsOf);
-    const startY = ev.clientY;
-    let lifted = false;
-    // 列のどこをつかんでも持ち上げられる。縦に動かしたときはスクロールなので持ち上げず、横に少し動かしてから持ち上げる
-    const lift = () => {
-      lifted = true;
-      groups[from].forEach((el) => el.classList.add("is-lifted"));
-      groups.forEach((g, i) => i !== from && g.forEach((el) => el.classList.add("is-making-way")));
-      raf = requestAnimationFrame(auto);
-    };
-    let clientX = ev.clientX;
-    let target = from;
-    let raf = 0;
-    const place = () => {
-      const dx = clientX + sl() - startX;
-      const lo = rects[0].left - rects[from].left;
-      const hi = rects.at(-1).left + rects.at(-1).w - rects[from].left - rects[from].w;
-      const mx = Math.min(hi, Math.max(lo, dx));
-      groups[from].forEach((el) => (el.style.transform = `translateX(${mx}px)`));
-      // 持ち上げた列の中心がどの位置にあるかで、行き先を決める
-      const center = rects[from].left + rects[from].w / 2 + mx;
-      target = 0;
-      rects.forEach((r, i) => i !== from && r.left + r.w / 2 < center && target++);
-      // 避ける列は、行き先に応じて動かした列の幅（+列の間）だけ左右へずれる
-      const gap = rects.length > 1 ? Math.abs(rects[1].left - rects[0].left) - rects[0].w : 0;
-      const shift = rects[from].w + gap;
-      groups.forEach((g, i) => {
-        if (i === from) return;
-        const idx = i - (i > from ? 1 : 0); // 持ち上げた列を抜いたときの位置
-        const s = from < target ? (i > from && idx < target ? -shift : 0) : i < from && idx >= target ? shift : 0;
-        g.forEach((el) => (el.style.transform = s ? `translateX(${s}px)` : ""));
+  // 列を1つ左右へ動かす（並べ替え中は非表示の列も並んでいるので、全列の並びで入れ替える）
+  function moveVenue(l, dir) {
+    const order = orderedVenues().map((v) => v.letter);
+    const i = order.indexOf(l);
+    const k = i + dir;
+    if (i < 0 || k < 0 || k >= order.length) return;
+    [order[i], order[k]] = [order[k], order[i]];
+    pref.order = order;
+    savePref();
+    // 動く前の横位置を覚え、描き直したあとに元の位置から素早く滑らせる
+    const left = (l) => $tt.querySelector(`.tt-head-cell[data-l="${l}"]`)?.getBoundingClientRect().left;
+    const before = Object.fromEntries(order.map((x) => [x, left(x)]));
+    rerender();
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
+      order.forEach((x) => {
+        const dx = before[x] - left(x);
+        if (dx) $tt.querySelectorAll(`[data-l="${x}"]`).forEach((el) => el.animate([{ transform: `translateX(${dx}px)` }, { transform: "none" }], { duration: 160, easing: "ease-out" }));
       });
-    };
-    // 端に近づいたら自動でスクロールする
-    const auto = () => {
-      const r = $scroll.getBoundingClientRect();
-      const edge = 48;
-      const v = clientX < r.left + edge ? -12 : clientX > r.right - edge ? 12 : 0;
-      if (v) {
-        $scroll.scrollLeft += v;
-        place();
-      }
-      raf = requestAnimationFrame(auto);
-    };
-    const move = (e) => {
-      clientX = e.clientX;
-      if (!lifted) {
-        if (Math.abs(e.clientX - ev.clientX) < 6 || Math.abs(e.clientX - ev.clientX) < Math.abs(e.clientY - startY)) return;
-        lift();
-        cell.setPointerCapture?.(ev.pointerId);
-      }
-      place();
-    };
-    const end = (e) => {
-      cell.releasePointerCapture?.(ev.pointerId);
-      removeEventListener("pointermove", move);
-      removeEventListener("pointerup", end);
-      removeEventListener("pointercancel", end);
-      cancelAnimationFrame(raf);
-      if (!lifted) return;
-      if (e.type === "pointerup" && target !== from) {
-        const order = [...letters];
-        order.splice(target, 0, order.splice(from, 1)[0]);
-        // 非表示の列も含めた並びを覚える（sorting 中は全列が出ている）
-        pref.order = order;
-        savePref();
-      }
-      rerender();
-    };
-    addEventListener("pointermove", move);
-    addEventListener("pointerup", end);
-    addEventListener("pointercancel", end);
+    $tt.querySelector(`[data-move="${l}:${dir}"]`)?.focus({ preventScroll: true });
   }
-  $tt.addEventListener("pointerdown", startDrag);
 
   let toastTimer;
-  function toast(msg, ms = 6000, anchor = "[data-refresh]") {
+  function toast(msg, ms = 6000) {
     let $t = document.querySelector(".toast");
     if (!$t) {
       $t = document.createElement("div");
@@ -381,8 +312,8 @@
     }
     $t.textContent = msg;
     $t.hidden = false;
-    // 指定のボタン（初期は更新ボタン）の真下に、ボタンを指す吹き出しとして出す
-    const r = document.querySelector(anchor)?.getBoundingClientRect();
+    // 更新ボタンの真下に、ボタンを指す吹き出しとして出す
+    const r = document.querySelector("[data-refresh]")?.getBoundingClientRect();
     if (r) {
       $t.style.top = `${r.bottom + 12}px`;
       $t.style.right = `${Math.max(8, innerWidth - r.right)}px`;
@@ -782,6 +713,8 @@
   $tt.addEventListener("click", (ev) => {
     if (ev.target.closest("[data-refresh]")) return hardRefresh();
     if (ev.target.closest("[data-sort]")) return toggleSort();
+    const mv = ev.target.closest("[data-move]");
+    if (mv) return moveVenue(...mv.dataset.move.split(":").map((x, i) => (i ? Number(x) : x)).slice(0, 2));
     const vis = ev.target.closest("[data-vis]");
     if (vis) return toggleVenue(vis.dataset.vis);
     if (sorting) return; // 並べ替え中は予定を開かない

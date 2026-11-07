@@ -1,5 +1,7 @@
 /* カレンダー本体のスタイル。配色・フォント・背景・フッター・テーマ色は base.css */
 :root {
+  --col-logo-dark: #B87CAC; /* ロゴの濃い部分の色。--col-logo だと淡くて文字が読みにくいときに使う */
+  --col-logo: #D4A8C0; /* 公式ロゴ（logo-header.webp）の主な色。base.css の配色ではなくこのサイトだけの色 */
   /* すりガラス（スマホの下のバー。nav.js）。bg の最後の数字が濃さ（0〜1、大きいほど透けにくい）、blur がぼかし */
   --glass-bg: rgb(244 241 255 / .9); /* バー・案内 */
   --glass-dark-bg: rgb(79 69 143 / .9); /* 市電いまどこ */
@@ -2101,9 +2103,7 @@
 .glass-bar .day-chip.is-active [data-wd="sat"] { color: var(--col-sat); }
 .glass-bar .day-chip.is-active [data-wd="sun"] { color: var(--col-sun); }
 
-/* 並べ替えモード：列の見出しをつかんで動かす */
-.tt.is-sorting .tt-head-cell,
-.tt.is-sorting .tt-col { cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; } /* 縦はスクロール、横は列を持ち上げる */
+/* 並べ替えモード：見出しの下のボタンで列を動かす */
 .tt.is-sorting .tt-col .ev,
 .tt.is-sorting .tt-col .ev-wait { pointer-events: none; }
 .tt-head-cell.is-off > .tt-head { opacity: .35; }
@@ -2121,7 +2121,7 @@
   box-sizing: border-box;
   height: 3.6em; /* 文字が1行でも2行でも、表示・非表示で大きさを変えない */
   padding: 4px;
-  border: 2px solid var(--col-secondary-dark);
+  border: 2px solid var(--col-logo-dark);
   border-radius: 12px;
   font-size: .75rem;
   font-weight: 900;
@@ -2129,17 +2129,46 @@
   text-align: center;
   word-break: keep-all; /* <wbr> の位置でだけ折る（日本語は何もしないと文字の途中で折れる） */
   overflow-wrap: anywhere;
+  color: var(--col-logo-dark);
+  background: var(--col-paper);
+  box-shadow: 0 2px 6px rgb(79 69 143 / .25);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.tt-head-cell.is-off .tt-vis { color: var(--col-paper); background: var(--col-logo-dark); }
+.tt-vis:disabled { opacity: .45; cursor: default; }
+/* 列を左右へ動かすボタン（表示・非表示の下） */
+.tt-move {
+  position: absolute;
+  top: calc(100% + 6px + 2.7rem + 6px); /* 表示・非表示ボタンの高さ（3.6em × .75rem）の下 */
+  left: 6px;
+  right: 6px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* 上下に並べ、左は左寄せ・右は右寄せで互い違いに */
+.tt-move button {
+  box-sizing: border-box;
+  width: calc(100% - 14px);
+  height: 2.8rem;
+  padding: 0 4px;
+  border: 2px solid var(--col-secondary-dark);
+  border-radius: 12px;
+  font-size: .85rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--col-secondary-dark);
   background: var(--col-paper);
   box-shadow: 0 2px 6px rgb(79 69 143 / .25);
   cursor: pointer;
   touch-action: manipulation;
 }
-.tt-head-cell.is-off .tt-vis { color: var(--col-paper); background: var(--col-secondary-dark); }
-.tt-vis:disabled { opacity: .45; cursor: default; }
-.tt-head-cell.is-making-way,
-.tt-col.is-making-way { transition: transform .15s ease; }
-.tt-head-cell.is-lifted,
-.tt-col.is-lifted { z-index: 8; cursor: grabbing; filter: drop-shadow(0 6px 10px rgb(79 69 143 / .35)); }
-.tt-col.is-lifted { opacity: .92; }
+.tt-move button + button { align-self: flex-end; }
+/* ブランドのグラデーション（青紫→ピンク）の両端を1色ずつ：左は青紫、右はピンク */
+.tt-move button[data-move$=":-1"] { border-color: var(--col-secondary); color: var(--col-secondary); }
+.tt-move button[data-move$=":1"] { border-color: var(--col-primary); color: var(--col-primary); }
+.tt-move button:disabled { opacity: .35; cursor: default; }
 .tt-sort.is-on { color: var(--col-paper); background: var(--brand-gradient); }
