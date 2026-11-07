@@ -129,7 +129,6 @@
   .is-resizing .tl-sign__num,
   .is-resizing .tl-map__heading path,
   .is-resizing .tl-map__pulse { animation-play-state: paused; }
-  .is-resizing .venue-card--fan { -webkit-text-stroke: 0; }
   /* 会場カードは枠だけ幅に合わせ、中身は押した時の幅（--cw、app.js の freeze）のまま組み直さない。縮めたら見切れ、広げたら右が空く。
      手を止めたら（.is-frozen が外れたら）中身も組み直す */
   .is-frozen .venue-card { overflow: clip; } /* hidden だとスクロール領域になり、中の貼り付き（.tl-side）が効かなくなる */
@@ -156,7 +155,6 @@
      レイヤーを作った最初のフレームは描画が重いので、持ち手にマウスが乗った時点で先に作っておく */
   .main:has(> .split:hover) .main__inner,
   .is-resizing .main__inner { will-change: transform; }
-  .is-resizing .tt-fan { background-repeat: repeat; } /* 市松のマスを列幅に合わせて伸縮させない */
 }
 /* スマホ表示（1カラム）のときは持ち手を出さない */
 @media (max-width: 640px) {
@@ -617,13 +615,6 @@
 }
 /* 2日目以降は上に会場見出しがないので、上の角も丸める（1日目は見出しとつながる） */
 .tt-col--round { border-radius: 10px; }
-
-/* 非公式の会場の列：背景を市松模様にして、チェックの片側を白く色抜きする */
-.tt-fan {
-  background:
-    linear-gradient(to bottom, var(--c-light) 0 1px, transparent 1px calc(50% - 1px), var(--col-paper) 0 50%, transparent 0) 0 0 / 8px var(--hour),
-    conic-gradient(var(--c-tint) 25%, var(--col-paper) 0 50%, var(--c-tint) 0 75%, var(--col-paper) 0) 0 0 / 24px 24px round; /* round でマスの数が整数になり、列幅の端がぴったり揃う */
-}
 
 /* 1日目の予定のない列（A〜C）をまたぐ「下へスクロール」の案内（app.js の tt-hint）。
    先頭の列の中に置き、--span 列ぶん（間の column-gap 5px を含む）右へ広げる */
@@ -1556,14 +1547,6 @@
     linear-gradient(var(--col-paper), var(--col-paper)) padding-box,
     repeating-linear-gradient(-45deg, var(--col-fan) 0 8px, transparent 8px 16px) border-box;
 }
-/* 市松模様の上でも読めるよう、文字に白い縁取り（塗りの外側にだけ描く）。ボタンとバッジは地色があるので除く */
-.venue-card--fan {
-  -webkit-text-stroke: 4px #fff;
-  paint-order: stroke fill;
-}
-.venue-card--fan .vc-ev__links a,
-.venue-card--fan .venue-card__letter,
-.venue-card--fan .badge { -webkit-text-stroke: 0; }
 .venue-card .ev__badges { justify-content: flex-start; margin: 0; }
 .vc-ev__title { margin: 6px 0 0; font-size: 1rem; font-weight: 900; line-height: 1.4; color: var(--c-dark); }
 .vc-ev__title small { font-size: .78em; color: var(--c); }

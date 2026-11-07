@@ -215,14 +215,19 @@ window.TT_DATA = {
       price: "未発表",
       theme: "gold",
       days: ["2027-02-06"],
-      allDay: true,
       official: false,
-      note: "<strong>ファン主催の非公式イベントです。</strong><br>開場・開演・終演の時間は未発表。<br>北海道大学ボーカロイド同好会様からの掲載許可を頂いています。",
+      // 終演時刻は主催者も「目安」としているので、終演のみ仮
+      tentative: "end",
+      note: "<strong>ファン主催の非公式イベントです。</strong><br>終演時刻はあくまで目安です。正確な情報とは限りません。<br>北海道大学ボーカロイド同好会様からの掲載許可を頂いています。",
       links: [
         { label: "開催告知ポスト", url: "https://x.com/HatsuneGinkasai/status/2112861563627679930" },
         { label: "北海道大学ボーカロイド同好会 X", url: "https://x.com/Hokkaidouniv_VC" },
       ],
-
+      // 昼・夜の2公演（開場は各30分前）
+      sessions: [
+        { id: "ginkasai-day", sub: "昼公演", open: "12:30", start: "13:30", end: "15:00" },
+        { id: "ginkasai-night", sub: "夜公演", open: "16:30", start: "17:30", end: "20:00", lead: "前半にキャラクターによる30分〜1時間程度のDJライブを予定しています。" },
+      ],
     },
     {
       id: "train",
