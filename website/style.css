@@ -515,9 +515,9 @@
 }
 /* 押している間と更新中はグラデーションで塗りつぶす */
 .tt-refresh:active,
-.is-refreshing .tt-refresh {
+.is-refreshing .tt-refresh:not(.tt-sort) { /* 更新中に色が変わるのは更新ボタンだけ（並べ替えボタンは同じ見た目の部品を使っているだけ） */
   color: var(--col-paper);
-  background: var(--brand-gradient);
+  background: var(--brand-gradient) border-box; /* 縁（透明の枠線）の下まで塗る。省くと枠線の部分にグラデーションが繰り返されて縁が見える */
 }
 .is-refreshing .tt-refresh { pointer-events: none; }
 .toast {
@@ -2171,4 +2171,4 @@
 .tt-move button[data-move$=":-1"] { border-color: var(--col-secondary); color: var(--col-secondary); }
 .tt-move button[data-move$=":1"] { border-color: var(--col-primary); color: var(--col-primary); }
 .tt-move button:disabled { opacity: .35; cursor: default; }
-.tt-sort.is-on { color: var(--col-paper); background: var(--brand-gradient); }
+.tt-sort.is-on { color: var(--col-paper); background: var(--brand-gradient) border-box; }
