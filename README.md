@@ -36,6 +36,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 ## PWA
 
 - オフライン保存するファイルの一覧は`precache.js`（`self.PRECACHE`）。`sw.js`と更新ボタン（`app.js`の`hardRefresh`）が共通で参照します。
+- 画像は`precache.js`の`self.PRECACHE_IMAGES`（`{ パス: 版 }`）に別に持ち、版を付けたURLを鍵に別のキャッシュ（`sm27-img`）へ保存します。版が同じ画像は取り直さず、`VERSION`を上げても更新ボタンでも消しません（更新ボタンでダウンロードするのはコードと、版が変わった画像だけ）。画像を置き換えたら、その行の版を上げます。
 - `sw.js`はstale-while-revalidate。`cache:"no-cache"`/`"reload"`のリクエストはネットワークから取得し、成功したらキャッシュも更新します。
 - デプロイ時に`index.html`から読み込むJS/CSSへ`?v=`（デプロイ時刻）を付けます。更新ボタンで読み込み直したとき、ブラウザが直前のページの古いファイルを使い回さないようにするためです。`sw.js`は`?v=`を外したURLでキャッシュします。
 - Webフォントは見出し用のDela Gothic Oneだけです（Google Fonts）。本文は端末のフォント（`base.css`の`--font-base`）で、Noto Sans JPは読み込みません（初回は約100ファイルに分かれて届き、そのたびに全体を組み直して重かったため）。

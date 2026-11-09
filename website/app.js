@@ -345,11 +345,21 @@
     try {
       // 先に最新を取得できるか確かめる（失敗したら今のキャッシュは消さない＝オフラインで真っ白にならない）
       // 取得対象は precache.js の一覧（確実に全ファイル）＋ 読み込み済みの同一オリジンのリソース
+      // 画像（PRECACHE_IMAGES）は別のキャッシュ（sm27-img）で版ごとに持つので、版が変わったものだけ取得する
+      const imgs = self.PRECACHE_IMAGES || {};
+      const imgPaths = new Set(Object.keys(imgs).map((p) => new URL(p, location.href).pathname));
+      const imgCache = "caches" in window ? await caches.open("sm27-img") : null;
+      const staleImgs = [];
+      for (const p of Object.keys(imgs)) {
+        const key = new URL(`${p}?v=${imgs[p]}`, location.href).href;
+        if (!(await imgCache?.match(key))) staleImgs.push(key);
+      }
       const urls = [
         location.href,
         ...(self.PRECACHE || []).map((u) => new URL(u, location.href).href),
         ...performance.getEntriesByType("resource").map((r) => r.name),
-      ].filter((u) => new URL(u).origin === location.origin);
+      ].filter((u) => new URL(u).origin === location.origin && !imgPaths.has(new URL(u).pathname));
+      urls.push(...staleImgs);
       const list = [...new Set(urls)];
       let done = 0;
       const res = await Promise.all(
@@ -362,7 +372,7 @@
       );
       if (res.some((r) => !r.ok)) throw new Error("fetch failed");
       // フォントとライブラリのキャッシュ（sw.js の FONT_CACHE・LIB_CACHE）は変わらないので残す
-      if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k !== "sm27-fonts" && k !== "sm27-lib").map((k) => caches.delete(k)));
+      if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k !== "sm27-fonts" && k !== "sm27-lib" && k !== "sm27-img").map((k) => caches.delete(k)));
       if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
       // サイトのリセット：インストール案内を再び出し、2カラムの分割率（持ち手）を 1:1 に戻す
       try {

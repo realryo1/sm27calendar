@@ -18,11 +18,16 @@ self.PRECACHE = [
   "train-view.js",
   "pwa.js",
   "manifest.webmanifest",
-  "favicon.ico",
-  "image/favicon-32.png",
-  "image/icon-maskable-512.png",
-  "image/souchou.png",
 ];
+
+// 画像の一覧（{ パス: 版 }）。コードとは別の長持ちのキャッシュ（sm27-img）に持ち、更新ボタンでも版が同じなら取り直さない。
+// 画像を置き換えたら、その行の版を上げる（上げないと端末に古い画像が残る）。追加・削除したときは、この一覧と sw.js の VERSION を更新する。
+self.PRECACHE_IMAGES = {
+  "favicon.ico": 1,
+  "image/favicon-32.png": 1,
+  "image/icon-maskable-512.png": 1,
+  "image/souchou.png": 1,
+};
 
 // グッズマップ（マップ・グッズ一覧。サイドバーから開く）。github.io ではサイドバーを出さないので保存しない（sw.js もキャッシュを通さない）
 self.PRECACHE_GOODSMAP = [
