@@ -5,6 +5,107 @@ document.addEventListener("gesturestart", (ev) => ev.preventDefault());
 document.addEventListener("gesturechange", (ev) => ev.preventDefault());
 
 window.TT_UTIL = {
+  // 2カラムのタッチ：列ごとに独立してスクロールする（左右の列を別の指で同時に動かせる）。
+  // ブラウザ標準のスクロールは同時に1か所しか動かないので、2カラムの列は CSS で touch-action: none にして、1本指の動きをこちらで受けて動かす（慣性も自前）。
+  // $el の中の指だけを見る。同じ列に2本目の指が来たらピンチなので、動かすのをやめる（ピンチは各ページの touch イベントが行う）。
+  // scroller: 動かすもの（要素。省略は $el 自身。window ならページ全体。要素を返す関数でもよい）。axis: "y"（縦だけ）か "xy"。enabled(): いま独立させるか（2カラムのときだけ）。
+  // 押しただけのタップは邪魔しない。動かしたあとのクリックだけ止める
+  touchPan: ($el, { scroller = $el, axis = "y", enabled = () => true } = {}) => {
+    const sc = () => (typeof scroller === "function" ? scroller() : scroller); // 関数なら、そのつど探す（作り直される中身）
+    const get = () => {
+      const s = sc();
+      return s === window ? { x: scrollX, y: scrollY } : { x: s.scrollLeft, y: s.scrollTop };
+    };
+    const by = (dx, dy) => {
+      const s = sc();
+      if (s === window) scrollBy(dx, dy);
+      else if (s) {
+        s.scrollLeft += dx;
+        s.scrollTop += dy;
+      }
+    };
+    const xy = axis === "xy";
+    $el.dataset.touchPan = ""; // CSS が2カラムのときだけ touch-action: none にする目印
+    let pan = null; // { id, x, y, t, vx, vy, moved }
+    let touching = 0; // いま $el に触れている指の数
+    let glide = 0;
+    let moved = false; // 直前の操作で動かしたか（そのあとのクリックを止める）
+    // 指の下に、それ自身がスクロールできる入れ子の枠があるときは、その枠に任せる
+    const nested = (t) => {
+      for (let n = t; n && n !== $el; n = n.parentElement) {
+        const s = getComputedStyle(n);
+        if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight + 1) return true;
+        if (xy && /(auto|scroll)/.test(s.overflowX) && n.scrollWidth > n.clientWidth + 1) return true;
+      }
+      return false;
+    };
+    const coast = (vx, vy) => {
+      let prev = performance.now();
+      const step = (now) => {
+        const dt = Math.min(32, now - prev);
+        prev = now;
+        const b = get();
+        by(xy ? -vx * dt : 0, -vy * dt);
+        const a = get();
+        const f = Math.pow(0.995, dt); // 約1秒で止まる
+        vx *= f;
+        vy *= f;
+        if (Math.hypot(vx, vy) > 0.02 && (a.x !== b.x || a.y !== b.y)) glide = requestAnimationFrame(step);
+      };
+      glide = requestAnimationFrame(step);
+    };
+    $el.addEventListener("pointerdown", (ev) => {
+      if (ev.pointerType !== "touch" || !enabled()) return;
+      cancelAnimationFrame(glide);
+      touching++;
+      if (touching > 1 || nested(ev.target)) {
+        pan = null;
+        return;
+      }
+      pan = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, t: ev.timeStamp, vx: 0, vy: 0, moved: false };
+    });
+    $el.addEventListener("pointermove", (ev) => {
+      if (!pan || ev.pointerId !== pan.id) return;
+      if (!pan.moved) {
+        if (Math.hypot(ev.clientX - pan.x, ev.clientY - pan.y) < 8) return; // 少しの手ぶれはタップのまま
+        pan.moved = true;
+        moved = true;
+        try {
+          $el.setPointerCapture(ev.pointerId);
+        } catch {
+          // 取れなくても動かせる
+        }
+      }
+      const dx = ev.clientX - pan.x;
+      const dy = ev.clientY - pan.y;
+      const dt = ev.timeStamp - pan.t;
+      if (dt > 0) {
+        pan.vx = 0.8 * pan.vx + 0.2 * (dx / dt);
+        pan.vy = 0.8 * pan.vy + 0.2 * (dy / dt);
+      }
+      pan.x = ev.clientX;
+      pan.y = ev.clientY;
+      pan.t = ev.timeStamp;
+      by(xy ? -dx : 0, -dy);
+    });
+    const end = (ev) => {
+      if (ev.pointerType !== "touch") return;
+      touching = Math.max(0, touching - 1);
+      if (!pan || ev.pointerId !== pan.id) return;
+      const p = pan;
+      pan = null;
+      if (ev.type === "pointerup" && p.moved && ev.timeStamp - p.t < 80 && Math.hypot(p.vx, p.vy) > 0.1) coast(p.vx, p.vy);
+      if (p.moved) setTimeout(() => (moved = false), 0);
+    };
+    $el.addEventListener("pointerup", end);
+    $el.addEventListener("pointercancel", end);
+    $el.addEventListener("click", (ev) => {
+      if (!moved) return;
+      ev.stopPropagation();
+      ev.preventDefault();
+    }, true);
+  },
+
   // HTML の本文・属性に入れる文字をエスケープする
   esc: (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])),
   // データ中の文字列の "\n" を改行（<br>）にする

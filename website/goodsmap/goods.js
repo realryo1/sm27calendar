@@ -164,6 +164,11 @@
   {
     const $cols = document.querySelector(".gd-cols");
     const $side = document.querySelector(".gd-main");
+    // 2カラムのタッチ：一覧とほしいものリストを、別々の指で独立してスクロールできるようにする（util.js の touchPan）
+    const wide = matchMedia("(min-width: 641px)");
+    TT_UTIL.touchPan($side, { enabled: () => wide.matches });
+    const $wish = $("gdWish");
+    TT_UTIL.touchPan($wish, { scroller: () => $wish.querySelector(".gm-wishlist__body"), enabled: () => wide.matches });
     const freeze = () => {
       if ($side.classList.contains("is-frozen")) return;
       $side.querySelectorAll(".gm-card").forEach((card) => {

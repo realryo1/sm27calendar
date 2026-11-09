@@ -450,6 +450,10 @@
 
   // 二本指で拡大縮小（カレンダーの時間割と同じ操作）。指の間の内容が動かないように、枠の中のスクロールで合わせる
   let pinch = null;
+  // このマップの上で始まった指だけ（ev.touches は画面全体の指。一覧の指を数えると、別の列の指でピンチになってしまう）
+  const mine = (ev) => [...ev.touches].filter((t) => $map.contains(t.target));
+  // 一覧の列は、マップとは別の指で独立してスクロールできるようにする（util.js の touchPan。マップ自身は下の pointer の処理で動かす）
+  TT_UTIL.touchPan(document.querySelector(".gm-scroll"), { enabled: () => twoCol.matches });
   const spread = (t) => ({
     d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY),
     x: (t[0].clientX + t[1].clientX) / 2,
@@ -458,10 +462,10 @@
   $map.addEventListener(
     "touchstart",
     (ev) => {
-      if (ev.touches.length !== 2 || preview) return; // プレビューでは拡大縮小しない
+      if (mine(ev).length !== 2 || preview) return; // プレビューでは拡大縮小しない
       drag = null; // 1本指の移動から、ピンチに切り替える
       anchored = false;
-      const s = spread(ev.touches);
+      const s = spread(mine(ev));
       const m = $map.getBoundingClientRect();
       pinch = { s, zoom, left: $map.scrollLeft, top: $map.scrollTop, ax: s.x - m.left, ay: s.y - m.top, raf: 0 };
     },
@@ -470,9 +474,9 @@
   $map.addEventListener(
     "touchmove",
     (ev) => {
-      if (!pinch || ev.touches.length !== 2) return;
+      if (!pinch || mine(ev).length !== 2) return;
       ev.preventDefault();
-      const s = spread(ev.touches);
+      const s = spread(mine(ev));
       cancelAnimationFrame(pinch.raf);
       pinch.raf = requestAnimationFrame(() => {
         if (!pinch || pinch.s.d < 20) return;
@@ -487,7 +491,7 @@
     { passive: false }
   );
   const endPinch = (ev) => {
-    if (!pinch || ev.touches.length >= 2) return;
+    if (!pinch || mine(ev).length >= 2) return;
     cancelAnimationFrame(pinch.raf);
     pinch = null;
     setZoom(zoom); // ボタンの状態を合わせる
@@ -519,7 +523,7 @@
     $map.scrollLeft -= dx;
     $map.scrollTop -= dy;
     const rest = dy - (top - $map.scrollTop); // マップで動かしきれなかった縦の量
-    if (chain && rest && !twoCol.matches) window.scrollBy(0, -rest);
+    if (chain && rest && !twoCol.matches && !preview) window.scrollBy(0, -rest); // プレビューのマップは、一覧とは独立に動かす（端まで来ても一覧を動かさない）
   };
   const coast = (vx, vy) => {
     let prev = performance.now();
@@ -874,6 +878,8 @@
   let heldAt = null; // カードへ移り終わったときのスクロール位置（そこから動かしていないあいだは、プレビューのまま）
   let holdSmall = false; // 一覧のカードへ移っているあいだ、プレビューに保つ
   let jump = false; // 次の shrink は、動かさずにすぐ切り替える
+  let cancelHold = null; // カードへ移るあいだのプレビュー固定を、いますぐ手放す（プレビューを押して拡大するとき）
+  let holdTimer = 0;
   // 一覧のカードへ移る前に、プレビューにすぐ切り替えておく（切り替えで一覧の場所が動くので、先に済ませてから目的の位置を計算する）。
   // 移り終わったら（scrollend。無い環境は時間で）手放す
   // animate のときは縮むアニメーションを付け、終わるまでの時間（ms。縮まないときは 0）を返す。呼び出し側は、その後にスクロールする
@@ -891,17 +897,21 @@
     shrink();
     jump = false;
     const wait = resizing ? GLIDE_MS + 50 : 0;
+    cancelHold?.();
     let done = false;
-    const release = () => {
+    const release = (keep = false) => {
       if (done) return;
       done = true;
       removeEventListener("scrollend", release);
+      clearTimeout(holdTimer);
+      cancelHold = null;
       holdSmall = false;
-      heldAt = window.scrollY;
+      if (keep !== true) heldAt = window.scrollY;
       requestShrink();
     };
+    cancelHold = () => release(true);
     addEventListener("scrollend", release);
-    setTimeout(release, 1500 + wait);
+    holdTimer = setTimeout(release, 1500 + wait);
     return wait;
   }
   // 枠の高さが変わるときは、マップ本体も同じフレームで合わせて大きさを変える（止まってから測り直す2段階にしない）
@@ -1082,6 +1092,7 @@
   }
   // プレビューを押したとき：一覧はそのまま、マップだけを開いたときの高さに戻す（大きさの変わり目は shrink がなめらかに動かす）
   function expand() {
+    cancelHold?.(); // カードへ移っている途中（プレビュー固定中）でも、押したら拡大する
     expanded = window.scrollY;
     heldAt = null;
     shrink();

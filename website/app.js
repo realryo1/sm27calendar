@@ -54,6 +54,11 @@
   const $toBoard = document.getElementById("toBoard");
   // 2カラム（641px〜）か。幅の測定は2カラムのときだけ行う（1カラムでは要らないのに、読み込み中のレイアウトを強制するため）
   const twoCol = window.matchMedia("(min-width: 641px)");
+  // 2カラムのタッチ：時間割（左）と会場一覧（右。ページのスクロール）を、別々の指で独立して動かせるようにする（util.js の touchPan）
+  TT_UTIL.touchPan($scroll, { axis: "xy", enabled: () => twoCol.matches });
+  TT_UTIL.touchPan(document.querySelector(".main__inner"), { scroller: window, enabled: () => twoCol.matches });
+  // この表の上で始まった指だけ（ev.touches は画面全体の指。右の列の指を数えると、別の列の指でピンチになってしまう）
+  const mine = (ev) => [...ev.touches].filter((t) => $scroll.contains(t.target));
   // 画面の大きさが変わったときに持ち手の幅と時間割の高さを合わせる処理（下の持ち手の中で入れる。resize のまとめ処理が呼ぶ）
   let syncSplit = null;
 
@@ -906,8 +911,8 @@
   $scroll.addEventListener(
     "touchstart",
     (ev) => {
-      if (ev.touches.length !== 2) return;
-      const s = spread(ev.touches);
+      if (mine(ev).length !== 2) return;
+      const s = spread(mine(ev));
       pinch = { prev: s, from: s, base: zoomBase(), lx: 0, ly: 0, raf: 0 };
     },
     { passive: true }
@@ -915,9 +920,9 @@
   $scroll.addEventListener(
     "touchmove",
     (ev) => {
-      if (!pinch || ev.touches.length !== 2) return;
+      if (!pinch || mine(ev).length !== 2) return;
       ev.preventDefault();
-      const now = spread(ev.touches);
+      const now = spread(mine(ev));
       // 指がほぼ重なっているときは向きも比率も定まらないので、何もしない
       if (pinch.prev.d >= 20 && now.d >= 20) {
         const dl = Math.log(now.d / pinch.prev.d);
@@ -938,7 +943,7 @@
     { passive: false }
   );
   const endPinch = (ev) => {
-    if (!pinch || ev.touches.length >= 2) return;
+    if (!pinch || mine(ev).length >= 2) return;
     pinch = null;
     requestAnimationFrame(fitEvents); // ピンチの途中で省いた、予定カードの収まりを測る（最後のコマを描いた後に）
     updateActiveChip();
@@ -969,7 +974,7 @@
     "touchstart",
     (ev) => {
       cancelAnimationFrame(momentumRaf);
-      lastY = ev.touches.length === 1 ? ev.touches[0].clientY : null;
+      lastY = mine(ev).length === 1 ? mine(ev)[0].clientY : null;
       lastT = ev.timeStamp;
       velocity = 0;
       handed = false;
@@ -979,7 +984,7 @@
   $scroll.addEventListener(
     "touchend",
     (ev) => {
-      if (handed && ev.touches.length === 0 && ev.timeStamp - lastT < 80 && Math.abs(velocity) > 0.1) startMomentum(velocity);
+      if (handed && mine(ev).length === 0 && ev.timeStamp - lastT < 80 && Math.abs(velocity) > 0.1) startMomentum(velocity);
       handed = false;
     },
     { passive: true }
@@ -987,8 +992,8 @@
   $scroll.addEventListener(
     "touchmove",
     (ev) => {
-      if (ev.touches.length !== 1 || lastY === null) return;
-      const y = ev.touches[0].clientY;
+      if (mine(ev).length !== 1 || lastY === null) return;
+      const y = mine(ev)[0].clientY;
       const dy = y - lastY; // 負＝指を上へ（内容は下へ進む）
       lastY = y;
       const atBottom = $scroll.scrollTop + $scroll.clientHeight >= $scroll.scrollHeight - 1;

@@ -55,6 +55,7 @@
 html { -webkit-text-size-adjust: 100%; overscroll-behavior: none; } /* iPhoneで端を越えて引っ張れる（ゴム紐のような）挙動を止める */
 html { scrollbar-width: none; } /* ページ全体のスクロールバーは、画面の幅によらず出さない（ホイール・タッチ・キーではスクロールできる） */
 html::-webkit-scrollbar { display: none; }
+@media (min-width: 641px) { html [data-touch-pan] { touch-action: none; } } /* 2カラムの列：1本指の動きは util.js の touchPan が受けて、列ごとに独立してスクロールさせる（標準のスクロールは同時に1か所しか動かない） */
 * { -webkit-tap-highlight-color: transparent; } /* 押したときにブラウザが出す水色（灰色）の四角を、すべての押せる要素で消す */
 html { touch-action: pan-x pan-y; } /* 二本指・ダブルタップでページ全体が拡大されないように（iPhoneで拡大のあと「繰り返しエラー」になることがある）。表とマップのピンチはJSで行う */
 
