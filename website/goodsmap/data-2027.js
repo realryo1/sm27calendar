@@ -148,6 +148,7 @@ window.GM_DATA = {
     // 公式物販
     { id: "kari-shopper", maker: "（仮）公式", name: "（仮）ショッパー", price: 4000, places: ["chikaho"], floor: "公式物販" },
     { id: "kari-keyholder", maker: "（仮）公式", name: "（仮）アクリルキーホルダー", price: 1000, places: ["chikaho"], floor: "公式物販" },
+    { id: "kari-stand", maker: "（仮）公式", name: "（仮）アクリルブロック", price: 1500, places: ["chikaho"], floor: "公式物販" },
     // 企業ブース（ウイングベイ）
     { id: "kari-cospa-tsumamare", booth: "1", src: ["kari-cospa"], maker: "（仮）コスパ", name: "（仮）つままれ2027", price: 1500, places: ["wingbay"], floor: "出展ブース" },
     { id: "kari-cospa-tshirt", booth: "1", src: ["kari-cospa"], maker: "（仮）コスパ", name: "（仮）Tシャツ2027", price: 3000, places: ["wingbay"], floor: "出展ブース" },
