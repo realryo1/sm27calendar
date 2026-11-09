@@ -232,8 +232,17 @@ window.GM_LIST = (D, { boothNo, beforeScroll }) => {
       const card = ev.target;
       if (card !== tapped || !card.open) return;
       tapped = null;
-      beforeScroll?.(); // マップが開いた高さのままだと、スクロール中に縮んで一覧がずれる。先にプレビューへ切り替えてから位置を決める
-      requestAnimationFrame(() => card.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" }));
+      // マップが開いた高さのままだと、スクロール中に縮んで一覧がずれる。先にプレビューへ縮め（アニメーション）、終わってから位置を決めて移る
+      const wait = beforeScroll?.() || 0;
+      const go = () =>
+        requestAnimationFrame(() => {
+          // マップが縮んだ分で、すでにほぼ目的の位置にいるときは動かさない（数pxだけ動くと、ずれたように見える）
+          const gap = card.getBoundingClientRect().top - parseFloat(getComputedStyle(card).scrollMarginTop || "0");
+          if (Math.abs(gap) < 24) return;
+          card.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" });
+        });
+      if (wait) setTimeout(go, wait);
+      else go();
     },
     true
   );

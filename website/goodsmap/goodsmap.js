@@ -59,7 +59,7 @@
   // ---------- データの整理と一覧の部品（goodslist.js。グッズ一覧 goods.js と共通） ----------
   // カードの番号は、押すとマップでそのブースを示すボタン
   const L = window.GM_LIST(D, {
-    beforeScroll: () => holdPreview(),
+    beforeScroll: () => holdPreview({ animate: true }),
     boothNo: (b) => `<button type="button" class="gm-no" data-map="${esc(b.no)}" aria-label="${esc(L.TEXT.showOnMap(L.boothName(b)))}">${esc(L.boothLabel(b))}</button>`,
   });
   const { norm, short, yen, onSale, boothBy, goodsAt, official, loose, info, boothLabel, srcOf, urlOf, noticeBy } = L;
@@ -872,11 +872,12 @@
   let jump = false; // 次の shrink は、動かさずにすぐ切り替える
   // 一覧のカードへ移る前に、プレビューにすぐ切り替えておく（切り替えで一覧の場所が動くので、先に済ませてから目的の位置を計算する）。
   // 移り終わったら（scrollend。無い環境は時間で）手放す
-  function holdPreview() {
-    if (twoCol.matches || full) return;
+  // animate のときは縮むアニメーションを付け、終わるまでの時間（ms。縮まないときは 0）を返す。呼び出し側は、その後にスクロールする
+  function holdPreview({ animate = false } = {}) {
+    if (twoCol.matches || full) return 0;
     holdSmall = true;
     heldAt = null;
-    jump = true;
+    jump = !animate;
     clearTimeout(glideTimer);
     resizing = false;
     $mapbox.classList.remove("is-animating");
@@ -885,6 +886,7 @@
     $map.firstElementChild.style.marginBottom = "";
     shrink();
     jump = false;
+    const wait = resizing ? GLIDE_MS + 50 : 0;
     let done = false;
     const release = () => {
       if (done) return;
@@ -895,7 +897,8 @@
       requestShrink();
     };
     addEventListener("scrollend", release);
-    setTimeout(release, 1500);
+    setTimeout(release, 1500 + wait);
+    return wait;
   }
   // 枠の高さが変わるときは、マップ本体も同じフレームで合わせて大きさを変える（止まってから測り直す2段階にしない）
   function shrink() {
