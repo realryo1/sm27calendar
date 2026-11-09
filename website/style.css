@@ -546,6 +546,16 @@
   border-bottom-color: rgb(40 34 70 / .94);
 }
 .toast[hidden] { display: none; }
+.toast__sub {
+  margin-top: 2px;
+  font-size: .72rem;
+  color: rgb(255 255 255 / .6);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.toast__sub > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.toast__sub > :last-child { flex: none; font-variant-numeric: tabular-nums; }
 .tt-day__label {
   position: sticky;
   left: 0;

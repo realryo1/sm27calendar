@@ -302,7 +302,7 @@
   }
 
   let toastTimer;
-  function toast(msg, ms = 6000) {
+  function toast(msg, ms = 6000, sub = "") {
     let $t = document.querySelector(".toast");
     if (!$t) {
       $t = document.createElement("div");
@@ -311,6 +311,18 @@
       document.body.append($t);
     }
     $t.textContent = msg;
+    if (sub) {
+      const $s = document.createElement("div");
+      $s.className = "toast__sub";
+      // sub は [左, 右] で渡す。右（分数）は右端に固定する
+      const [l, r] = Array.isArray(sub) ? sub : [sub, ""];
+      const $l = document.createElement("span");
+      $l.textContent = l;
+      const $r = document.createElement("span");
+      $r.textContent = r;
+      $s.append($l, $r);
+      $t.append($s);
+    }
     $t.hidden = false;
     // 更新ボタンの真下に、ボタンを指す吹き出しとして出す
     const r = document.querySelector("[data-refresh]")?.getBoundingClientRect();
@@ -338,7 +350,16 @@
         ...(self.PRECACHE || []).map((u) => new URL(u, location.href).href),
         ...performance.getEntriesByType("resource").map((r) => r.name),
       ].filter((u) => new URL(u).origin === location.origin);
-      const res = await Promise.all([...new Set(urls)].map((u) => fetch(u, { cache: "reload" })));
+      const list = [...new Set(urls)];
+      let done = 0;
+      const res = await Promise.all(
+        list.map(async (u) => {
+          const r = await fetch(u, { cache: "reload" });
+          const name = decodeURIComponent(new URL(u).pathname.split("/").filter(Boolean).pop() || "index.html");
+          toast("更新中です。オフラインや回線が遅いと表示に時間がかかるかもしれません", 30000, [`${name}を更新中…`, `${++done}/${list.length}`]);
+          return r;
+        }),
+      );
       if (res.some((r) => !r.ok)) throw new Error("fetch failed");
       // フォントとライブラリのキャッシュ（sw.js の FONT_CACHE・LIB_CACHE）は変わらないので残す
       if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k !== "sm27-fonts" && k !== "sm27-lib").map((k) => caches.delete(k)));
@@ -347,6 +368,10 @@
       try {
         localStorage.removeItem("sm27-install-dismissed");
         localStorage.removeItem("sm27-board-w");
+      } catch {}
+      // 読み込み直すと吹き出しが消えるので、印を残して読み込み後に出す
+      try {
+        sessionStorage.setItem("sm27-refreshed", "1");
       } catch {}
       location.reload();
     } catch {
@@ -1097,6 +1122,14 @@
   updateActiveChip();
 
   setInterval(updateNow, 60 * 1000);
+
+  // 更新ボタンで読み込み直したあと、成功を知らせる
+  try {
+    if (sessionStorage.getItem("sm27-refreshed") === "1") {
+      sessionStorage.removeItem("sm27-refreshed");
+      toast("更新に成功しました！", 4000);
+    }
+  } catch {}
 
   // 起動時に一度だけ data.js の最終更新日時を確かめ、新しい情報があれば読み込み直す
   // （sessionStorage の印で、取得できなかった場合などに読み込み直しを繰り返さないようにする）
