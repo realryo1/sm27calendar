@@ -364,7 +364,7 @@
       let done = 0;
       const res = await Promise.all(
         list.map(async (u) => {
-          const r = await fetch(u, { cache: "reload" });
+          const r = await fetch(u, { cache: "no-cache" });
           const name = decodeURIComponent(new URL(u).pathname.split("/").filter(Boolean).pop() || "index.html");
           toast("更新中です。オフラインや回線が遅いと表示に時間がかかるかもしれません", 30000, [`${name}を更新中…`, `${++done}/${list.length}`]);
           return r;
