@@ -1,7 +1,7 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v32";
+const VERSION = "v33";
 const CACHE = `sm27-${VERSION}`;
 importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）・self.SM27_SITE（公開先）
 const PRECACHE = self.PRECACHE;
@@ -15,6 +15,7 @@ const LIB_HOSTS = ["cdnjs.cloudflare.com"];
 const LIB_CACHE = "sm27-lib";
 // 画像（precache.js の PRECACHE_IMAGES）は { パス: 版 } で、版を付けた URL を鍵に別のキャッシュへ持つ。版が同じなら取り直さず、版の更新でも更新ボタンでも消さない
 const IMG_CACHE = "sm27-img";
+const FRESH_MS = 3 * 60 * 1000; // 取って3分以内のキャッシュは取り直さない
 const IMAGES = self.PRECACHE_IMAGES || {};
 const imgKey = (path) => new URL(`${path}?v=${IMAGES[path]}`, self.registration.scope).href;
 const IMG_PATHS = new Map(Object.keys(IMAGES).map((p) => [new URL(p, self.registration.scope).pathname, p]));
@@ -112,6 +113,9 @@ self.addEventListener("fetch", (event) => {
       // ?at= などのクエリ付きでもページ本体はキャッシュを使う。ページはフォルダごとの index.html（カレンダーと goodsmap/。iframe もここを通る）
       const key = sameOrigin && req.mode === "navigate" && url.pathname.endsWith("/") ? new URL("index.html", url).href : plain;
       const cached = await cache.match(key, { ignoreSearch: sameOrigin });
+      // 取って間もないキャッシュ（更新ボタン・インストールの直後など）は、裏で取り直さない（回線を食って、画面に出す分が遅れるため）。
+      // 取得時刻は保存した応答の Date。分からないとき（opaque など）は取り直す。新しい内容は、起動時の data.js の確認や次の起動で届く
+      if (cached && Date.now() - new Date(cached.headers.get("date")).getTime() < FRESH_MS) return cached;
       const network = fetch(req)
         .then((res) => {
           if (res && (res.ok || res.type === "opaque")) cache.put(key, res.clone());

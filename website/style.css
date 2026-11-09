@@ -520,6 +520,7 @@
   background: var(--brand-gradient) border-box; /* 縁（透明の枠線）の下まで塗る。省くと枠線の部分にグラデーションが繰り返されて縁が見える */
 }
 .is-refreshing .tt-refresh { pointer-events: none; }
+html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み終えるまで、空の枠（紫の四角など）を見せない */
 .toast {
   position: fixed;
   top: 60px;

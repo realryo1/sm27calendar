@@ -1130,6 +1130,7 @@
   if (dayIndex(hashId) >= 0) scrollToDay(hashId, null, "instant");
   else if (dayIndex(dateId) >= 0) scrollToDay(dateId, Math.max(range.start, min / 60 - 1), "instant");
   updateActiveChip();
+  document.documentElement.classList.add("is-ready");
 
   setInterval(updateNow, 60 * 1000);
 
