@@ -100,7 +100,7 @@ window.GM_WISH = (D, L) => {
   let sort = loadPref(SORT_KEY, TEXT.sorts, "price");
   let showTags = loadPref(TAGS_KEY, { on: 1, off: 1 }, "on") === "on";
   let full = false; // 全画面で見ているか（覚えない）
-  let menuOpen = true; // 設定を開いているか（覚えない。ページを開いたときは開いた状態）
+  let menuOpen = false; // 設定を開いているか（覚えない。ページを開いたときは閉じた状態）
 
   // ---------- リンク（カレンダーの ?view=goods&wish=id.個数,…。1個なら .個数 を省く。年は今のページの ?year= を引き継ぐ） ----------
   // カレンダー（このページの1つ上）を開き、カレンダーの nav.js がグッズの表示へ wish・year を渡す（data.js の nav の pass）
