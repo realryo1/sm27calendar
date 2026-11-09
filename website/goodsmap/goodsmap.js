@@ -613,11 +613,15 @@
     if (!$card) return;
     if ($card.hidden) resetFilter();
     L.openCard($card); // 選んで開いたので、しぼり込みを外しても閉じない
-    holdPreview();
-    $card.scrollIntoView({ behavior: instant ? "auto" : behavior, block: "start" });
-    $card.classList.remove("is-flash");
-    void $card.offsetWidth;
-    $card.classList.add("is-flash");
+    const wait = holdPreview({ animate: !instant }); // 縮むアニメーションが終わってから、位置を決めて移る
+    const go = () => {
+      $card.scrollIntoView({ behavior: instant ? "auto" : behavior, block: "start" });
+      $card.classList.remove("is-flash");
+      void $card.offsetWidth;
+      $card.classList.add("is-flash");
+    };
+    if (wait) setTimeout(go, wait);
+    else go();
   }
 
   // マップへ移る。ほかのフロアのブースならフロアを切り替え、拡大しているときはブースを枠のまん中に出す
