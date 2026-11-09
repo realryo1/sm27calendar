@@ -1,7 +1,7 @@
 // グッズの一覧の部品（グッズマップ goodsmap.js と、グッズ一覧 goods.js（同じ index.html の ?page=goods）で共通）。
 // 品の行・タグ・ブースのカード・公式物販のカード・売り場の記載なしのカード・カードの開け閉めを、どちらのページでも同じ形で作る。
 // 使い方：const L = window.GM_LIST(window.GM_DATA, { boothNo })。boothNo(b) はカードの見出しのブースの番号の HTML（マップはボタン、グッズ一覧はマップへのリンク）
-window.GM_LIST = (D, { boothNo }) => {
+window.GM_LIST = (D, { boothNo, beforeScroll }) => {
   const { esc } = window.TT_UTIL; // カレンダーの ../util.js
 
   // 一覧の文言（年に関係しないもの）
@@ -232,6 +232,7 @@ window.GM_LIST = (D, { boothNo }) => {
       const card = ev.target;
       if (card !== tapped || !card.open) return;
       tapped = null;
+      beforeScroll?.(); // マップが開いた高さのままだと、スクロール中に縮んで一覧がずれる。先にプレビューへ切り替えてから位置を決める
       requestAnimationFrame(() => card.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" }));
     },
     true

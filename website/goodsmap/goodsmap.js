@@ -59,6 +59,7 @@
   // ---------- データの整理と一覧の部品（goodslist.js。グッズ一覧 goods.js と共通） ----------
   // カードの番号は、押すとマップでそのブースを示すボタン
   const L = window.GM_LIST(D, {
+    beforeScroll: () => holdPreview(),
     boothNo: (b) => `<button type="button" class="gm-no" data-map="${esc(b.no)}" aria-label="${esc(L.TEXT.showOnMap(L.boothName(b)))}">${esc(L.boothLabel(b))}</button>`,
   });
   const { norm, short, yen, onSale, boothBy, goodsAt, official, loose, info, boothLabel, srcOf, urlOf, noticeBy } = L;
