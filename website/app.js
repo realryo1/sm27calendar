@@ -358,7 +358,15 @@
         location.href,
         ...(self.PRECACHE || []).map((u) => new URL(u, location.href).href),
         ...performance.getEntriesByType("resource").map((r) => r.name),
-      ].filter((u) => new URL(u).origin === location.origin && !imgPaths.has(new URL(u).pathname));
+      ]
+        .filter((u) => new URL(u).origin === location.origin && !imgPaths.has(new URL(u).pathname))
+        // フォルダのページ（カレンダー・goodsmap/）は ?embed=1 などの引数が付いても中身は同じ（sw.js も引数を無視して保存する）。
+        // 引数を外して、条件付き取得（304）のできる URL に寄せる
+        .map((u) => {
+          const x = new URL(u);
+          if (x.pathname.endsWith("/")) x.search = "";
+          return x.href;
+        });
       urls.push(...staleImgs);
       const list = [...new Set(urls)];
       let done = 0;
