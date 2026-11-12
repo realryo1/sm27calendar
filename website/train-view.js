@@ -584,8 +584,9 @@
   };
   let sync = null;
   const io = new IntersectionObserver(
-    ([entry]) => {
-      visible = entry.isIntersecting;
+    (entries) => {
+      // 通知が溜まっているときは、いちばん新しい状態で判断する（先頭を使うと、近づいたのに作られないことがある）
+      visible = entries[entries.length - 1].isIntersecting;
       if (!visible) return;
       if (sync) sync();
       else sync = start();
@@ -593,5 +594,9 @@
     { rootMargin: "600px 0px" }
   );
   io.observe($root);
+  // 欄より下のカードへスクロールするとき、先に欄を作っておく（スクロール先を測ったあとで欄が伸びて、途中で止まるのを防ぐ）
+  window.TT_TRAIN_ENSURE = () => {
+    if (!sync) sync = start();
+  };
   document.addEventListener("visibilitychange", () => !document.hidden && visible && sync?.());
 })();

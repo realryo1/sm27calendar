@@ -610,6 +610,7 @@
   function showEvent(id) {
     const el = $venueList.querySelector(`[data-ids~="${CSS.escape(id)}"]`);
     if (!el) return;
+    window.TT_TRAIN_ENSURE?.();
     el.closest(".venue-card").scrollIntoView({ behavior: "smooth", block: "start" });
     el.classList.remove("is-flash");
     void el.offsetWidth;
@@ -620,6 +621,7 @@
     const el = document.getElementById("wait-" + id);
     if (!el) return;
     el.open = true;
+    window.TT_TRAIN_ENSURE?.();
     el.closest(".venue-card").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
