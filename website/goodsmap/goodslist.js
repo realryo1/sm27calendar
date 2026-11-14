@@ -1,4 +1,4 @@
-// グッズの一覧の部品（会場・グッズのページの goods.js が使う。会場マップ goodsmap.js・ほしいものリスト wishlist.js も、整理したデータをここから受け取る）。
+// グッズの一覧の部品（グッズのページの goods.js が使う。会場マップ goodsmap.js・ほしいものリスト wishlist.js も、整理したデータをここから受け取る）。
 // 品の行・タグ・ブースのカード・公式物販のカード・売り場の記載なしのカード・カードの開け閉めを作る。
 // 使い方：const L = window.GM_LIST(window.GM_DATA, { boothNo })。boothNo(b) はカードの見出しのブースの番号の HTML（マップでそのブースを示すボタン）
 window.GM_LIST = (D, { boothNo }) => {

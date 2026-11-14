@@ -29,7 +29,7 @@ self.PRECACHE_IMAGES = {
   "image/souchou.png": 1,
 };
 
-// 会場・グッズ（会場マップとグッズ一覧の1ページ。サイドバーから開く）。github.io ではサイドバーを出さないので保存しない（sw.js もキャッシュを通さない）
+// グッズ（会場マップとグッズ一覧の1ページ。サイドバーから開く）。github.io ではサイドバーを出さないので保存しない（sw.js もキャッシュを通さない）
 self.PRECACHE_GOODSMAP = [
   "goodsmap/",
   "goodsmap/index.html",

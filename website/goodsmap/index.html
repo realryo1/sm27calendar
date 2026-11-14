@@ -10,7 +10,7 @@
   <!-- 試験ページ：検索に載せない。カレンダーからはサイドバー（nav.js。github.io では出さない）から ?embed=1 の iframe で開く。オフライン保存は新しいドメインと手元だけ（precache.js の PRECACHE_GOODSMAP） -->
   <meta name="robots" content="noindex">
   <!-- 会場マップとグッズ一覧を1つのページにまとめたもの（goods.js が一覧、goodsmap.js が会場マップ）。古いリンクの ?page=goods は無視する -->
-  <title>会場・グッズ（試験版）</title>
+  <title>グッズ（試験版）</title>
   <meta name="description" content="ウイングベイ小樽の出展ブース・チ・カ・ホで売っているものを、売り場ごと・出展企業ごとにまとめ、会場マップで場所も見られる非公式ページの試験版。">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="../favicon.ico" sizes="48x48">
@@ -62,7 +62,7 @@
   <div class="gm">
     <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2026/location_wingbay.html#wingbay_sponsor">出展ブース</a>もご覧ください。</p></noscript>
     <!-- ?part=map（カレンダーのサイドバーの「マップ」）：会場マップだけを画面いっぱいに出す（goods.js が会場マップの節を左の列へ移し、ほかを取り除く）。
-         それ以外（サイドバーの「会場・グッズ」）：
+         それ以外（サイドバーの「グッズ」）：
          2カラム（641px〜）は、左にほしいものリスト、右に一覧。それぞれの列がスクロールし、ページ全体はスクロールしない。間の持ち手で幅を変える。
          スマホは、ページ全体がスクロールする。ほしいものリストは浮かぶボタンから dialog -->
     <div class="gd-cols" id="gdCols">
@@ -81,7 +81,7 @@
       <!-- 2カラムのときだけ出る、左の列と一覧の幅を変える持ち手（goods.js） -->
       <div class="gm-split" id="gdSplit" role="separator" aria-orientation="vertical" aria-label="左の列と一覧の幅" tabindex="0"></div>
       <main class="gd-main" id="gdMain">
-        <h1 class="gm-visually-hidden">会場・グッズ</h1>
+        <h1 class="gm-visually-hidden">グッズ</h1>
         <!-- 会場マップの節（#map）は、?part=map のときだけ使う（goods.js が左の列へ移す）。グッズの表示では goods.js が取り除く -->
         <section class="gm-sec gm-sec--map" id="map" aria-label="会場マップ">
           <div class="gm-mapbox" id="gmMapbox">
