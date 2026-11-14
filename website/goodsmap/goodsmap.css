@@ -482,6 +482,7 @@
   color: var(--col-paper);
   background: var(--brand-gradient) border-box; /* 透明の枠の下までグラデーションで塗る（カレンダーの日付ボタンと同じ） */
 }
+.gm-lead:empty { display: none; }
 .gm-lead { margin: 0 0 12px; padding-left: 10px; font-size: .76rem; border-left: 3px solid var(--col-gold); }
 .gm-empty {
   margin: 0;

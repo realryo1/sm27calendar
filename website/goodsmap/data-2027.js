@@ -18,7 +18,7 @@ window.GM_DATA = {
     venue: "ウイングベイ小樽・チ・カ・ホ",
   },
 
-  priceNote: "ブース・グッズは未発表です。公開され次第、掲載します。",
+  priceNote: "",
 
   sources: [
     { label: "会場一覧", url: "https://snowmiku.com/2027/info-venue.html" },
@@ -40,11 +40,13 @@ window.GM_DATA = {
   // status は、分かっていないこと（売り場・販売方法）を書く。分かったら直す
   live: {
     title: "SNOW MIKU LIVE! 2027",
-    lines: ["会場はZepp Sapporo（2/5〜2/7）"],
-    status: [
-      "ペンライト・ハッピ・リングライトは、公式の発表（11/19）の前に出た店頭の告知（Loppiで11/20〜12/21に予約）による。公式のページは未確認",
-      "ほかのグッズ、売り場・販売方法（ライブ会場での物販か、ウイングベイ・チ・カ・ホでも売るか、通販か）は未発表",
+    lines: [
+      "会場：Zepp Sapporo（2/5〜2/7）",
+      "事前物販：11/20〜12/21",
+      "配送・受け取り：1/28から順次",
     ],
+    // 販売ページは11/20 10:00に公開予定。公開されたら、HMVのトップではなくそのページに直す
+    links: [{ label: "HMV（販売ページは11/20公開）", url: "https://www.hmv.co.jp/" }],
   },
 
   // 売り場の名前（品名の前のタグ）
@@ -143,8 +145,8 @@ window.GM_DATA = {
   goods: [
     // ライブ物販：公式の発表（11/19）の前に店頭に出ていた告知（Loppiの予約案内、11/20発売）による。公式のURLは無いので、リンクは公式のグッズ一覧に向けておく。売り場は未確認。
     // 予約は@Loppi 11/20〜12/21。税込。デザインは監修中で変わることがある
-    { id: "live-penlight", maker: "公式", name: "ペンライト（商品番号 AW17383625）", price: 4000, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
-    { id: "live-happi", maker: "公式", name: "ハッピ（商品番号 AW17383628）", price: 7000, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
-    { id: "live-ringlight", maker: "公式", name: "リングライト（商品番号 AW17383626）", price: 1500, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
+    { id: "live-penlight", maker: "公式", name: "ペンライト（商品番号 AW17383625）", price: 4000, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
+    { id: "live-happi", maker: "公式", name: "ハッピ（商品番号 AW17383628）", price: 7000, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
+    { id: "live-ringlight", maker: "公式", name: "リングライト（商品番号 AW17383626）", price: 1500, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
   ],
 };

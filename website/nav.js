@@ -242,20 +242,6 @@
           lastHits = { type: "hits", hits: m.hits, active: m.active };
           if (ready.has("map")) send("map", lastHits);
           break;
-        case "year": {
-          // 前年の見本（?year=2026）の切り替え：どちらも同じ年で読み込み直す（年は goodsmap/goods.js のフッターのリンクが決める）
-          for (const id of PARTS) {
-            const f = frameOf(id);
-            if (!f) continue;
-            ready.delete(id);
-            waiting[id].length = 0;
-            const u = new URL(f.src);
-            if (m.year === 2027) u.searchParams.delete("year");
-            else u.searchParams.set("year", String(m.year));
-            f.src = u.href;
-          }
-          break;
-        }
       }
     });
   }

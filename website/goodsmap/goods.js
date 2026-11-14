@@ -15,27 +15,14 @@
   const PART = params.get("part") === "map" ? "map" : "goods";
   document.documentElement.classList.add(`is-part-${PART}`);
 
-  // 年は上に出さず、フッターのリンクで前年の見本（?year=2026）を開く（正式リリース時に削除）。データのファイルが年ごとなので読み込み直す
-  const SAMPLE_YEAR = 2026;
-  const yearHref = (year) => {
-    const url = new URL(location.href);
-    if (year === 2027) url.searchParams.delete("year");
-    else url.searchParams.set("year", year);
-    url.hash = "";
-    return url.search || "?";
-  };
-
   const TEXT = {
-    sampleOpen: "前年（2026）の見本を開く",
-    sampleClose: "2027に戻る",
     // 売り場。上のしぼり込みのボタンと節の見出し（spot は会場の売り場・設備の説明。しぼり込みのボタンは無い）
     all: "すべて",
-    at: { official: "公式物販", booth: "企業ブース", live: "ライブ物販", loose: "売り場の記載なし", spot: "会場の案内" },
+    at: { official: "公式物販", booth: "企業ブース", live: "ライブ物販", loose: "売り場の記載なし", spot: "会場案内" },
     count: (n) => `${n}点`,
     search: "商品名・会社名でさがす",
     leads: {
       booth: "出展企業のブースで売るもの。公式のグッズ一覧に載るもの（公式）と、企業が自社サイト・Xなどで出すお品書きにだけあるもの（企業）があります。ブースの番号を押すとマップで場所が見られます。",
-      live: "ライブのグッズ。",
     },
     liveNone: "グッズはまだ載せていません。",
     empty: "見つかりませんでした。ほかのことばでさがすか、「すべて」を押してしぼり込みを外してみてください。",
@@ -62,7 +49,7 @@
   // カレンダーの中（iframe）では、マップとグッズが別のページなので、親（nav.js）にメッセージを送って表示を切り替えてもらい、相手のページへ取り次いでもらう。
   //   送る：{ type: "map", id }（マップの表示に切り替えてそのブースを示す）／{ type: "booth", id }（グッズの表示に切り替えてそのカードへ）／
   //         { type: "select", id }（切り替えずに、マップでそのブースを選んでおく）／{ type: "hits", hits, active }（しぼり込みの結果。マップで濃く出す）／
-  //         { type: "year", year }（前年の見本の切り替え。両方を読み込み直す）／{ type: "ready" }（読み込み終わり）
+  //         { type: "ready" }（読み込み終わり）
   //   受ける：{ type: "pick", id, show }（マップ。showならそのブースを枠のまん中へ）／{ type: "hits", … }（マップ）／{ type: "card", id }（グッズ）
   // 親が無いとき（このページを直接開いたとき）は、もう一方の表示のページを、ブースの番号つきのハッシュ（#booth-○○）で開く
   const TALK = "goodsmap";
@@ -132,6 +119,7 @@
       n: live.length,
       title: V.title ?? TEXT.at.live,
       body: `${[...(V.lines ?? []), ...(V.status ?? [])].map((t) => `<p class="gm-note">${esc(t)}</p>`).join("")}
+        ${L.linkList(V.links)}
         ${live.length ? `<ul class="gm-items">${[...live].sort(L.byTags({ here: ["live"] })).map((g) => L.goodsRow(g, { here: ["live"] })).join("")}</ul>` : `<p class="gd-none">${esc(TEXT.liveNone)}</p>`}`,
     });
   }
@@ -207,23 +195,13 @@
   const [y, mo, d] = dateOf(D.updated);
   const sources = [...D.sources.map((s) => ({ ...s, label: `${s.label}（${E.name}）` })), ...(D.notices ?? []).filter((n) => n.kind === "maker")];
   const officialMaps = [].concat(D.officialMap ?? []).map((m) => (typeof m === "string" ? { label: TEXT.officialMap, url: m } : m));
-  const sampleYear = D.year === SAMPLE_YEAR ? 2027 : SAMPLE_YEAR;
   $("gdFooter").innerHTML = `
     ${D.notice ? `<p>${esc(D.notice)}</p>` : ""}
     <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
     <p>${br(TEXT.disclaimer)}</p>
     <p>${esc(D.mapNote ?? TEXT.mapNote)}${officialMaps.map((m) => `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.label)} ↗</a>`).join("")}</p>
     <p class="gm-sources">${esc(TEXT.sources)}：${sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)} ↗</a>`).join("／")}</p>
-    <p class="site-footer__repo"><a href="${esc(yearHref(sampleYear))}" data-year="${sampleYear}">${esc(D.year === SAMPLE_YEAR ? TEXT.sampleClose : TEXT.sampleOpen)}</a></p>
     ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
-  // カレンダーの中では、マップの表示も同じ年にそろえるため、親に読み込み直してもらう
-  if (embedded)
-    $("gdFooter").addEventListener("click", (ev) => {
-      const a = ev.target.closest("[data-year]");
-      if (!a || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-      ev.preventDefault();
-      tell({ type: "year", year: Number(a.dataset.year) });
-    });
 
   // ---------- ほしいものリスト（2カラムの左の列。いつも開いている） ----------
   // 名前と件数・合計（wishlist.js が入れる）を見出しに出す。スマホは浮かぶボタンから dialog で開く
