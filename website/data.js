@@ -208,6 +208,8 @@ window.TT_DATA = {
     {
       id: "ginkasai",
       title: "初音<wbr>銀華祭 <wbr>2027",
+      // 予定カードが小さくてタイトルが収まらないときに出す短いタイトル
+      minTitle: "銀華祭",
       letter: "F",
       name: "北海道大学 クラーク会館講堂",
       short: "初音銀華祭2027",

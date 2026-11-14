@@ -445,7 +445,9 @@
           <span class="ev__time">${e.live || e.range ? `${fmtTime(e, "start")} ▶ ${fmtTime(e, "end")}` : `START ${fmtTime(e, "start")}`}</span>
           ${e.official ? `<span class="ev__badges">${badges(e)}</span>` : ""}
         </span>
-        <span class="ev__title">${e.official ? "" : `<span class="ev__fan-label">${B.fan}</span>`}${br(e.title)}</span>
+        <span class="ev__title">${e.official ? "" : `<span class="ev__fan-label">${B.fan}</span>`}${
+          e.minTitle ? `<span class="ev__title-full">${br(e.title)}</span><span class="ev__title-min">${br(e.minTitle)}</span>` : br(e.title)
+        }</span>
         ${e.sub ? `<span class="ev__sub">${br(e.sub)}</span>` : ""}
       </span>
       ${lastEntry}
@@ -831,9 +833,10 @@
   };
 
   // 予定カードの内容（OPEN 帯＋文字）が高さに収まらないとき、バッジ→サブタイトル→時刻→OPEN の文字の順に隠し、最後はタイトルだけにする。
+  // それでも収まらず、短いタイトル（minTitle）があれば、それに差し替える（非公式のラベルは常に出す）。
   // OPEN の文字を消すと帯は背景に回り、タイトルが上に詰まる。
   // 文字の大きさがカードの高さに比例するため、境目で出たり消えたりしないよう、一度隠したものを戻すには余裕（SLACK）を要求する
-  const HIDE = ["ev--nobadge", "ev--nosub", "ev--notime", "ev--noopentext"];
+  const HIDE = ["ev--nobadge", "ev--nosub", "ev--notime", "ev--noopentext", "ev--mintitle"];
   const SLACK = 10;
   // 1枚ずつ「隠す→測る」を繰り返すとカードの数だけレイアウトの再計算が起きるので、
   // 全カードまとめて隠してからまとめて測る（段階ごとに再計算1回）

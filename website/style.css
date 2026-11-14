@@ -777,6 +777,10 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
 .ev--nobadge .ev__badges,
 .ev--nosub .ev__sub,
 .ev--notime .ev__time { display: none; }
+/* タイトルも収まらないときは短いタイトル（data.js の minTitle）に差し替える。非公式のラベルは消さない */
+.ev__title-min,
+.ev--mintitle .ev__title-full { display: none; }
+.ev--mintitle .ev__title-min { display: inline; }
 /* OPEN の帯が低い／収まらないときは文字を消し（font-size: 0）、帯を背景にして、タイトルを上に詰める */
 .ev--noopentext .ev__open { font-size: 0; position: absolute; top: 0; left: 0; right: 0; } /* 斜線の帯は背景として残す */
 .tt .ev.ev--noopentext .ev__open + .ev__inner { padding-top: 2px; }
@@ -1640,6 +1644,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   cursor: pointer;
   transition: opacity .2s, transform .2s;
 }
+.to-board:hover { filter: brightness(1.05); } /* ほしいものリストのボタン（goodsmap.css の .gm-wishfab）と同じ */
 .to-board[hidden] { display: block; opacity: 0; transform: translateY(12px); pointer-events: none; }
 
 @media (max-width: 640px) {
@@ -2107,6 +2112,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
+.has-nav .day-nav .day-chip--train:hover { filter: brightness(1.05); } /* ほしいものリストのボタン（goodsmap.css の .gm-wishfab）と同じ */
 
 /* ---------- 曜日の色（平日は灰色、土曜は青、日曜は赤。:root の --col-weekday・--col-sat・--col-sun） ---------- */
 [data-wd="weekday"] { color: var(--col-weekday); }
