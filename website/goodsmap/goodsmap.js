@@ -1,68 +1,37 @@
-// グッズ・出展ブースマップ（試験ページ）
+// 会場マップ（会場・グッズのページの部品。window.GM_MAP）
 // データは data-○○○○.js の window.GM_DATA（年ごとに差し替える）。ここは年に関係なく使う。
-// 会場マップは公式の画像を使わず、データのブース・売り場の位置から SVG で描く
-(() => {
-  const D = window.GM_DATA;
-  if (!D) return;
-  const E = D.event;
+// 会場マップは公式の画像を使わず、データのブース・売り場の位置から SVG で描く。
+// 一覧・しぼり込み・ハッシュは goods.js が受け持ち、ここはマップの描画と操作（拡大・移動・回す・全画面・スマホで縮むプレビュー）だけ。
+// 使い方：const M = window.GM_MAP(D, L, { $list, onActivate, visible })
+//   L は goodslist.js の部品、$list は一覧（選んだカードを強調する）、onActivate(id) はマップのブース・売り場を押したとき、
+//   visible() はマップが見えているか（スマホで開いている・2カラム）
+window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
   // 書き写しの確認（コンソールの警告）は、手元で開いたときだけ行う。公開版では毎回は行わない
   const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
 
   // 会場のタブ（このデータのフロア）
   const TABS = D.floors.map((f) => ({ floor: f.id, label: f.label }));
-  // 前年（2026）の見本へのリンク（正式リリース時に削除）。データのファイルが年ごとなので読み込み直す
-  const sampleHref = (() => {
-    const url = new URL(location.href);
-    if (D.year === 2026) url.searchParams.delete("year");
-    else url.searchParams.set("year", 2026);
-    return url.search || "?";
-  })();
-  // カレンダーのサイドバーから iframe で開いたとき（?embed=1。カレンダーの nav.js）。カレンダーへ戻るリンクを出さない
-  const EMBED = new URLSearchParams(location.search).has("embed");
-  if (EMBED) document.documentElement.classList.add("is-embed"); // goodsmap.css（左右の金の帯を消す）
 
   // 画面の文言（年に関係しないもの）。日付・会場・注意書きなど、年ごとに変わるものはデータ側
   const TEXT = {
-    mapNote: "公式の会場マップをもとに描いた略図です。",
     floors: "会場",
     mapHint: "二本指で拡大するとブースの中身が出ます",
     mapHintMouse: "ホイールで拡大するとブースの中身が出ます", // マウスのとき（指で触る端末は mapHint）
-    officialMap: "公式の会場マップ（画像）",
     fullOn: "全画面で表示",
     fullOff: "全画面を閉じる",
-    search: "商品名・会社名でさがす",
-    filter: "種類でしぼる",
-    all: "すべて",
-    // しぼり込みのボタン
-    kinds: { sale: "販売", exhibit: "展示・体験", gift: "配布・特典" },
     legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示", goods: "グッズ販売・展示など", marche: "マルシェ" },
-    empty: "見つかりませんでした。ほかのことばでさがしてみてください。",
     zoom: { out: ["－", "縮小"], fit: ["全体", "全体を表示"], in: ["＋", "拡大"] },
     turn: ["↻", "マップを右へ90度回す"],
-    updated: (date) => `データ：${date}時点の公式サイト`,
-    disclaimer:
-      "本ページは非公式の試験版です。\nこのページの問い合わせはx.com/realryo1にお願いします。\n情報の正確性には留意していますが、最終的な判断は利用者が行ってください。\n商品の写真は、品名のリンクから公式サイトで見られます。",
-    sources: "出典",
-    calendar: "非公式カレンダーへ戻る",
-    sampleOpen: "前年（2026）の見本を開く",
-    sampleClose: "2027に戻る",
   };
 
   const $ = (id) => document.getElementById(id);
   const { esc } = window.TT_UTIL; // カレンダーの ../util.js
-  const br = (s) => esc(s).replace(/\n/g, "<br>");
   const r1 = (n) => Math.round(n * 10) / 10;
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  // 2カラム（左にマップを固定）にする幅。goodsmap.css と合わせる
+  // 2カラム（左の列にマップ）にする幅。goodsmap.css・goods.js と合わせる
   const twoCol = matchMedia("(min-width: 641px)");
 
-  // ---------- データの整理と一覧の部品（goodslist.js。グッズ一覧 goods.js と共通） ----------
-  // カードの番号は、押すとマップでそのブースを示すボタン
-  const L = window.GM_LIST(D, {
-    beforeScroll: () => holdPreview({ animate: true }),
-    boothNo: (b) => `<button type="button" class="gm-no" data-map="${esc(b.no)}" aria-label="${esc(L.TEXT.showOnMap(L.boothName(b)))}">${esc(L.boothLabel(b))}</button>`,
-  });
-  const { norm, short, yen, onSale, boothBy, goodsAt, official, loose, info, boothLabel, srcOf, urlOf, noticeBy } = L;
+  const { short, yen, onSale, boothBy, goodsAt, info, boothLabel, srcOf, urlOf, noticeBy } = L;
   const booths = D.booths;
   // 中にブースがある売り場（ガチャコーナー）。ブース → 売り場
   const spotOf = new Map(Object.entries(D.spots).flatMap(([id, s]) => (s.booths ?? []).map((no) => [no, id])));
@@ -84,31 +53,6 @@
     const onMap = new Set(D.floors.flatMap((f) => [...Object.keys(f.booths), ...f.areas.flatMap((a) => D.spots[a.spot]?.booths ?? [])]));
     for (const b of booths) if (!onMap.has(b.no)) warn(`マップに無いブース: ${b.no}`);
     for (const no of onMap) if (!boothBy.has(no)) warn(`一覧に無いブースがマップにある: ${no}`);
-  }
-
-  // ---------- 出展ブースの一覧 ----------
-  // カード（ブース・公式物販・売り場の記載なし）は goodslist.js。初めは閉じていて、マップで選んだとき（showCard）・種類でしぼった・さがしたとき（applyFilter）に開く
-  const $list = $("gmList");
-
-  // ブースの無い売り場・設備（主催展示・ワークショップ・クロークなど）の説明。マップで押すと、ここへ移る
-  const infoSpots = Object.entries(D.spots).filter(([, s]) => !s.booths && !s.official);
-  const spotText = (s) => norm([s.title, ...(s.lines ?? [])].join("|"));
-  const spotsHtml = () =>
-    infoSpots
-      .map(([id, s]) =>
-        L.foldCard({
-          theme: "violet",
-          id: `spot-${id}`,
-          no: id,
-          cls: " gm-spot",
-          title: s.title,
-          body: `${s.lines?.length ? `<ul class="gm-items">${s.lines.map((t) => L.textRow(t)).join("")}</ul>` : ""}${L.linkList(s.links)}`,
-        })
-      )
-      .join("");
-
-  function renderList() {
-    $list.innerHTML = booths.map(L.boothCard).join("") + L.officialCard() + L.looseCard() + spotsHtml();
   }
 
   // ---------- 会場マップ ----------
@@ -357,7 +301,7 @@
       areas.has("marche") ? `<li><i class="theme-orange"></i>${TEXT.legend.marche}</li>` : "",
     ].join("");
     markPicked();
-    applyFilter();
+    markHits();
   }
 
   // ---------- 大きさと拡大縮小 ----------
@@ -420,6 +364,7 @@
   // スマホ（1カラム）は、ブース名が出る大きさ（NAMED）まで拡大して開き、右下に寄せる（左端の売り場はあえて見切れさせる）。
   // 枠が広くて、いちばん左のブースの列とその左の売り場の端まで入るなら、そこまで入る大きさにする（左にも売り場があるとわかるように）。2カラムと、回しているときは全体
   function initialZoom() {
+    if (!$map.clientWidth) return void (inited = false); // 隠しているあいだは、見せたとき（show）にする
     zoom = 1;
     setZoom(1);
     if (twoCol.matches || rot) return;
@@ -443,7 +388,7 @@
   // 中身は押した時の大きさのまま、枠だけが動く。手を止めたら持ち手の処理が sizeMap を呼ぶ
   let resizing = false;
   new ResizeObserver(() => {
-    if (resizing) return;
+    if (resizing || !$map.clientWidth) return; // 隠している（スマホで閉じている）あいだは測らない
     sizeMap();
     if (anchored) toCorner();
   }).observe($map);
@@ -452,8 +397,6 @@
   let pinch = null;
   // このマップの上で始まった指だけ（ev.touches は画面全体の指。一覧の指を数えると、別の列の指でピンチになってしまう）
   const mine = (ev) => [...ev.touches].filter((t) => $map.contains(t.target));
-  // 一覧の列は、マップとは別の指で独立してスクロールできるようにする（util.js の touchPan。マップ自身は下の pointer の処理で動かす）
-  TT_UTIL.touchPan(document.querySelector(".gm-scroll"), { enabled: () => twoCol.matches });
   const spread = (t) => ({
     d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY),
     x: (t[0].clientX + t[1].clientX) / 2,
@@ -600,33 +543,18 @@
     $list.querySelectorAll(".gm-card").forEach((el) => el.classList.toggle("is-picked", ids.has(el.dataset.no)));
   }
 
-  // ブース・売り場・設備の名前から、一覧のカードを探す（中にブースがある売り場は、その先頭のブース）
-  const cardOf = (id) => $(`booth-${D.spots[id]?.booths?.[0] ?? id}`) ?? $(`spot-${id}`);
-
-  function pick(id, { toCard = false, toMap = false } = {}) {
+  function pick(id, { toMap = false } = {}) {
     picked = id;
     markPicked();
     if (boothBy.has(id) || id === "official") history.replaceState(null, "", `#booth-${id}`);
-    if (toCard) showCard(id);
     if (toMap) showOnMap(id);
   }
 
-  // 一覧のカードへ移って光らせる。しぼり込みで隠れているときは、しぼり込みを解く
-  function showCard(id, { instant = false } = {}) {
-    const $card = cardOf(id);
-    if (!$card) return;
-    if ($card.hidden) resetFilter();
-    L.openCard($card); // 選んで開いたので、しぼり込みを外しても閉じない
-    const wait = holdPreview({ animate: !instant }); // 縮むアニメーションが終わってから、位置を決めて移る
-    const go = () => {
-      $card.scrollIntoView({ behavior: instant ? "auto" : behavior, block: "start" });
-      $card.classList.remove("is-flash");
-      void $card.offsetWidth;
-      $card.classList.add("is-flash");
-    };
-    if (wait) setTimeout(go, wait);
-    else go();
-  }
+  // マップにあるブース・売り場か（中にブースがある売り場のブースは、その売り場）
+  const onMap = (id) => {
+    const key = spotOf.get(id) ?? id;
+    return D.floors.some((x) => key in x.booths || x.areas.some((a) => a.spot === key));
+  };
 
   // マップへ移る。ほかのフロアのブースならフロアを切り替え、拡大しているときはブースを枠のまん中に出す
   function showOnMap(id) {
@@ -643,64 +571,21 @@
     else if (a) centerOn([a.x + a.w / 2, a.y + a.h / 2], true);
   }
 
-  // ---------- しぼり込み・検索 ----------
-  const state = { kind: "all", q: "" };
-  const $chips = $("gmChips");
-  const $query = $("gmQuery");
-
-  const markItems = ($el, q) => $el.querySelectorAll(".gm-item").forEach((li) => li.classList.toggle("is-hit", !!q && li.dataset.text.includes(q)));
-
-  function applyFilter() {
-    const q = norm(state.q);
-    const active = state.kind !== "all" || !!q;
-    const hits = new Set();
-    for (const b of booths) {
-      const i = info.get(b.no);
-      const on = (state.kind === "all" || i.kinds.includes(state.kind)) && (!q || i.text.includes(q));
-      const $card = $(`booth-${b.no}`);
-      $card.hidden = !on;
-      markItems($card, q);
-      L.fold($card, on, active);
-      if (on) hits.add(b.no);
-    }
-    // 公式物販と、売り場の記載がないグッズ（どちらも販売だけ）。検索で当たったら開く
-    for (const [id, gs] of [
-      ["official", official],
-      ["loose", loose],
-    ]) {
-      const $el = $(`booth-${id}`);
-      if (!$el) continue;
-      const on = (state.kind === "all" || state.kind === "sale") && (!q || gs.some((g) => norm(`${g.name}|${g.maker}`).includes(q)));
-      $el.hidden = !on;
-      markItems($el, q);
-      L.fold($el, on, active);
-      if (on) hits.add(id);
-    }
-    // 売り場・設備の説明は「すべて」のときだけ
-    for (const [id, s] of infoSpots) {
-      const on = state.kind === "all" && (!q || spotText(s).includes(q));
-      const $el = $(`spot-${id}`);
-      $el.hidden = !on;
-      markItems($el, q);
-      L.fold($el, on, active);
-      if (on) hits.add(id);
-    }
-    // マップは、しぼり込み中だけ当たらなかったところを薄くする
-    $map.classList.toggle("is-filtering", state.kind !== "all" || !!q);
+  // ---------- しぼり込み・検索の結果 ----------
+  // 一覧で見えているカード（goods.js の setHits）。しぼり込み・検索中だけ、マップで当たらなかったところを薄くする
+  let hits = new Set();
+  let filtering = false;
+  function markHits() {
+    $map.classList.toggle("is-filtering", filtering);
     $map.querySelectorAll("[data-pick]").forEach((el) => {
       const id = el.dataset.pick;
       el.classList.toggle("is-hit", hits.has(id) || (D.spots[id]?.booths ?? []).some((no) => hits.has(no)));
     });
-    $("gmEmpty").hidden = hits.size > 0;
   }
-
-  const syncChips = () => $chips.querySelectorAll("[data-kind]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kind === state.kind)));
-  function resetFilter() {
-    state.kind = "all";
-    state.q = "";
-    $query.value = "";
-    syncChips();
-    applyFilter();
+  function setHits(next, active) {
+    hits = next;
+    filtering = active;
+    markHits();
   }
 
   // ---------- 固定の文言 ----------
@@ -712,36 +597,14 @@
         .join("") + `<button type="button" class="gm-full" id="gmFull" aria-pressed="false" aria-label="${esc(TEXT.fullOn)}"></button>`;
     $("gmFloors").setAttribute("role", "tablist");
     $("gmFloors").setAttribute("aria-label", TEXT.floors);
-    $("gmTools").hidden = !booths.length; // ブース・グッズがまだ無いあいだは、検索としぼり込みを出さない
-    $query.placeholder = TEXT.search;
-    $query.setAttribute("aria-label", TEXT.search);
-    $chips.setAttribute("aria-label", TEXT.filter);
-    $chips.innerHTML = ["all", ...Object.keys(TEXT.kinds)]
-      .map((k) => `<button type="button" class="gm-chip" data-kind="${k}" aria-pressed="${k === state.kind}">${k === "all" ? TEXT.all : TEXT.kinds[k]}</button>`)
-      .join("");
-    $("gmLead").textContent = D.priceNote;
-    $("gmEmpty").textContent = TEXT.empty;
-    const [y, mo, d] = D.updated.split("-").map(Number);
-    $("gmFooter").innerHTML = `
-      ${D.notice ? `<p>${esc(D.notice)}</p>` : ""}
-      <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
-      <p>${br(TEXT.disclaimer)}</p>
-      <p>${esc(D.mapNote ?? TEXT.mapNote)}${[].concat(D.officialMap)
-        .map((m) => (typeof m === "string" ? { label: TEXT.officialMap, url: m } : m))
-        .map((m) => `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.label)} ↗</a>`)
-        .join("")}</p>
-      <p class="gm-sources">${esc(TEXT.sources)}：${D.sources
-        .map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(`${s.label}（${E.name}）`)} ↗</a>`)
-        .join("／")}</p>
-      <p class="site-footer__repo"><a href="${esc(sampleHref)}">${esc(D.year === 2026 ? TEXT.sampleClose : TEXT.sampleOpen)}</a></p>
-      ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
   }
 
   // ---------- 操作 ----------
-  // マップのブース・売り場を押すと、一覧のそのカードへ移る（カレンダーの「予定タップで詳細」と同じ）
+  // マップのブース・売り場を押すと、一覧のそのカードへ移る（カレンダーの「予定タップで詳細」と同じ。移るのは goods.js）
   const activate = (el) => {
     setFull(false); // フルスクリーンで押したら、閉じてから一覧へ
-    pick(el.dataset.pick, { toCard: true });
+    pick(el.dataset.pick);
+    onActivate(el.dataset.pick);
   };
   $map.addEventListener("click", (ev) => {
     // プレビューは、どこを押してもマップだけを大きくする（一覧はスクロールさせない。ブースを選ぶのは大きくしてから）
@@ -756,28 +619,6 @@
     ev.preventDefault();
     activate(el);
   });
-  // カードの番号を押すと、マップでそのブースを示す。カードを開いたときも、マップにあるブース・売り場なら示す（選んでいなくても）
-  const onMap = (id) => {
-    const key = spotOf.get(id) ?? id;
-    return D.floors.some((x) => key in x.booths || x.areas.some((a) => a.spot === key));
-  };
-  $list.addEventListener("click", (ev) => {
-    const el = ev.target.closest("[data-map]");
-    if (el) return pick(el.dataset.map, { toMap: true });
-    const $card = ev.target.closest(".gm-card__head, .gm-official__head")?.parentElement;
-    if ($card && !$card.open && onMap($card.dataset.no)) pick($card.dataset.no, { toMap: true });
-  });
-  $chips.addEventListener("click", (ev) => {
-    const el = ev.target.closest("[data-kind]");
-    if (!el) return;
-    state.kind = el.dataset.kind;
-    syncChips();
-    applyFilter();
-  });
-  $query.addEventListener("input", () => {
-    state.q = $query.value;
-    applyFilter();
-  });
   $("gmZoom").addEventListener("click", (ev) => {
     // 全画面のボタン（＋の右）。押したときだけ切り替える（拡大しても自動では全画面にしない）
     if (ev.target.closest("#gmFull")) return setFull(!full);
@@ -790,80 +631,51 @@
   $("gmFloors").addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-floor]");
     if (!el) return;
-    floor = D.floors.find((f) => f.id === el.dataset.floor) ?? floor;
+    setFloor(el.dataset.floor);
     history.replaceState(null, "", `#map-${floor.id}`);
-    renderMap();
-    initialZoom();
   });
+  // フロアを切り替える（#map-○○ で開いたときも）
+  function setFloor(id) {
+    const f = D.floors.find((x) => x.id === id);
+    if (!f) return false;
+    if (f !== floor) {
+      floor = f;
+      renderMap();
+      initialZoom();
+    }
+    return true;
+  }
 
-  // 2カラムの持ち手：ドラッグ（ダブルクリックで半々、← → キーでも動く）でマップの幅を変え、この端末に覚える（カレンダーの持ち手と同じ操作・同じ処理。util.js の splitter）
-  {
-    const $main = $("gmMain");
-    // MIN_MAP・MIN_LIST：マップと一覧が読める幅の下限（px）。カレンダーの持ち手と同じ（641px でも両方が収まる）
-    // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。
-    // 動かす手を止めたら、その幅で中身も組み直す
-    const $side = $("booths");
-    const freeze = () => {
-      if ($side.classList.contains("is-frozen")) return;
-      $side.querySelectorAll(".gm-card").forEach((card) => {
-        const cs = getComputedStyle(card);
-        card.style.setProperty("--cw", `${card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)}px`);
-      });
-      $side.classList.add("is-frozen");
-      resizing = true;
-    };
-    // 幅を変えたか（持ち手を選んだだけで列が広がったときは、マップを測り直さない。外したら元の幅に戻るので、中身は元の大きさのままでぴったり収まる）
-    let moved = false;
-    const thaw = () => {
-      $side.classList.remove("is-frozen");
-      if (!resizing) return;
-      // 持ち手の列が広がる動き（goodsmap.css の --gm-split-extra）が終わってから測る
-      const grow = $main.getAnimations().filter((a) => a.transitionProperty === "--gm-split-extra");
-      Promise.allSettled(grow.map((a) => a.finished)).then(() => {
-        if ($side.classList.contains("is-frozen")) return; // また動かし始めた
-        resizing = false;
-        if (!moved) return;
-        moved = false;
-        settleMap(); // 止めた幅でマップを1回だけ測り直す（回すときと同じ動きで）
-      });
-    };
-    const sp = TT_UTIL.splitter({
-      $split: $("gmSplit"),
-      $main,
-      cssVar: "--gm-map-w",
-      key: "sm27-goodsmap-w",
-      def: 50,
-      minA: 300,
-      minB: 260,
-      hold: true,
-      freeze,
-      thaw,
-      onChange: () => (moved = true),
-    });
-    // 2カラムの高さは dvh ではなく innerHeight で決める（goodsmap.css の --app-h。カレンダーと同じ）。
-    // Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、resize の後も直らないことがある
-    const setAppH = () => $main.style.setProperty("--app-h", `${innerHeight}px`);
-    setAppH();
-    // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す
-    window.addEventListener("resize", () => {
-      sp.setW(sp.cur(), false);
-      setAppH();
+  // 2カラムの持ち手（goods.js）を動かしているあいだは、マップを測り直さない（中身は押した時の大きさのまま、枠だけが動く）。
+  // 手を止めたら、持ち手の列が広がる動き（goodsmap.css の --gm-split-extra）が終わってから、止めた幅で1回だけ測り直す（回すときと同じ動きで）
+  const $cols = $("gdCols");
+  let held = 0; // 持ち手で止めた回数（止め直したら、前の手を止めた処理は何もしない）
+  function holdSize() {
+    held++;
+    resizing = true;
+  }
+  function releaseSize(moved) {
+    if (!resizing) return;
+    const my = held;
+    const grow = $cols.getAnimations().filter((a) => a.transitionProperty === "--gm-split-extra");
+    Promise.allSettled(grow.map((a) => a.finished)).then(() => {
+      if (my !== held) return; // また動かし始めた
+      resizing = false;
+      if (moved && $map.clientWidth) settleMap();
     });
   }
 
-  // スマホ（1カラム）のマップ：開いたときは、画面の上半分に出す（1倍。マップと一覧が上下1:1）。
-  // マップは画面の上に貼り付き、ページを下へスクロールするほど低くなり（下端は一覧と一緒に上がる）、最後は検索欄の上の細いプレビュー（PREVIEW px）で残る。
+  // スマホ（1カラム）のマップ：一覧の上の「会場マップ」のバー（goods.js）で開け閉めする。開いたときは、画面の上半分に出す（1倍。マップと一覧が上下1:1）。
+  // マップは画面の上に貼り付き、ページを下へスクロールすると細いプレビュー（PREVIEW px）になって残る（下の一覧と一緒に上がる）。
   // 全画面は、＋の右のボタンを押したときだけにする（拡大しても自動では切り替えない）。もう一度押すと元に戻る。
   // プレビューはどこを押しても、一覧はそのままでマップだけが大きくなる（一覧をスクロールすると、またプレビューに戻る）。カードの番号を押せばプレビューの中で光る。
   // 2カラムではマップが常に見えているので、縮むプレビューは使わない（全画面だけ使える）
   const $sec = $("map");
   const PREVIEW = 160; // goodsmap.css の --gm-preview と合わせる
   // 縮む高さと位置は、使う要素に直接入れる（:root に入れると、スクロールのたびにページ全体のスタイルを計算し直して重い。goodsmap.css の @property）
-  const $tools = document.querySelector(".gm-tools");
   const boxStyle = $mapbox.style;
-  const toolsStyle = $tools.style;
   const secStyle = $sec.style;
-  let top0Cache = null; // マップの列の上端（offsetTop）。測るとレイアウトを確かめるので、スクロールのたびには測らない
+  let top0Cache = null; // ページの中での、マップの列の上端。測るとレイアウトを確かめるので、スクロールのたびには測らない
   const put = (style, k, v) => style.getPropertyValue(k) !== v && style.setProperty(k, v); // 変わらないときは書かない
   let preview = false; // プレビューのあいだは拡大縮小しない（小さすぎて操作しにくい）
   let expanded = null; // プレビューを押して大きくしたときの、ページのスクロール位置（一覧をスクロールしたら、プレビューに戻す）
@@ -884,7 +696,7 @@
   // 移り終わったら（scrollend。無い環境は時間で）手放す
   // animate のときは縮むアニメーションを付け、終わるまでの時間（ms。縮まないときは 0）を返す。呼び出し側は、その後にスクロールする
   function holdPreview({ animate = false } = {}) {
-    if (twoCol.matches || full) return 0;
+    if (twoCol.matches || full || !visible()) return 0;
     holdSmall = true;
     heldAt = null;
     jump = !animate;
@@ -892,7 +704,6 @@
     resizing = false;
     $mapbox.classList.remove("is-animating");
     $sec.classList.remove("is-animating");
-    $tools.classList.remove("is-animating");
     $map.firstElementChild.style.marginBottom = "";
     shrink();
     jump = false;
@@ -917,15 +728,16 @@
   // 枠の高さが変わるときは、マップ本体も同じフレームで合わせて大きさを変える（止まってから測り直す2段階にしない）
   function shrink() {
     shrinkRaf = 0;
-    if (twoCol.matches) {
-      for (const style of [boxStyle, toolsStyle, secStyle]) for (const k of ["--gm-map-top", "--gm-map-h", "--gm-pv", "--gm-sec-h"]) style.removeProperty(k);
+    if (twoCol.matches || !visible()) {
+      for (const style of [boxStyle, secStyle]) for (const k of ["--gm-map-top", "--gm-map-h", "--gm-sec-h"]) style.removeProperty(k);
       $mapbox.classList.remove("is-shrunk", "is-preview");
       preview = false;
-      return sizeMap();
+      lastH = null; // 次に開いたときは、動かさずにその高さで描く
+      return $map.clientWidth ? sizeMap() : undefined;
     }
     if (full) return sizeMap();
     // 開いたときの高さ：画面の上半分（マップと一覧が上下1:1。これがマップの列の高さになる）。マップはその中に収まる大きさで描く
-    const top0 = (top0Cache ??= $sec.offsetTop); // ページの中での、マップの列の上端（画面の大きさが変わったときだけ測り直す）
+    const top0 = (top0Cache ??= $sec.getBoundingClientRect().top + window.scrollY); // ページの中での、マップの列の上端（画面の大きさが変わった・開いたときだけ測り直す）
     const H = Math.round(window.innerHeight / 2 - top0);
     const y = window.scrollY;
     if (expanded != null && Math.abs(y - expanded) > 4) expanded = null;
@@ -953,13 +765,11 @@
       resizing = true; // 動いているあいだ、ResizeObserver は測り直さない（描き直しは下の1回だけ）
       $mapbox.classList.add("is-animating");
       $sec.classList.add("is-animating");
-      $tools.classList.add("is-animating");
     }
     // 一覧の頭は、枠の高さの分だけ下にある（枠と同じ高さで一覧の場所も変えるので、枠と検索欄のあいだにすき間ができない）
     put(secStyle, "--gm-sec-h", `${h}px`);
     put(boxStyle, "--gm-map-top", `${Math.max(0, top0 - y)}px`);
     put(boxStyle, "--gm-map-h", `${h}px`);
-    put(toolsStyle, "--gm-pv", `${h}px`); // 検索欄は、この高さの下に貼り付く
     preview = small;
     $mapbox.classList.toggle("is-shrunk", small);
     $mapbox.classList.toggle("is-preview", preview);
@@ -998,7 +808,6 @@
       $map.firstElementChild.style.marginBottom = "";
       $mapbox.classList.remove("is-animating");
       $sec.classList.remove("is-animating");
-      $tools.classList.remove("is-animating");
       sizeMap(); // 描いた大きさと同じはず（ずれたときだけ直る）
     }, GLIDE_MS);
   }
@@ -1118,40 +927,37 @@
     requestShrink();
   });
 
-
-  // #booth-○○ なら、そのブースを選んで一覧のカードへ（共有したリンクから開いたとき・開いたままハッシュが変わったとき）
-  function openHash({ instant = false } = {}) {
-    let id = "";
-    let tab = "";
-    try {
-      id = decodeURIComponent(location.hash.match(/^#booth-(.+)$/)?.[1] ?? "");
-      tab = decodeURIComponent(location.hash.match(/^#map-(.+)$/)?.[1] ?? "");
-    } catch {
-      return false; // 壊れたハッシュは無視する
-    }
-    // #map-○○ ならそのフロアのタブで開く
-    const f = D.floors.find((x) => x.id === tab);
-    if (f) {
-      if (f !== floor) {
-        floor = f;
-        renderMap();
-        initialZoom();
-      }
-      return true;
-    }
-    if (!boothBy.has(id) && id !== "official") return false;
-    pick(id);
-    showCard(id, { instant });
-    return true;
+  // ---------- 見せる・隠す（goods.js） ----------
+  // 隠しているあいだ（スマホで閉じている）は大きさが0になるので、隠す前に見ていたところを覚えておき、
+  // 見せたときに戻す。初めて見せたときは、開いたときの拡大率（initialZoom）にする
+  let inited = false;
+  let lastCenter = null;
+  function hide() {
+    setFull(false);
+    if (!$map.clientWidth || !$map.firstElementChild) return;
+    const r = $map.firstElementChild.getBoundingClientRect();
+    const m = $map.getBoundingClientRect();
+    const [vx, vy, vw, vh] = shown.view;
+    lastCenter = anchored ? null : [vx + ((m.left + m.width / 2 - r.left) / r.width) * vw, vy + ((m.top + m.height / 2 - r.top) / r.height) * vh];
   }
-  window.addEventListener("hashchange", () => openHash());
+  function show() {
+    top0Cache = null;
+    shrink(); // スマホは、先にマップの枠を開いたときの高さにしてから拡大する（右下に寄せるため）
+    if (!$map.clientWidth) return;
+    if (!inited) {
+      inited = true;
+      initialZoom();
+      return;
+    }
+    sizeMap();
+    if (anchored) toCorner();
+    else if (lastCenter) centerOn(lastCenter);
+  }
 
   // ---------- 開始 ----------
   renderStatic();
-  renderList();
-  window.GM_WISH(D, L); // ほしいものリスト（wishlist.js。品の行の♡と浮かぶボタン）
   renderMap();
-  shrink(); // スマホは、先にマップの枠を開いたときの高さにしてから拡大する（右下に寄せるため）
-  initialZoom();
-  openHash({ instant: true });
-})();
+  show();
+
+  return { pick, showOnMap, onMap, setHits, setFloor, holdPreview, show, hide, holdSize, releaseSize, isPicked: (id) => picked === id };
+};

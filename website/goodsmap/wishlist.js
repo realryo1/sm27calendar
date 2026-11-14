@@ -1,8 +1,8 @@
-// ほしいものリスト（グッズマップ・グッズ一覧で共通）。品の行の左端の♡（goodslist.js の .gm-wish）で入れ、浮かぶボタンからリストを開く。
-// リストは年ごとにブラウザ（localStorage の sm27-wish-年）に保存し、マップとグッズ一覧で同じものを使う（カレンダーの中の2つの iframe も storage イベントで合わせる）。
+// ほしいものリスト（会場・グッズのページ）。品の行の左端の♡（goodslist.js の .gm-wish）で入れ、浮かぶボタンからリストを開く。
+// リストは年ごとにブラウザ（localStorage の sm27-wish-年）に保存する（別のタブ・カレンダーの中の iframe とは storage イベントで合わせる）。
 // まとめ方（タグ・ブース）と並び順（値段・ブース）、個数を持ち、PDF はブラウザの印刷で、画像は印刷と同じ表を写して PNG で出す（印刷用の表 #gmWishPrint だけを印刷する。goodsmap.css の @media print）。
 // リストはリンク（カレンダーの ?view=goods&wish=id.個数,…）にでき、PDF にはそのリンクと QR コードを載せる。リンクを開くと、今のリストに合わせるか置き換えるかを選んで読み込む。
-// グッズ一覧の2カラム（641px〜）では、浮かぶボタンの代わりに、右カラム（#gdWish）にリストを常に出す。
+// 2カラム（641px〜）では、浮かぶボタンの代わりに、左の列の下から引き出すリスト（#gdWish。会場マップの上に重なる）に出す。
 // 使い方：ページの一覧を描いたあとに window.GM_WISH(GM_DATA, GM_LIST の戻り値)
 window.GM_WISH = (D, L) => {
   const { esc } = window.TT_UTIL;
@@ -182,10 +182,12 @@ window.GM_WISH = (D, L) => {
   $print.className = "gm-wishprint";
   $print.id = "gmWishPrint";
   document.body.append($fab, $dlg, $print);
-  const $panel = document.getElementById("gdWish"); // グッズ一覧の右カラム。CSS が狭い画面では隠す
+  const $panel = document.getElementById("gdWish"); // 2カラムの左の列の下から引き出すリスト。CSS が狭い画面では隠す
+  const $sum = document.getElementById("gdWishSum"); // 引き出しの取っ手の件数・合計
   const wide = window.matchMedia("(min-width: 641px)");
-  // 右カラムに出ているか（グッズ一覧の2カラム。goods.css の .gd-page .gd-wish と同じ条件。スタイルを測らずに分かるようにしている）
-  const inPanel = () => !!$panel && wide.matches && document.documentElement.classList.contains("gd-page");
+  // 左の列に置いているか（2カラム。goods.css の .gd-wish と同じ条件。スタイルを測らずに分かるようにしている）。
+  // 引き出しを閉じているあいだも作っておく（引き出したらすぐ見える）
+  const inPanel = () => !!$panel && wide.matches;
 
   const short = (g) => L.short(g.name);
   function rowHtml(g, showWhere) {
@@ -285,6 +287,8 @@ window.GM_WISH = (D, L) => {
     if (t.n) $fab.setAttribute("aria-label", `${TEXT.title} ${TEXT.count(t.n)} ${yen(t.sum)}`);
     else $fab.removeAttribute("aria-label");
     $fab.classList.toggle("is-empty", !t.n);
+    // 2カラムの引き出しの取っ手（goods.js）にも、件数と合計を出す
+    if ($sum) $sum.textContent = t.n ? `${TEXT.count(t.n)}　${yen(t.sum)}` : "";
     if ($dlg.open || inPanel()) renderDialog(); // 見えていないリストは作り直さない（見えるようになったとき作る）
   }
   const setQty = (id, q) => {

@@ -1,4 +1,4 @@
-// サイドバー（スマホは画面の下のバー）：日付のボタンをガラスのバーにし、カレンダーのまま、マップ・グッズ・運行情報に切り替える（data.js の nav）。
+// サイドバー（スマホは画面の下のバー）：日付のボタンをガラスのバーにし、カレンダーのまま、マップ・会場・グッズ・運行情報に切り替える（data.js の nav）。
 // 切り替えは新しいドメインと手元だけで出す。github.io（precache.js の SM27_SITE が "pages"）では切り替えボタンを出さず、日付のガラスのバーだけにする（html に .has-views が付かない）。
 // 切り替え先は別ページだが、iframe で画面に重ねて出し、カレンダーは裏に残す（戻ったときにスクロール位置・拡大率がそのまま）。
 // URL は ?view=○○ にして（history.pushState）、戻るボタンでカレンダーに戻れるようにする。
@@ -29,7 +29,7 @@
   if (enabled)
     $nav.innerHTML = `<div class="app-nav__views">${items
       .map(
-        (it) => `<a class="app-nav__item" draggable="false" href="${it.url ? `?view=${esc(it.id)}` : "./"}" data-view="${esc(it.id)}">
+        (it) => `<a class="app-nav__item" draggable="false" href="${it === home ? "./" : `?view=${esc(it.id)}`}" data-view="${esc(it.id)}">
           <svg class="app-nav__icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS[it.icon] ?? ""}</svg><span class="app-nav__label">${esc(it.label)}</span>
         </a>`
       )
@@ -55,13 +55,14 @@
     }
     return u.href;
   };
+  // url の無い項目（カレンダー以外。いまはマップ）は、iframe を入れず背景だけの枠にする（data.js の nav）
   const viewFor = (it) => {
-    if (!it?.url) return null;
+    if (!it || it === home) return null;
     let $v = views.get(it.id);
     if ($v) return $v;
     $v = document.createElement("div");
     $v.className = "app-view";
-    $v.innerHTML = `<iframe class="app-view__frame" src="${esc(srcOf(it))}" title="${esc(it.label)}"></iframe>`;
+    if (it.url) $v.innerHTML = `<iframe class="app-view__frame" src="${esc(srcOf(it))}" title="${esc(it.label)}"></iframe>`;
     document.body.append($v);
     views.set(it.id, $v);
     return $v;
@@ -154,24 +155,25 @@
     // （両方を同時にフェードすると、途中で裏のカレンダーが透けて見えるため。style.css の .is-behind）
     const $prev = views.get(current);
     current = it.id;
+    const isView = it !== home; // カレンダー以外（iframe の表示と、中身の無い表示）
     viewFor(it);
     views.forEach(($v, vid) => {
       $v.classList.toggle("is-open", vid === it.id);
-      $v.classList.toggle("is-behind", !!it.url && $v === $prev);
+      $v.classList.toggle("is-behind", isView && $v === $prev);
     });
     // 裏のカレンダーは、Tab で移ったり読み上げたりしないようにし、ページのスクロールも止める（iframe の端でスクロールが外へ伝わるため）
-    $main.inert = !!it.url;
-    document.documentElement.classList.toggle("is-view-open", !!it.url);
+    $main.inert = isView;
+    document.documentElement.classList.toggle("is-view-open", isView);
     $nav.querySelectorAll("[data-view]").forEach((a) => {
       if (a.dataset.view === it.id) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
     setViewIndex(items.indexOf(it));
-    document.title = it.url ? `${it.label}｜${baseTitle}` : baseTitle;
+    document.title = isView ? `${it.label}｜${baseTitle}` : baseTitle;
     if (!push) return;
     // #日付 はそのまま残す
     const url = new URL(location.href);
-    if (it.url) url.searchParams.set("view", it.id);
+    if (isView) url.searchParams.set("view", it.id);
     else url.searchParams.delete("view");
     history.pushState(null, "", url);
   };
@@ -211,28 +213,6 @@
   const syncDay = () => setDayIndex(Math.max(0, [...$days.querySelectorAll(".day-chip")].findIndex((c) => c.classList.contains("is-active"))));
   new MutationObserver(syncDay).observe($days, { subtree: true, childList: true, attributeFilter: ["class"] });
   syncDay();
-
-  // 表示の中のページから、別の表示へ移る（グッズ一覧 goodsmap/?page=goods のブースの番号 → マップのそのブース）。
-  // { type: "sm27-view", view: "map", search: "year=2026", hash: "#booth-11" } を postMessage で受け取る。
-  // search（年など）が今の iframe と違えば読み込み直し、同じならハッシュだけ変える（マップは hashchange でそのブースを開く）
-  if (enabled)
-    window.addEventListener("message", (ev) => {
-      const { type, view, search = "", hash = "" } = ev.data ?? {};
-      const it = items.find((x) => x.id === view && x.url);
-      if (ev.origin !== location.origin || type !== "sm27-view" || !it) return;
-      const $f = viewFor(it).querySelector("iframe");
-      const want = new URL((local && it.localUrl) || it.url, location.href);
-      for (const [k, v] of new URLSearchParams(search)) want.searchParams.set(k, v);
-      try {
-        const cur = $f.contentWindow.location;
-        if (cur.pathname !== want.pathname || cur.search !== want.search) throw 0;
-        if (cur.hash === hash) cur.hash = ""; // 同じブースをもう一度押したときも hashchange を起こす
-        cur.hash = hash;
-      } catch {
-        $f.src = want.href + hash;
-      }
-      show(it.id, true);
-    });
 
   // 押す前（指が触れた・マウスが乗った・Tab で選んだ時点）から読み込み始め、押したときにはなるべく表示できているようにする
   const warm = (ev) => viewFor(itemOf(ev.target));

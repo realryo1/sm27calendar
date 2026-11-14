@@ -1,5 +1,5 @@
-/* グッズ・出展ブースマップ（試験ページ）
-   配色・フォント・背景・フッターはカレンダーの ../style.css を使い、ここではこのページの部品だけを足す（クラス名は gm- で始め、カレンダーと混ざらないようにする）。
+/* 会場・グッズ（試験ページ）の部品：会場マップ・カード・品の行・タグ・検索欄・ほしいものリスト。ページの並べ方と一覧だけの部品は goods.css
+   配色・フォント・背景・フッターはカレンダーと共通の ../base.css を使い、ここではこのページの部品だけを足す（クラス名は gm- で始め、カレンダーと混ざらないようにする）。
    色は style.css の .theme-pink（販売）・.theme-violet（展示・体験）・.theme-orange（配布・特典）・.theme-gold（公式物販）の --c 系をそのまま使う。
    見た目は SNOW MIKU 2027 公式サイトの下層ページに寄せる：左右の端の金の帯、キラ星の箇条書き、公式物販の見出しのグラデーション。
    飾りのキラ星などは自前の SVG（公式の画像は使わない） */
@@ -15,12 +15,10 @@
    値の型は決めない（"*"）ので、var() の予備の値はそのまま使える */
 @property --gm-map-top { syntax: "*"; inherits: false; }
 @property --gm-map-h { syntax: "*"; inherits: false; }
-@property --gm-pv { syntax: "*"; inherits: false; }
 @property --gm-sec-h { syntax: "*"; inherits: false; }
 
 .gm { padding: var(--gap) var(--gap) 0; } /* 隙間はカレンダーの style.css の --gap */
 .gm-floors[hidden],
-.gm-tools[hidden],
 .gm-empty[hidden] { display: none; }
 /* 見た目には出さない見出し（読み上げ用） */
 .gm-visually-hidden {
@@ -56,72 +54,28 @@
   .is-embed body { padding-bottom: calc(80px + var(--safe-b)); }
 }
 
-/* ---------- 並べ方 ---------- */
+/* ---------- 2カラム（641px〜）の部品 ----------
+   並べ方（左に会場マップと、下から引き出すほしいものリスト、右に一覧）は goods.css。境目はカレンダーの2カラムと同じ 641px（goods.js・goodsmap.js の twoCol と合わせる） */
 /* 2カラムで持ち手を選んだとき、持ち手の列が広がる分（動かせるよう型を登録する） */
 @property --gm-split-extra {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
-.gm-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
-}
-.gm-split { display: none; }
-/* 広い画面は2カラム：画面いっぱいに、左にマップ・右に一覧を並べ、それぞれの列の中だけをスクロールする（ページ全体はスクロールしない）。
-   間の持ち手で幅を変える。境目はカレンダーの2カラムと同じ 641px（goodsmap.js の twoCol と合わせる） */
 @media (min-width: 641px) {
   html,
   body { height: 100%; overflow: hidden; }
-  .gm { height: 100%; padding: var(--gap) 0 0 var(--gap); }
-  /* 上下に隙間（--gap）を空ける（カレンダーの .board と同じ）。画面の高さは goodsmap.js が innerHeight から --app-h に入れる
-     （Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残ることがある。カレンダーと同じ対策） */
-  .gm-main {
-    /* 持ち手の列は、持ち手を選んだとき（下の :has）に --gm-split-extra だけ広がり、左右の列を半分ずつ押しのける。
-       持ち手の列の幅は --gap。持ち手の中心は、広がっても幅の割合（--gm-map-w）の位置 + --gap の半分のまま */
-    grid-template-columns: calc(var(--gm-map-w, 50%) - var(--gm-split-extra) / 2) calc(var(--gap) + var(--gm-split-extra)) minmax(0, 1fr);
-    transition: --gm-split-extra .2s cubic-bezier(.22, 1, .36, 1);
-    gap: 0;
-    height: calc(100svh - var(--gap) * 2);
-    height: calc(100dvh - var(--gap) * 2);
-    height: calc(var(--app-h, 100dvh) - var(--gap) * 2);
-  }
-  .gm-sec { min-height: 0; }
-  /* マップの列はスクロールしない（高さは画面で決まり、マップはその中に収まる）。一覧の列だけがスクロールする。
+  /* マップの列はスクロールしない（高さは左の列の残りで決まり、マップはその中に収まる）。
      枠（角丸・影）は列が持つ（カレンダーの .board と同じ）。中の .gm-mapbox は枠を持たない */
   .gm-sec--map {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     border-radius: 16px;
     background: var(--col-paper);
     box-shadow: var(--gm-shadow);
   }
   .gm-sec--map .gm-mapbox { border-radius: 0; box-shadow: none; }
-  /* 検索欄は列の上に置き、その下の .gm-scroll だけがスクロールする。
-     こうすると、カードは検索欄の下の縁で切れ、丸い角の外にもぐったカードが見えることがない。
-     スクロールはできるが、スクロールバーは出さない */
-  .gm-sec--list {
-    display: flex;
-    flex-direction: column;
-    padding-right: var(--gap);
-    overflow: hidden;
-  }
-  .gm-sec--list .gm-tools { position: relative; flex: none; margin-bottom: 0; } /* 下に書いた .gm-tools より強くする */
-  .gm-scroll {
-    position: relative;
-    z-index: 0;
-    flex: 1;
-    min-height: 0;
-    /* カードの影が左右で切れないよう、8px 広げて同じ分だけ内側に戻す。持ち手（z-index: 1）の上には重ならない */
-    margin: 0 -8px;
-    padding: 12px 8px 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: none;
-  }
-  .gm-scroll::-webkit-scrollbar { display: none; }
-  .gm-sec--list .gm-card { scroll-margin-top: 4px; } /* 検索欄は貼り付かないので、上に空ける分は要らない */
   /* 持ち手：列の高さいっぱいの縦の帯。中央に縦長のつまみを描く（カレンダーの .split と同じ形） */
   .gm-split {
     display: flex;
@@ -144,20 +98,15 @@
   .gm-split:hover::before,
   .gm-split:focus-visible::before,
   .gm-split.is-dragging::before { width: 10px; height: 72px; background: var(--col-primary); }
-  /* 持ち手を選んだら、持ち手の列を広げて左右の列を押しのける（マップと一覧の中身は goodsmap.js が止めておき、動かし終えてから組み直す） */
-  .gm-main:has(> .gm-split:is(:hover, :focus-visible, .is-dragging)) { --gm-split-extra: 12px; }
-  @media (prefers-reduced-motion: reduce) {
-    .gm-main { transition: none; }
-  }
-  /* ドラッグ中のカードは枠だけ幅に合わせ、中身は押した時の幅（--cw、goodsmap.js の freeze）のまま組み直さない。
+  /* ドラッグ中のカードは枠だけ幅に合わせ、中身は押した時の幅（--cw、goods.js の freeze）のまま組み直さない。
      手を止めたら（.is-frozen が外れたら）中身も組み直す（カレンダーの会場カードと同じ） */
   .is-frozen .gm-card { overflow: clip; min-width: 0; }
   .is-frozen { min-width: 0; }
   .is-frozen .gm-card > * { width: var(--cw); }
   .is-frozen .gm-card > .gm-official__head { width: auto; } /* 公式物販の見出しは帯なので、固定すると右端が組み直すたびに段になって動く。幅に合わせて伸び縮みさせる（中身は1行なので軽い） */
   /* 一覧は独立したレイヤーにして、横に動いても中身を描き直さない。最初のフレームが重いので、持ち手にマウスが乗った時点で作っておく */
-  .gm-main:has(> .gm-split:hover) .gm-sec--list,
-  .is-resizing .gm-sec--list { will-change: transform; }
+  .gd-cols:has(> .gm-split:hover) .gd-main,
+  .is-resizing .gd-main { will-change: transform; }
   /* マップの列は、枠の大きさが変わっても中身のレイアウトを外へ広げない（中身は列の中で完結させる） */
   .gm-sec--map { contain: layout paint; }
   /* 全画面のあいだは、列の枠で切らない（contain と overflow があると、position: fixed の全画面が列の中に閉じ込められる） */
@@ -172,14 +121,8 @@
   }
   .is-embed .gm-mapbox.is-full { padding-bottom: calc(10px + var(--embed-nav-h, 0px)); } /* カレンダーの下のバー（親の --nav-h。index.html が写す）の上まで */
   /* ドラッグ中は、描き直しが重い装飾と動きを止め、離したら戻す（カレンダーの .is-resizing と同じ） */
-  .is-resizing .gm-tools { -webkit-backdrop-filter: none; backdrop-filter: none; } /* 背景はほぼ不透明なので見た目は変わらない */
   .is-resizing .gm-tile.is-picked { filter: none; }
   .is-resizing .gm-card.is-flash { animation-play-state: paused; }
-}
-/* 2カラムで画面の高さが低いとき（横向きのスマホ）：上下の隙間を半分に詰める（カレンダーと同じ） */
-@media (min-width: 641px) and (max-height: 500px) {
-  .gm { padding-top: calc(var(--gap) / 2); }
-  .gm-main { height: calc(100svh - var(--gap)); height: calc(100dvh - var(--gap)); height: calc(var(--app-h, 100dvh) - var(--gap)); }
 }
 
 /* ---------- 会場マップ ---------- */
@@ -191,7 +134,6 @@
   min-width: 0; /* 拡大したマップの大きさで、列が広がらないように */
 }
 @media (max-width: 640px) {
-  html:not(.gd-page) .gm { padding-top: 0; } /* （グッズ一覧は上の隙間を残す）マップを画面のいちばん上から出す */
   /* スマホ（1カラム）は、開いたときに画面の上半分（goodsmap.js の shrink が --gm-sec-h に入れる） */
   .gm-sec--map { height: var(--gm-sec-h, 50svh); }
 }
@@ -496,27 +438,7 @@
 .gm-maphint { margin: 6px 0 0; font-size: .7rem; text-align: center; opacity: .7; }
 .gm-maphint:empty { display: none; }
 
-/* ---------- 出展ブースの一覧 ---------- */
-/* 検索欄としぼり込みは上に貼り付ける（長い一覧の途中でも、すぐさがし直せるように） */
-.gm-tools {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: rgb(244 241 255 / .95);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-@media (max-width: 640px) {
-  .gm-tools { margin: 0 calc(-1 * var(--gap)) 12px; padding: 10px var(--gap); border-radius: 0; }
-  .gm-scroll { display: contents; } /* スマホはページ全体がスクロールする */
-}
+/* ---------- 一覧の部品（検索欄・タブ・カード） ---------- */
 .gm-search { position: relative; flex: 1 1 100%; }
 .gm-search__icon {
   position: absolute;
@@ -545,7 +467,7 @@
 }
 .gm-search input::placeholder { color: var(--col-secondary); opacity: 1; }
 .gm-search input:focus { outline: none; border-color: var(--col-ink-primary); box-shadow: 0 0 0 4px rgb(221 103 226 / .15); }
-/* フロアのタブ（ウイングベイ・チ・カ・ホ）：絞り込みの札より少し大きく */
+/* フロアのタブ（ウイングベイ・チ・カ・ホ）：ほしいものリストの設定の札より少し大きく */
 .gm-tab { padding: 6px 18px; font-size: .88rem; }
 @media (max-width: 640px) {
   .gm-tab { padding: 5px 11px; font-size: .78rem; }
@@ -586,7 +508,7 @@
   padding: 0 12px;
   box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c) 28%, transparent); /* 区切りの線。border-bottom だと左の色の帯（番号）を横切って見える */
   background: var(--col-paper);
-  scroll-margin-top: 132px; /* 上に貼り付く検索欄の分 */
+  scroll-margin-top: 12px;
 }
 /* 開いたカードだけ、上下の行から切り離す（影をつけ、上下に間を空ける。角丸はなし） */
 .gm-fold[open],
@@ -700,7 +622,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-price { font-family: var(--font-display); font-size: .98rem; white-space: nowrap; color: var(--c-dark); }
 .gm-price small { margin-right: 2px; font-family: var(--font-base); font-size: .7rem; font-weight: 700; }
 .gm-price--none { font-family: var(--font-base); font-size: .68rem; font-weight: 700; color: #8b8b96; }
-/* タグ（goodslist.js。マップとグッズ一覧で共通）。背景の色は --tag-bg（ほしいものリストの見出しの帯・PDF の見出しの行でも使う）。どれも同じ大きさで、品名の前に 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注 の順 */
+/* タグ（goodslist.js）。背景の色は --tag-bg（ほしいものリストの見出しの帯・PDF の見出しの行でも使う）。どれも同じ大きさで、品名の前に 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注 の順 */
 .gm-tag {
   display: inline-block;
   margin-right: 6px;
@@ -735,7 +657,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 }
 .gm-links a:hover { filter: brightness(1.1); }
 
-/* 開け閉めできるカード（details.gm-fold。マップとグッズ一覧（?page=goods）で共通）。初めは閉じていて、選んだ・さがした・しぼり込んだときに開く（各ページの JS）。
+/* 開け閉めできるカード（details.gm-fold）。初めは閉じていて、選んだ・さがした・しぼり込んだときに開く（goods.js）。
    見出しの行（summary.gm-card__head）を押すと開閉し、名前のすぐ右に件数（.gm-fold__n。公式物販の見出しと同じ位置）、右端に矢印（開いているときは下向き、閉じているときは右向き）。
    見出しの中のブースの番号（ボタン・リンク）は、押しても開け閉めしない（summary の中の操作できる部品は、それ自体として働くため） */
 .gm-fold > summary,
@@ -791,11 +713,10 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-official__maker { margin: 14px 0 0; font-size: .76rem; font-weight: 900; color: var(--col-gold-dark); }
 .gm-loose .gm-card__name { font-size: .92rem; }
 
-/* スマホ（1カラム）のマップ：画面の上に貼り付け、ページを下へスクロールするほど低くし、最後は検索欄の上の細いプレビューにする（goodsmap.js の shrink）。
-   位置と高さは goodsmap.js が --gm-map-top・--gm-map-h に入れる。もとの場所の高さは .gm-sec--map が持つので、一覧の位置は動かない */
+/* スマホ（1カラム）のマップ（「会場マップ」のバーで開いたとき）：画面の上に貼り付け、ページを下へスクロールすると細いプレビューにする（goodsmap.js の shrink）。
+   位置と高さは goodsmap.js が --gm-map-top・--gm-map-h に入れる。もとの場所の高さは .gm-sec--map が持つ */
 @media (max-width: 640px) {
   :root { --gm-preview: 160px; } /* プレビューの高さ（goodsmap.js の PREVIEW と合わせる） */
-  .gm-main { gap: 0; } /* 縮んでいくマップの下端に、検索欄がすき間なく続くように */
   .gm-mapbox {
     position: fixed;
     top: var(--gm-map-top, 0px);
@@ -824,14 +745,11 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   html.gm-noscroll,
   html.gm-noscroll body { overflow: hidden; }
   .gm-mapbox.is-preview { padding: 4px 0; }
-  /* 検索欄はマップの下に貼り付く（--gm-pv はいまのマップの高さ） */
-  .gm-tools { top: var(--gm-pv, 0px); }
-  .gm-tools.is-animating { transition: top .25s ease-out; } /* 検索欄が貼り付く位置も、枠の高さと同じ動きで（先に動くと、枠と重なる・すき間ができる） */
-  .gm-card { scroll-margin-top: calc(var(--gm-preview) + 132px); }
+  /* マップが開いているときは、カードへ移ったときに頭がプレビューの裏に隠れないようにする */
+  html.is-map-open .gm-card { scroll-margin-top: calc(var(--gm-preview) + 12px); }
   /* プレビューを押して大きくするときだけ、高さをなめらかに変える（スクロールで縮むときは指に合わせるので動かさない） */
   .gm-mapbox.is-animating,
   .gm-sec--map.is-animating { transition: height .25s ease-out; }
-  html:not(.gd-page) { overflow-anchor: none; } /* 一覧の場所が枠と一緒に動くので、ブラウザにスクロール位置を直させない */
   /* プレビューは、どこを押してもマップだけが大きくなる（goodsmap.js の expand） */
   .gm-mapbox.is-preview .gm-map { cursor: pointer; }
   .gm-mapbox.is-preview .gm-map * { cursor: pointer; pointer-events: none; } /* プレビューのタッチは拡大専用：ブースは押せず、押下・ホバーの色も付かない（押すと .gm-map のクリックで大きくなる） */
@@ -846,7 +764,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
   .gm-card.is-flash { animation: none; }
 }
 
-/* ---------- ほしいものリスト（wishlist.js。マップとグッズ一覧で共通） ---------- */
+/* ---------- ほしいものリスト（wishlist.js） ---------- */
 :root {
   --gm-heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z'/%3E%3C/svg%3E");
   --gm-heart-line: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'%3E%3Cpath d='M12 20s-7-4.3-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.5 1.2 5.2 3.1C13.7 6.2 15.2 5 17.2 5c3.3 0 5.2 3.3 3.8 6.4C19 15.7 12 20 12 20z'/%3E%3C/svg%3E");
@@ -995,7 +913,7 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-wishlist__opt > span { flex: none; font-size: .72rem; font-weight: 900; color: var(--col-secondary-dark); }
 .gm-wishlist__opt .gm-chips { flex-wrap: nowrap; gap: 4px; }
 .gm-wishlist__menu .gm-chip { display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 4em; padding: 0 10px; font-size: .78rem; line-height: 1; white-space: nowrap; }
-.gm-wishlist__inner { container: wishlist / inline-size; } /* リストの幅（画面の幅と一致しない。グッズ一覧の2カラムでは右の列で、幅を変えられる）で品の行の組み方を変える */
+.gm-wishlist__inner { container: wishlist / inline-size; } /* リストの幅（画面の幅と一致しない。2カラムでは左の列で、幅を変えられる）で品の行の組み方を変える */
 @media (max-width: 640px) {
   /* リストを広く見せるため、上（見出し・設定）と下（合計）を詰める */
   .gm-wishlist__head { padding: 10px 12px 10px 16px; }
