@@ -23,7 +23,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     fullOff: "全画面を閉じる",
     legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示", goods: "グッズ販売・展示など", marche: "マルシェ" },
     zoom: { out: ["－", "縮小"], fit: ["全体", "全体を表示"], in: ["＋", "拡大"] },
-    turn: ["↻", "マップを右へ90度回す"],
+    turn: ["回転", "マップを右へ90度回す"],
   };
 
   const $ = (id) => document.getElementById(id);
@@ -182,7 +182,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
           [...t].map((c, j, cs) => {
             const tx = cx + ((lines.length - 1) / 2 - i) * size * 1.2;
             const ty = cy + (j - (cs.length - 1) / 2) * size * 1.05;
-            return text(c, tx, ty, /[ー－〜～]/.test(c) ? ` transform="rotate(90 ${r1(tx)} ${r1(ty)})"` : "");
+            return text(c, tx, ty, /[ー－〜～（）()「」]/.test(c) ? ` transform="rotate(90 ${r1(tx)} ${r1(ty)})"` : "");
           })
         );
       const spot = a.spot && D.spots[a.spot];

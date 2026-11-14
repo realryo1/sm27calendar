@@ -10,8 +10,7 @@
 window.GM_DATA = {
   year: 2027,
   // データを書き写した日（公式サイトを見た日）
-  updated: "2026-10-30",
-  notice: "試験版：会場の略図です。ブース・グッズの内容は未発表です。",
+  updated: "2026-11-19",
 
   event: {
     name: "SNOW MIKU 2027",
@@ -21,10 +20,8 @@ window.GM_DATA = {
   priceNote: "",
 
   sources: [
-    { label: "会場一覧", url: "https://snowmiku.com/2027/info-venue.html" },
-    { label: "ウイングベイ小樽", url: "https://snowmiku.com/2027/event-wingbay.html" },
+    { label: "SNOW MIKU 2027公式サイト", url: "https://snowmiku.com/2027/info-venue.html" },
   ],
-  mapNote: "店舗配置図・広場マップをもとに描いた略図です。",
   officialMap: [
     { label: "ウイングベイ小樽のフロアガイド", url: "https://wingbay-otaru.co.jp/floor/" },
     { label: "チ・カ・ホの広場マップ", url: "https://www.sapporo-chikamichi.jp/guide/" },

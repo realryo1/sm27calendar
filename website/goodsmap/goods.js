@@ -7,7 +7,6 @@
 (() => {
   const D = window.GM_DATA;
   if (!D) return;
-  const E = D.event;
   // カレンダーのサイドバーから iframe で開いたとき（?embed=1。カレンダーの nav.js）。goodsmap.css の .is-embed（金の帯を消す・スマホで下を空ける）も効く
   const params = new URLSearchParams(location.search);
   const EMBED = params.has("embed");
@@ -28,11 +27,10 @@
     empty: "見つかりませんでした。ほかのことばでさがすか、「すべて」を押してしぼり込みを外してみてください。",
     // 2カラムの左の列のほしいものリストの見出し
     drawer: "ほしいものリスト",
-    mapNote: "公式の会場マップをもとに描いた略図です。",
     officialMap: "公式の会場マップ（画像）",
-    updated: (date) => `データ：${date}時点の公式サイト・企業のお品書き`,
+    updated: (date) => `データ：${date}時点の公式サイト`,
     disclaimer:
-      "本ページは非公式の試験版です。\nこのページの問い合わせはx.com/realryo1にお願いします。\n情報の正確性には留意していますが、最終的な判断は利用者が行ってください。\n商品の写真は、品名のリンクから公式サイト・企業のページで見られます。",
+      "本ページは非公式です。\nこのページの問い合わせはx.com/realryo1にお願いします。\n情報の正確性には留意していますが、最終的な判断は利用者が行ってください。",
     sources: "出典",
     calendar: "非公式カレンダーへ戻る",
   };
@@ -193,14 +191,13 @@
   window.GM_WISH(D, L); // ほしいものリスト（wishlist.js。品の行の♡と、浮かぶボタン・左の列）
   $("gdEmpty").textContent = TEXT.empty;
   const [y, mo, d] = dateOf(D.updated);
-  const sources = [...D.sources.map((s) => ({ ...s, label: `${s.label}（${E.name}）` })), ...(D.notices ?? []).filter((n) => n.kind === "maker")];
   const officialMaps = [].concat(D.officialMap ?? []).map((m) => (typeof m === "string" ? { label: TEXT.officialMap, url: m } : m));
+  const sources = [...D.sources, ...(D.notices ?? []).filter((n) => n.kind === "maker"), ...officialMaps];
   $("gdFooter").innerHTML = `
     ${D.notice ? `<p>${esc(D.notice)}</p>` : ""}
     <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
     <p>${br(TEXT.disclaimer)}</p>
-    <p>${esc(D.mapNote ?? TEXT.mapNote)}${officialMaps.map((m) => `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.label)} ↗</a>`).join("")}</p>
-    <p class="gm-sources">${esc(TEXT.sources)}：${sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)} ↗</a>`).join("／")}</p>
+    <p class="gm-sources">${esc(TEXT.sources)}：${sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)} ↗</a>`).join("　")}</p>
     ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
 
   // ---------- ほしいものリスト（2カラムの左の列。いつも開いている） ----------
