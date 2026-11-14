@@ -1,15 +1,19 @@
 // 会場・グッズ（試験ページ）
 // データ（data-○○○○.js の window.GM_DATA）・一覧の部品（goodslist.js）・会場マップ（goodsmap.js）・ほしいものリスト（wishlist.js）をまとめるページ本体。
-// グッズを売り場（公式物販・企業ブース・ライブ物販）ごとにまとめ、最後に会場の売り場・設備の説明を置く。
-// 2カラム（641px〜）は、左に会場マップ（下からほしいものリストを引き出せる）、右に一覧。スマホは一覧の上に会場マップ（「会場マップ」のバーで開け閉め）。
-// マップのブースを押すと一覧のそのカードへ、カードの番号を押すとマップでそのブースを示す
+// 同じページを2つの表示に使い分ける（?part=）。カレンダーのサイドバーでは、どちらも iframe で開く（nav.js）。
+//   グッズ（既定）：グッズを売り場（公式物販・企業ブース・ライブ物販）ごとにまとめ、最後に会場の売り場・設備の説明を置く。2カラム（641px〜）は左にほしいものリスト、右に一覧
+//   マップ（?part=map）：会場マップだけを画面いっぱいに出す
+// マップのブースを押すとグッズの一覧のそのカードへ、カードの番号を押すとマップでそのブースを示す（表示をまたぐので、親の nav.js が取り次ぐ。下の「表示どうしのやりとり」）
 (() => {
   const D = window.GM_DATA;
   if (!D) return;
   const E = D.event;
   // カレンダーのサイドバーから iframe で開いたとき（?embed=1。カレンダーの nav.js）。goodsmap.css の .is-embed（金の帯を消す・スマホで下を空ける）も効く
-  const EMBED = new URLSearchParams(location.search).has("embed");
+  const params = new URLSearchParams(location.search);
+  const EMBED = params.has("embed");
   if (EMBED) document.documentElement.classList.add("is-embed");
+  const PART = params.get("part") === "map" ? "map" : "goods";
+  document.documentElement.classList.add(`is-part-${PART}`);
 
   // 年は上に出さず、フッターのリンクで前年の見本（?year=2026）を開く（正式リリース時に削除）。データのファイルが年ごとなので読み込み直す
   const SAMPLE_YEAR = 2026;
@@ -35,9 +39,8 @@
     },
     liveNone: "グッズはまだ載せていません。",
     empty: "見つかりませんでした。ほかのことばでさがすか、「すべて」を押してしぼり込みを外してみてください。",
-    // 2カラムの左の列の下から引き出すほしいものリストの取っ手と、スマホのマップの開け閉めのバー
+    // 2カラムの左の列のほしいものリストの見出し
     drawer: "ほしいものリスト",
-    mapBar: "会場マップ",
     mapNote: "公式の会場マップをもとに描いた略図です。",
     officialMap: "公式の会場マップ（画像）",
     updated: (date) => `データ：${date}時点の公式サイト・企業のお品書き`,
@@ -52,34 +55,51 @@
   const br = (s) => esc(s).replace(/\n/g, "<br>");
   const dateOf = (s) => s.split("-").map(Number);
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  // 2カラムにする幅。goods.css・goodsmap.css・goodsmap.js と合わせる
+  // 2カラムにする幅。goods.css・goodsmap.css と合わせる
   const twoCol = matchMedia("(min-width: 641px)");
-  // この端末に覚える（ほしいものリストの引き出し・スマホのマップの開け閉め）。読めない・書けないときは覚えない
-  const load = (k) => {
-    try {
-      return localStorage.getItem(k);
-    } catch {
-      return null;
-    }
-  };
-  const save = (k, v) => {
-    try {
-      localStorage.setItem(k, v);
-    } catch {}
-  };
 
-  // ---------- データの整理と一覧の部品（goodslist.js） ----------
+  // ---------- 表示どうしのやりとり ----------
+  // カレンダーの中（iframe）では、マップとグッズが別のページなので、親（nav.js）にメッセージを送って表示を切り替えてもらい、相手のページへ取り次いでもらう。
+  //   送る：{ type: "map", id }（マップの表示に切り替えてそのブースを示す）／{ type: "booth", id }（グッズの表示に切り替えてそのカードへ）／
+  //         { type: "select", id }（切り替えずに、マップでそのブースを選んでおく）／{ type: "hits", hits, active }（しぼり込みの結果。マップで濃く出す）／
+  //         { type: "year", year }（前年の見本の切り替え。両方を読み込み直す）／{ type: "ready" }（読み込み終わり）
+  //   受ける：{ type: "pick", id, show }（マップ。showならそのブースを枠のまん中へ）／{ type: "hits", … }（マップ）／{ type: "card", id }（グッズ）
+  // 親が無いとき（このページを直接開いたとき）は、もう一方の表示のページを、ブースの番号つきのハッシュ（#booth-○○）で開く
+  const TALK = "goodsmap";
+  const embedded = EMBED && parent !== window;
+  const tell = (msg) => parent.postMessage({ sm27: TALK, ...msg }, location.origin);
+  const partHref = (part, id) => {
+    const url = new URL(location.href);
+    if (part === "map") url.searchParams.set("part", "map");
+    else url.searchParams.delete("part");
+    url.hash = id ? `#booth-${id}` : "";
+    return url.search + url.hash || "?";
+  };
+  const toPart = (part, id) => (embedded ? tell({ type: part === "map" ? "map" : "booth", id }) : location.assign(partHref(part, id)));
+  const listen = (handlers) =>
+    addEventListener("message", (ev) => {
+      const m = ev.data;
+      if (ev.origin !== location.origin || ev.source !== parent || m?.sm27 !== TALK) return;
+      handlers[m.type]?.(m);
+    });
+
+  // 年・読み込み直しのたびに、同じデータを両方の表示で作る。一覧の部品（goodslist.js）はどちらの表示でも使う
   // カードの番号は、押すとマップでそのブースを示すボタン
-  let M = null; // 会場マップ（goodsmap.js）。一覧を描いてから作る
   const L = window.GM_LIST(D, {
-    beforeScroll: () => M?.holdPreview({ animate: true }) ?? 0,
     boothNo: (b) => `<button type="button" class="gm-no" data-map="${esc(b.no)}" aria-label="${esc(L.TEXT.showOnMap(L.boothName(b)))}">${esc(L.boothLabel(b))}</button>`,
   });
-  const { norm, onSale, boothBy, official, live, loose } = L;
+  const { boothBy } = L;
+
+  if (PART === "map") return startMap();
+
+  const { norm, onSale, official, live, loose } = L;
   // 企業ブースのカードは、すべてのブース（マップのブースを押したときに移る先）
   const booths = D.booths;
   const boothSale = D.goods.filter((g) => g.booth && onSale(g)).length;
   const COUNT = { official: official.length, booth: boothSale, live: live.length, loose: loose.length };
+
+  // この表示にはマップを置かない（マップは別の表示）
+  $("map").remove();
 
   // ---------- 売り場のしぼり込み ----------
   const THEME = { official: "gold", booth: "pink", live: "violet", loose: "indigo", spot: "violet" };
@@ -135,7 +155,7 @@
   // ---------- しぼり込み ----------
   // 売り場は節ごとに、検索は品の行ごとに隠す。検索中は、中に見える行が無いカード・節を隠す。会場の案内は「すべて」のときだけ。
   // しぼり込み・検索中は見えているカードを開き、外したらそうして開いたものだけ閉じる（goodslist.js の fold）。
-  // 見えているカードは、マップでも当たったところとして濃く出す（goodsmap.js の setHits）
+  // 見えているカードは、マップの表示にも送り、当たったところとして濃く出す（goodsmap.js の setHits）
   const state = { at: "all", q: "" };
   const $list = $("gdList");
   const $query = $("gdQuery");
@@ -162,7 +182,7 @@
     $("gdGuide")
       .querySelectorAll("button[data-at]")
       .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.at === state.at)));
-    M?.setHits(hits, active);
+    if (embedded) tell({ type: "hits", hits: [...hits], active });
   }
   function resetFilter() {
     state.at = "all";
@@ -187,140 +207,51 @@
   const [y, mo, d] = dateOf(D.updated);
   const sources = [...D.sources.map((s) => ({ ...s, label: `${s.label}（${E.name}）` })), ...(D.notices ?? []).filter((n) => n.kind === "maker")];
   const officialMaps = [].concat(D.officialMap ?? []).map((m) => (typeof m === "string" ? { label: TEXT.officialMap, url: m } : m));
+  const sampleYear = D.year === SAMPLE_YEAR ? 2027 : SAMPLE_YEAR;
   $("gdFooter").innerHTML = `
     ${D.notice ? `<p>${esc(D.notice)}</p>` : ""}
     <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
     <p>${br(TEXT.disclaimer)}</p>
     <p>${esc(D.mapNote ?? TEXT.mapNote)}${officialMaps.map((m) => `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.label)} ↗</a>`).join("")}</p>
     <p class="gm-sources">${esc(TEXT.sources)}：${sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)} ↗</a>`).join("／")}</p>
-    <p class="site-footer__repo"><a href="${esc(yearHref(D.year === SAMPLE_YEAR ? 2027 : SAMPLE_YEAR))}">${esc(D.year === SAMPLE_YEAR ? TEXT.sampleClose : TEXT.sampleOpen)}</a></p>
+    <p class="site-footer__repo"><a href="${esc(yearHref(sampleYear))}" data-year="${sampleYear}">${esc(D.year === SAMPLE_YEAR ? TEXT.sampleClose : TEXT.sampleOpen)}</a></p>
     ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
+  // カレンダーの中では、マップの表示も同じ年にそろえるため、親に読み込み直してもらう
+  if (embedded)
+    $("gdFooter").addEventListener("click", (ev) => {
+      const a = ev.target.closest("[data-year]");
+      if (!a || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      ev.preventDefault();
+      tell({ type: "year", year: Number(a.dataset.year) });
+    });
 
-  // ---------- 会場マップの置き場所 ----------
-  // 2カラムは左の列にいつも出す（ほしいものリストは、その下から引き出して上に重ねる）。
-  // スマホは一覧の上で、「会場マップ」のバーで開け閉めする（はじめは閉じる。開け閉めはこの端末に覚える）
-  const $sec = $("map");
-  const $side = $("gdSide");
-  const $drawer = $("gdDrawer");
-  const $bar = $("gdMapBar");
-  const $wishPanel = $("gdWish");
-  let open = load("sm27-goods-map") === "1";
-  const mapVisible = () => twoCol.matches || open;
-
-  $bar.innerHTML = `<span class="gd-mapbar__label">${esc(TEXT.mapBar)}</span><span class="gd-mapbar__sub">${esc(D.floors.map((f) => f.label).join("・"))}</span>`;
-
-  // マップの節を、2カラムなら左の列（引き出しの前）に、スマホなら一覧の上のバーの下に置く。見せる・隠すは CSS（goods.css）
-  function place() {
-    if (twoCol.matches) {
-      if ($sec.parentElement !== $side) $side.insertBefore($sec, $drawer);
-    } else if ($sec.previousElementSibling !== $bar) $bar.after($sec);
-    document.documentElement.classList.toggle("is-map-open", open);
-    $bar.setAttribute("aria-expanded", String(open));
-  }
-  place();
-
-  // ---------- ほしいものリストの引き出し（2カラム） ----------
-  // 左の列の下端の取っ手（件数・合計つき。wishlist.js が入れる）を押すと開け閉めし、上下にドラッグすると引き出す高さを変える。
-  // 引き出したリストはマップの上に重ねる（マップの大きさは変えないので、ドラッグ中も測り直さない）。
-  // 下端近く（取っ手の高さ＋CLOSE_AT px より下）で離すと閉じる。開け閉めと高さ（左の列に対する割合）はこの端末に覚える。
-  // ほしいものリストのリンク ?wish= で開いたときは、開いて始める
-  const $handle = $("gdDrawerHandle");
-  const $sheet = $drawer.querySelector(".gd-drawer__sheet");
+  // ---------- ほしいものリスト（2カラムの左の列。いつも開いている） ----------
+  // 名前と件数・合計（wishlist.js が入れる）を見出しに出す。スマホは浮かぶボタンから dialog で開く
   $("gdDrawerLabel").textContent = TEXT.drawer;
-  const HANDLE = 48; // 取っ手の高さ（goods.css の .gd-drawer と合わせる）
-  const CLOSE_AT = 60;
-  const MIN_OPEN = 160; // 開いたときの最低の高さ
-  let drawerOpen = new URLSearchParams(location.search).has("wish") || load("sm27-goods-wish-open") === "1";
-  let drawerK = Math.min(1, Math.max(0.2, parseFloat(load("sm27-goods-wish-h")) || 0.6)); // 開いた高さ（左の列の高さに対する割合）
-  const openH = () => Math.round(Math.min($side.clientHeight, Math.max(MIN_OPEN, drawerK * $side.clientHeight)));
-  function layoutDrawer() {
-    $sheet.style.setProperty("--drawer-h", `${drawerOpen ? openH() : HANDLE}px`);
-    $drawer.classList.toggle("is-open", drawerOpen);
-    $handle.setAttribute("aria-expanded", String(drawerOpen));
-    $wishPanel.inert = !drawerOpen; // 閉じているあいだは、Tab で中のボタンに止まらない
-  }
-  function setDrawer(next) {
-    drawerOpen = next;
-    save("sm27-goods-wish-open", drawerOpen ? "1" : "0");
-    layoutDrawer();
-  }
-  layoutDrawer();
-  {
-    let drag = null;
-    let suppress = false; // ドラッグのあとのクリックで、開け閉めしない
-    $handle.addEventListener("pointerdown", (ev) => {
-      if (ev.button) return;
-      drag = { id: ev.pointerId, y: ev.clientY, h: $sheet.getBoundingClientRect().height, moved: false };
-      // 押した時点で捕まえる（最初の動きで取っ手の外へ出ても、動きを受け取れるように。クリックは取っ手にそのまま届く）
-      $handle.setPointerCapture(ev.pointerId);
-    });
-    $handle.addEventListener("pointermove", (ev) => {
-      if (!drag || ev.pointerId !== drag.id) return;
-      const dy = ev.clientY - drag.y;
-      if (!drag.moved) {
-        if (Math.abs(dy) < 5) return;
-        drag.moved = true;
-        $drawer.classList.add("is-dragging");
-      }
-      drag.cur = Math.min($side.clientHeight, Math.max(HANDLE, drag.h - dy));
-      $sheet.style.setProperty("--drawer-h", `${drag.cur}px`);
-    });
-    const end = (ev) => {
-      if (!drag || ev.pointerId !== drag.id) return;
-      const d = drag;
-      drag = null;
-      if (!d.moved) return;
-      $drawer.classList.remove("is-dragging");
-      suppress = true;
-      setTimeout(() => (suppress = false), 0);
-      if (d.cur < HANDLE + CLOSE_AT) return setDrawer(false);
-      drawerK = Math.max(MIN_OPEN, d.cur) / $side.clientHeight;
-      save("sm27-goods-wish-h", drawerK.toFixed(3));
-      setDrawer(true);
-    };
-    $handle.addEventListener("pointerup", end);
-    $handle.addEventListener("pointercancel", end);
-    $handle.addEventListener("click", () => !suppress && setDrawer(!drawerOpen));
-    // 画面の高さが変わったら、覚えた割合で高さを合わせ直す
-    window.addEventListener("resize", layoutDrawer);
-  }
-  // スマホのマップを開け閉めする。anchor（カードなど）を渡したときは、マップが上に出ても、それが画面の同じ位置に残るようにする
-  // （先頭付近にいるときは動かさない。マップが開いた高さで出て、一覧はその下に続く）
-  function setOpen(next, { anchor = null } = {}) {
-    if (next === open) return;
-    if (!next) M.hide();
-    const top = anchor?.getBoundingClientRect().top;
-    open = next;
-    save("sm27-goods-map", open ? "1" : "0");
-    place();
-    if (!open) return;
-    M.show();
-    if (anchor && window.scrollY > 60) window.scrollBy(0, anchor.getBoundingClientRect().top - top);
-  }
-  // マップを見える状態にする（2カラムは、引き出したほしいものリストを閉じる。スマホはマップを開く）
-  const revealMap = (anchor) => (twoCol.matches ? drawerOpen && setDrawer(false) : setOpen(true, { anchor }));
+  const $wishPanel = $("gdWish");
 
-  // ---------- 選択（マップ ⇄ 一覧） ----------
+  // ---------- 選択（一覧のカード） ----------
   // ブース・売り場・設備の名前から、一覧のカードを探す（中にブースがある売り場は、その先頭のブース）
   const cardOf = (id) => $(`booth-${D.spots[id]?.booths?.[0] ?? id}`) ?? $(`spot-${id}`);
+  // 選んだカードを強調する（#booth-○○ も合わせる）
+  function pickCard($card, id) {
+    $list.querySelectorAll(".gm-card.is-picked").forEach((el) => el.classList.remove("is-picked"));
+    $card.classList.add("is-picked");
+    if (boothBy.has(id) || id === "official") history.replaceState(null, "", `#booth-${id}`);
+  }
   // 一覧のカードへ移って光らせる。しぼり込みで隠れているときは、しぼり込みを解く
   function showCard(id, { instant = false } = {}) {
     const $card = cardOf(id);
     if (!$card) return;
     if ($card.hidden) resetFilter();
     L.openCard($card); // 選んで開いたので、しぼり込みを外しても閉じない
-    const wait = M.holdPreview({ animate: !instant }); // スマホでマップが縮むアニメーションが終わってから、位置を決めて移る
-    const go = () => {
-      $card.scrollIntoView({ behavior: instant ? "auto" : behavior, block: "start" });
-      $card.classList.remove("is-flash");
-      void $card.offsetWidth;
-      $card.classList.add("is-flash");
-    };
-    if (wait) setTimeout(go, wait);
-    else go();
+    pickCard($card, id);
+    $card.scrollIntoView({ behavior: instant ? "auto" : behavior, block: "start" });
+    $card.classList.remove("is-flash");
+    void $card.offsetWidth;
+    $card.classList.add("is-flash");
   }
 
-  M = window.GM_MAP(D, L, { $list, onActivate: (id) => showCard(id), visible: mapVisible });
   applyFilter();
 
   // ---------- 操作 ----------
@@ -335,37 +266,25 @@
     state.q = $query.value;
     applyFilter();
   });
-  // カードの番号を押すと、マップを出してそのブースを示す。
-  // カードを開いたときは、マップにあるブース・売り場ならそれを選ぶ（マップが見えていれば示す。見えていないときは、マップを出さない）
+  // カードの番号を押すと、マップの表示に切り替えてそのブースを示す。
+  // カードを開いたときは、マップでそのブース・売り場を選んでおく（切り替えはしない。マップに無いものは、マップの表示が無視する）
   $list.addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-map]");
-    if (el) {
-      revealMap(el.closest(".gm-card"));
-      return M.pick(el.dataset.map, { toMap: true });
-    }
+    if (el) return toPart("map", el.dataset.map);
     const $card = ev.target.closest(".gm-card__head, .gm-official__head")?.parentElement;
-    if ($card && !$card.open && M.onMap($card.dataset.no)) M.pick($card.dataset.no, { toMap: mapVisible() });
+    if ($card && !$card.open && $card.dataset.no && embedded) tell({ type: "select", id: $card.dataset.no });
   });
-  $bar.addEventListener("click", () => setOpen(!open));
-  // 幅が変わって2カラムとスマホを行き来したら、マップの節を置き直す（2カラムになったら、引き出しの高さも合わせ直す）
-  twoCol.addEventListener("change", () => {
-    M.hide();
-    place();
-    if (mapVisible()) M.show();
-    layoutDrawer();
-  });
+  if (embedded) listen({ card: (m) => showCard(m.id) });
 
   // 2カラムの持ち手：カレンダー（app.js）と同じ操作・同じ処理（util.js の splitter）。ドラッグ（ダブルクリックで既定、← → キーでも動く）で左の列の幅（割合）を変え、この端末に覚える。
-  // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。マップも測り直さない（goodsmap.js の holdSize）。
-  // 手を止めたら、その幅で組み直す
+  // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。手を止めたら、その幅で組み直す
   {
     const $cols = $("gdCols");
     const $main = $("gdMain");
-    // 2カラムのタッチ：一覧とほしいものリストを、別々の指で独立してスクロールできるようにする（util.js の touchPan。マップは goodsmap.js が自分で動かす）
+    // 2カラムのタッチ：一覧とほしいものリストを、別々の指で独立してスクロールできるようにする（util.js の touchPan）
     TT_UTIL.touchPan($main, { enabled: () => twoCol.matches });
     TT_UTIL.touchPan($wishPanel, { scroller: () => $wishPanel.querySelector(".gm-wishlist__body"), enabled: () => twoCol.matches });
     const freeze = () => {
-      M.holdSize();
       if ($main.classList.contains("is-frozen")) return;
       $main.querySelectorAll(".gm-card").forEach((card) => {
         const cs = getComputedStyle(card);
@@ -373,26 +292,19 @@
       });
       $main.classList.add("is-frozen");
     };
-    // 幅を変えたか（持ち手を選んだだけで列が広がったときは、マップを測り直さない。外したら元の幅に戻るので、中身は元の大きさのままでぴったり収まる）
-    let moved = false;
-    const thaw = () => {
-      $main.classList.remove("is-frozen");
-      M.releaseSize(moved);
-      moved = false;
-    };
-    // 左の列（会場マップ・ほしいものリスト）が読める幅の下限は300px、一覧は320px
+    const thaw = () => $main.classList.remove("is-frozen");
+    // 左の列（ほしいものリスト）が読める幅の下限は300px、一覧は320px
     const sp = TT_UTIL.splitter({
       $split: $("gdSplit"),
       $main: $cols,
       cssVar: "--gd-side-w",
-      key: "sm27-goods-side-w",
-      def: 50,
+      key: "sm27-goods-wish-w",
+      def: 40,
       minA: 300,
       minB: 320,
       hold: true,
       freeze,
       thaw,
-      onChange: () => (moved = true),
     });
     // 高さは dvh ではなく innerHeight で決める（goods.css の --app-h。カレンダーと同じ。Android の Chrome は、読み込み直したあと dvh が古い高さのまま残ることがある）。
     // 画面の幅が変わったら下限をかけ直す
@@ -404,25 +316,56 @@
     resize();
   }
 
-  // #booth-○○ なら、そのブースを選んで一覧のカードへ。#map-○○ なら、マップを出してそのフロアのタブ（共有したリンクから開いたとき・開いたままハッシュが変わったとき）
+  // #booth-○○ なら、そのブースの一覧のカードへ（共有したリンクから開いたとき・開いたままハッシュが変わったとき）
   function openHash({ instant = false } = {}) {
     let id = "";
-    let tab = "";
     try {
       id = decodeURIComponent(location.hash.match(/^#booth-(.+)$/)?.[1] ?? "");
-      tab = decodeURIComponent(location.hash.match(/^#map-(.+)$/)?.[1] ?? "");
     } catch {
       return; // 壊れたハッシュは無視する
     }
-    if (tab && D.floors.some((f) => f.id === tab)) {
-      revealMap();
-      M.setFloor(tab);
-      return;
-    }
     if (!boothBy.has(id) && id !== "official") return;
-    M.pick(id);
     showCard(id, { instant });
   }
   window.addEventListener("hashchange", () => openHash());
   openHash({ instant: true });
+  if (embedded) tell({ type: "ready" });
+
+  // ---------- マップの表示（?part=map） ----------
+  // 会場マップだけを画面いっぱいに出す。ブース・売り場を押すと、グッズの表示のそのカードへ移る
+  function startMap() {
+    const $side = $("gdSide");
+    $side.append($("map"));
+    $("gdMain").remove();
+    $("gdSplit").remove();
+    $("gdDrawer").remove();
+    // 高さは innerHeight で決める（グッズの表示と同じ。goods.css の --app-h）
+    const $cols = $("gdCols");
+    const resize = () => $cols.style.setProperty("--app-h", `${innerHeight}px`);
+    window.addEventListener("resize", resize);
+    resize();
+
+    const M = window.GM_MAP(D, L, { fixed: true, visible: () => true, onActivate: (id) => toPart("goods", id) });
+    // #booth-○○ ならそのブースをマップで示す。#map-○○ ならそのフロアのタブ
+    function openHash() {
+      let id = "";
+      let tab = "";
+      try {
+        id = decodeURIComponent(location.hash.match(/^#booth-(.+)$/)?.[1] ?? "");
+        tab = decodeURIComponent(location.hash.match(/^#map-(.+)$/)?.[1] ?? "");
+      } catch {
+        return; // 壊れたハッシュは無視する
+      }
+      if (tab) M.setFloor(tab);
+      else if (M.onMap(id)) M.pick(id, { toMap: true });
+    }
+    window.addEventListener("hashchange", openHash);
+    openHash();
+    if (!embedded) return;
+    listen({
+      pick: (m) => M.onMap(m.id) && M.pick(m.id, { toMap: m.show }),
+      hits: (m) => M.setHits(new Set(m.hits), m.active),
+    });
+    tell({ type: "ready" });
+  }
 })();

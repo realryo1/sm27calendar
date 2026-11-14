@@ -61,19 +61,19 @@
 <body>
   <div class="gm">
     <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2026/location_wingbay.html#wingbay_sponsor">出展ブース</a>もご覧ください。</p></noscript>
-    <!-- 2カラム（641px〜）：左に会場マップ（下からほしいものリストを引き出せる）、右に一覧。それぞれの列がスクロールし、ページ全体はスクロールしない。間の持ち手で幅を変える。
-         スマホ：ページ全体がスクロールする。一覧の上に会場マップ（開け閉めできる）、ほしいものリストは浮かぶボタンから dialog -->
+    <!-- ?part=map（カレンダーのサイドバーの「マップ」）：会場マップだけを画面いっぱいに出す（goods.js が会場マップの節を左の列へ移し、ほかを取り除く）。
+         それ以外（サイドバーの「会場・グッズ」）：
+         2カラム（641px〜）は、左にほしいものリスト、右に一覧。それぞれの列がスクロールし、ページ全体はスクロールしない。間の持ち手で幅を変える。
+         スマホは、ページ全体がスクロールする。ほしいものリストは浮かぶボタンから dialog -->
     <div class="gd-cols" id="gdCols">
-      <!-- 2カラムのときだけ出る左の列：会場マップ（goods.js がここへ移す）と、下から引き出すほしいものリスト（wishlist.js が描く） -->
+      <!-- 左の列：ほしいものリスト（wishlist.js が描く。スマホは隠す）。マップの表示では、ここに会場マップが入る -->
       <div class="gd-side" id="gdSide">
         <div class="gd-drawer" id="gdDrawer">
           <div class="gd-drawer__sheet">
-            <!-- 押すと開け閉め、上下にドラッグすると引き出す高さを変える（goods.js） -->
-            <button type="button" class="gd-drawer__handle" id="gdDrawerHandle" aria-expanded="false" aria-controls="gdWish">
-              <span class="gd-drawer__grip" aria-hidden="true"></span>
+            <div class="gd-drawer__handle">
               <span class="gd-drawer__label" id="gdDrawerLabel"></span>
               <span class="gd-drawer__sum" id="gdWishSum"></span>
-            </button>
+            </div>
             <aside class="gd-wish gm-wishlist" id="gdWish" aria-label="ほしいものリスト"></aside>
           </div>
         </div>
@@ -82,8 +82,7 @@
       <div class="gm-split" id="gdSplit" role="separator" aria-orientation="vertical" aria-label="左の列と一覧の幅" tabindex="0"></div>
       <main class="gd-main" id="gdMain">
         <h1 class="gm-visually-hidden">会場・グッズ</h1>
-        <!-- スマホだけ：会場マップの開け閉め（goods.js）。2カラムでは、マップの節（#map）を左の列へ移す -->
-        <button type="button" class="gd-mapbar" id="gdMapBar" aria-expanded="false" aria-controls="map"></button>
+        <!-- 会場マップの節（#map）は、?part=map のときだけ使う（goods.js が左の列へ移す）。グッズの表示では goods.js が取り除く -->
         <section class="gm-sec gm-sec--map" id="map" aria-label="会場マップ">
           <div class="gm-mapbox" id="gmMapbox">
             <!-- フロアのタブ（スマホではマップの枠が上に重なるので、枠の中に置く） -->

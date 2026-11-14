@@ -3,21 +3,17 @@
    色は売り場ごと：公式物販＝.theme-gold、企業ブース＝.theme-pink、ライブ物販・会場の案内＝.theme-violet、売り場の記載なし＝.theme-indigo */
 
 /* ---------- 並べ方 ----------
-   2カラム（641px〜）：ページ全体はスクロールせず、左の列（会場マップと、下から引き出すほしいものリスト）と、右の一覧がそれぞれスクロールする。
-   スマホ（〜640px）：左の列（引き出しとほしいものリストの枠）を隠し、ページ全体をスクロールする。一覧の上に会場マップのバーとマップ（開いたときだけ）。
-   ほしいものリストは浮かぶボタンから dialog で開く。会場マップの節（#map）は goods.js が幅に合わせて置き直す */
+   html の .is-part-goods（会場・グッズの表示）と .is-part-map（マップの表示）。どちらも同じページ（goods.js が ?part= で決める）。
+   グッズ：2カラム（641px〜）はページ全体がスクロールせず、左の列（ほしいものリスト）と、右の一覧がそれぞれスクロールする。
+           スマホ（〜640px）は左の列を隠し、ページ全体をスクロールする。ほしいものリストは浮かぶボタンから dialog で開く
+   マップ：会場マップを画面いっぱいに出す（ページ全体はスクロールしない。左の列にマップだけが入る） */
 @media (max-width: 640px) {
-  .gd-side,
+  .is-part-goods .gd-side,
   .gm-split { display: none; }
   .gd-main { max-width: 760px; margin: 0 auto; padding-bottom: var(--gap); }
   /* ページ全体のスクロールバーは消す（ホイール・タッチ・キーではスクロールできる。カレンダーの2カラムと同じ） */
   html { scrollbar-width: none; }
   html::-webkit-scrollbar { display: none; }
-  /* 会場マップは「会場マップ」のバーで開いたときだけ出す（html の .is-map-open。goods.js） */
-  html:not(.is-map-open) .gm-sec--map { display: none; }
-  /* マップが開いているあいだは、一覧の場所が枠と一緒に動くので、ブラウザにスクロール位置を直させない */
-  html.is-map-open { overflow-anchor: none; }
-  .gm-sec--map { margin-bottom: 14px; }
 }
 @media (min-width: 641px) {
   .gm { height: 100%; padding: var(--gap); }
@@ -39,69 +35,32 @@
   @media (prefers-reduced-motion: reduce) {
     .gd-cols { transition: none; }
   }
-  /* 左の列：会場マップを列の高さいっぱいに出し、下端にほしいものリストの取っ手（.gd-drawer。高さは goods.js の HANDLE と合わせる）を置く */
+  /* 左の列：グッズの表示ではほしいものリスト（.gd-drawer）が列の高さいっぱいに入る。マップの表示では会場マップの節が入る */
   .gd-side { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .gd-drawer { position: relative; z-index: 30; flex: none; height: 48px; margin-top: 8px; }
-  /* 引き出す板：取っ手の場所から上へ伸び、会場マップの上に重なる（マップの大きさは変えない）。高さ --drawer-h は goods.js が入れる */
+  .gd-drawer { flex: 1; min-height: 0; }
   .gd-drawer__sheet {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
     display: flex;
     flex-direction: column;
-    height: var(--drawer-h, 48px);
+    height: 100%;
     overflow: hidden;
     border-radius: 16px;
     background: var(--col-paper);
     box-shadow: var(--gm-shadow);
-    transition: height .3s cubic-bezier(.22, 1, .36, 1), box-shadow .3s;
   }
-  .gd-drawer.is-open .gd-drawer__sheet,
-  .gd-drawer.is-dragging .gd-drawer__sheet { box-shadow: 0 -6px 24px rgb(79 69 143 / .2); }
-  .gd-drawer.is-dragging .gd-drawer__sheet { transition: box-shadow .3s; } /* ドラッグ中は指について動く */
-  @media (prefers-reduced-motion: reduce) {
-    .gd-drawer__sheet { transition: none; }
-  }
-  /* 取っ手：上のまん中に引き出す印、左に名前、右に件数・合計、右端に矢印（閉じているときは上向き）。押すと開け閉め、上下にドラッグで高さを変える */
+  /* 見出し：左に名前、右に件数・合計 */
   .gd-drawer__handle {
-    position: relative;
     display: flex;
     flex: none;
     align-items: center;
     gap: 10px;
     height: 48px;
-    padding: 4px 16px 0;
-    border: 0;
-    font: inherit;
-    text-align: left;
+    padding: 0 16px;
     color: var(--col-secondary-dark);
-    background: none;
-    cursor: ns-resize;
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
   }
-  .gd-drawer__handle:focus-visible { outline: 2px solid var(--col-secondary); outline-offset: -4px; border-radius: 16px; }
-  .gd-drawer__grip { position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; border-radius: 999px; background: var(--col-secondary-light); transform: translateX(-50%); }
-  .gd-drawer__handle:hover .gd-drawer__grip,
-  .gd-drawer.is-dragging .gd-drawer__grip { background: var(--col-primary); }
   .gd-drawer__label { flex: none; font-size: 1rem; font-weight: 900; }
   .gd-drawer__sum { min-width: 0; margin-left: auto; overflow: hidden; font-size: .82rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; color: var(--col-ink); }
-  .gd-drawer__handle::after {
-    content: "";
-    flex: none;
-    width: 9px;
-    height: 9px;
-    margin: 0 4px 0 0;
-    border-right: 2.5px solid var(--col-secondary);
-    border-bottom: 2.5px solid var(--col-secondary);
-    transform: translateY(3px) rotate(-135deg);
-    transition: transform .2s;
-  }
-  .gd-drawer.is-open .gd-drawer__handle::after { transform: translateY(-2px) rotate(45deg); }
   /* ほしいものリストの枠は dialog（.gm-wishlist）のもの。dialog でないので、出して縦に並べ、板の残りの高さに収める。
-     名前は取っ手に出しているので、リストの見出しの名前は出さない */
+     名前は見出しに出しているので、リストの見出しの名前は出さない */
   .gd-wish { display: flex; flex: 1; width: auto; max-height: none; flex-direction: column; min-height: 0; overflow: hidden; border-top: 1px solid #ece8fb; border-radius: 0; box-shadow: none; }
   .gd-wish .gm-wishlist__close,
   .gd-wish .gm-wishlist__head .gm-wishlist__title { display: none; }
@@ -115,48 +74,22 @@
 .gm-card[hidden],
 .gm-item[hidden] { display: none; }
 
-/* ---------- 会場マップのバー（スマホだけ） ----------
-   押すと一覧の上の会場マップを開け閉めする。右端の矢印は、カードと同じ形（開いているときは下向き、閉じているときは右向き） */
-.gd-mapbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin: 0 0 14px;
-  padding: 12px 16px;
-  border: 0;
-  border-left: 4px solid var(--col-secondary);
-  border-radius: 16px;
-  font: inherit;
-  text-align: left;
-  color: var(--col-secondary-dark);
-  background: var(--col-paper);
-  box-shadow: var(--gm-shadow);
-  cursor: pointer;
+/* ---------- マップの表示（?part=map） ----------
+   会場マップを画面いっぱいに出す。ページ全体はスクロールしない（スマホも。2カラムの規則は goodsmap.css の min-width: 641px の html, body と同じ） */
+html.is-part-map,
+html.is-part-map body { height: 100%; overflow: hidden; }
+.is-part-map .gm { height: 100%; padding: var(--gap); }
+.is-part-map .gm-full { display: none; } /* 常に全画面なので、全画面のボタンは出さない */
+.is-part-map .gd-cols { display: block; height: calc(var(--app-h, 100dvh) - var(--gap) * 2); }
+.is-part-map .gd-side { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; }
+@media (min-width: 641px) and (max-height: 500px) {
+  .is-part-map .gm { padding-block: calc(var(--gap) / 2); }
+  .is-part-map .gd-cols { height: calc(var(--app-h, 100dvh) - var(--gap)); }
 }
-.gd-mapbar__label { flex: none; font-size: 1rem; font-weight: 900; }
-.gd-mapbar__sub { min-width: 0; overflow: hidden; font-size: .74rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; color: var(--col-ink); opacity: .7; }
-.gd-mapbar::after {
-  content: "";
-  flex: none;
-  width: 9px;
-  height: 9px;
-  margin: 0 4px 0 auto;
-  border-right: 2.5px solid var(--col-secondary);
-  border-bottom: 2.5px solid var(--col-secondary);
-  transform: rotate(-45deg);
-  transition: transform .2s;
-}
-.gd-mapbar[aria-expanded="true"]::after { transform: translateY(-2px) rotate(45deg); }
-.gd-mapbar:focus-visible { outline: 2px solid var(--col-secondary); outline-offset: 2px; }
 @media (max-width: 640px) {
-  .gd-mapbar { margin-inline: calc(-1 * var(--gap)); width: calc(100% + var(--gap) * 2); border-radius: 0; } /* カードと同じく、画面の端まで */
-}
-@media (min-width: 641px) {
-  .gd-mapbar { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .gd-mapbar::after { transition: none; }
+  /* 下のバー（カレンダーの中）の分は、body ではなく高さから引く（body の下の余白は、はみ出して見えなくなるため） */
+  .is-part-map.is-embed body { padding-bottom: 0; }
+  .is-part-map.is-embed .gd-cols { height: calc(var(--app-h, 100dvh) - var(--gap) * 2 - 80px - var(--safe-b, 0px)); }
 }
 
 /* ---------- 検索・売り場のしぼり込み ---------- */

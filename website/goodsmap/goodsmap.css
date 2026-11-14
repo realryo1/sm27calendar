@@ -11,12 +11,6 @@
   --gm-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5' fill='none' stroke='%23000' stroke-width='2.6'/%3E%3Cpath d='M15.5 15.5 21 21' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-/* スマホでマップが縮む高さ・位置（goodsmap.js の shrink が、使う要素に直接入れる）。継承しないので、スクロールのたびに子孫のスタイルを計算し直さない。
-   値の型は決めない（"*"）ので、var() の予備の値はそのまま使える */
-@property --gm-map-top { syntax: "*"; inherits: false; }
-@property --gm-map-h { syntax: "*"; inherits: false; }
-@property --gm-sec-h { syntax: "*"; inherits: false; }
-
 .gm { padding: var(--gap) var(--gap) 0; } /* 隙間はカレンダーの style.css の --gap */
 .gm-floors[hidden],
 .gm-empty[hidden] { display: none; }
@@ -65,17 +59,6 @@
 @media (min-width: 641px) {
   html,
   body { height: 100%; overflow: hidden; }
-  /* マップの列はスクロールしない（高さは左の列の残りで決まり、マップはその中に収まる）。
-     枠（角丸・影）は列が持つ（カレンダーの .board と同じ）。中の .gm-mapbox は枠を持たない */
-  .gm-sec--map {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    border-radius: 16px;
-    background: var(--col-paper);
-    box-shadow: var(--gm-shadow);
-  }
-  .gm-sec--map .gm-mapbox { border-radius: 0; box-shadow: none; }
   /* 持ち手：列の高さいっぱいの縦の帯。中央に縦長のつまみを描く（カレンダーの .split と同じ形） */
   .gm-split {
     display: flex;
@@ -107,11 +90,7 @@
   /* 一覧は独立したレイヤーにして、横に動いても中身を描き直さない。最初のフレームが重いので、持ち手にマウスが乗った時点で作っておく */
   .gd-cols:has(> .gm-split:hover) .gd-main,
   .is-resizing .gd-main { will-change: transform; }
-  /* マップの列は、枠の大きさが変わっても中身のレイアウトを外へ広げない（中身は列の中で完結させる） */
-  .gm-sec--map { contain: layout paint; }
-  /* 全画面のあいだは、列の枠で切らない（contain と overflow があると、position: fixed の全画面が列の中に閉じ込められる） */
-  .gm-sec--map:has(.gm-mapbox.is-full) { contain: none; overflow: visible; }
-  /* 2カラムの全画面：画面いっぱいにマップを出す（スマホは下の @media (max-width: 640px) の .is-full） */
+  /* 全画面：画面いっぱいにマップを出す（スマホは下の @media (max-width: 640px) の .is-full） */
   .gm-mapbox.is-full {
     position: fixed;
     inset: 0;
@@ -128,14 +107,26 @@
 /* ---------- 会場マップ ---------- */
 /* マップの列の縦幅は画面の大きさだけで決める（中身の量では変えない。カレンダーの時間割 .board と同じ）。
    スマホは画面の高さ、2カラムは列の高さいっぱい。マップは残りの高さに収まる大きさで描く（goodsmap.js の sizeMap） */
+/* 会場マップの節（マップの表示だけで使う）。マップの列はスクロールしない（高さは親の残りで決まり、マップはその中に収まる）。
+   枠（角丸・影）は列が持つ（カレンダーの .board と同じ）。中の .gm-mapbox は枠を持たない。
+   中身のレイアウトを外へ広げない（枠の大きさが変わっても、中身は列の中で完結させる） */
 .gm-sec--map {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0; /* 拡大したマップの大きさで、列が広がらないように */
+  min-height: 0;
+  overflow: hidden;
+  contain: layout paint;
+  border-radius: 16px;
+  background: var(--col-paper);
+  box-shadow: var(--gm-shadow);
 }
+.gm-sec--map .gm-mapbox { border-radius: 0; box-shadow: none; }
+/* 全画面のあいだは、列の枠で切らない（contain と overflow があると、position: fixed の全画面が列の中に閉じ込められる） */
+.gm-sec--map:has(.gm-mapbox.is-full) { contain: none; overflow: visible; }
 @media (max-width: 640px) {
-  /* スマホ（1カラム）は、開いたときに画面の上半分（goodsmap.js の shrink が --gm-sec-h に入れる） */
-  .gm-sec--map { height: var(--gm-sec-h, 50svh); }
+  .gm-sec--map { margin: 0 calc(-1 * var(--gap)); border-radius: 0; box-shadow: none; } /* 画面の幅いっぱい */
 }
 .gm-floors {
   display: flex;
@@ -231,8 +222,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 @media (max-width: 640px) {
-  /* スマホは左右の余白も使い、マップを画面の幅いっぱいにする（カレンダーの時間割と同じ） */
-  .gm-mapbox { margin: 0 calc(-1 * var(--gap)); padding: 10px 0 12px; border-radius: 0; }
+  /* スマホは左右の余白も使い、マップを画面の幅いっぱいにする（カレンダーの時間割と同じ。.gm-sec--map が余白の分だけ広がる） */
+  .gm-mapbox { padding: 10px 0 12px; border-radius: 0; }
   .gm-maptools,
   .gm-legend { padding: 0 12px; }
   .gm-map { border-radius: 0; }
@@ -713,46 +704,22 @@ a.gm-item__name::after { content: "\00a0↗"; font-size: .8em; color: var(--c); 
 .gm-official__maker { margin: 14px 0 0; font-size: .76rem; font-weight: 900; color: var(--col-gold-dark); }
 .gm-loose .gm-card__name { font-size: .92rem; }
 
-/* スマホ（1カラム）のマップ（「会場マップ」のバーで開いたとき）：画面の上に貼り付け、ページを下へスクロールすると細いプレビューにする（goodsmap.js の shrink）。
-   位置と高さは goodsmap.js が --gm-map-top・--gm-map-h に入れる。もとの場所の高さは .gm-sec--map が持つ */
+/* スマホのマップ（マップの表示）：画面いっぱいに出す（高さは goods.css の .is-part-map） */
 @media (max-width: 640px) {
-  :root { --gm-preview: 160px; } /* プレビューの高さ（goodsmap.js の PREVIEW と合わせる） */
-  .gm-mapbox {
-    position: fixed;
-    top: var(--gm-map-top, 0px);
-    left: 0;
-    right: 0;
-    z-index: 20;
-    height: var(--gm-map-h, 50svh);
-    margin: 0;
-    border-radius: 0;
-    box-shadow: 0 6px 16px rgb(79 69 143 / .12);
-  }
-  /* 案内と凡例はフルスクリーンのときだけ出す（開いたときはマップ全体だけを、すき間なく見せる） */
+  /* 案内と凡例は全画面のときだけ出す（ふだんはマップ全体だけを、すき間なく見せる） */
   .gm-mapbox:not(.is-full) .gm-maphint,
-  .gm-mapbox:not(.is-full) .gm-legend,
-  .gm-mapbox.is-preview .gm-maptools,
-  .gm-mapbox.is-preview .gm-floors { display: none; }
-  /* 拡大したときだけの、画面いっぱいの表示。うしろのページはスクロールさせない */
+  .gm-mapbox:not(.is-full) .gm-legend { display: none; }
+  /* 全画面：画面いっぱいの表示。うしろのページはスクロールさせない */
   .gm-mapbox.is-full {
-    top: 0;
-    bottom: 0;
+    position: fixed;
+    inset: 0;
     z-index: 50;
-    height: auto;
     padding: calc(10px + env(safe-area-inset-top)) 0 calc(10px + env(safe-area-inset-bottom));
+    background: var(--col-paper);
   }
   .is-embed .gm-mapbox.is-full { padding-bottom: calc(10px + var(--embed-nav-h, 0px)); } /* 2カラムと同じ（上の @media (min-width: 641px) の同じ規則） */
   html.gm-noscroll,
   html.gm-noscroll body { overflow: hidden; }
-  .gm-mapbox.is-preview { padding: 4px 0; }
-  /* マップが開いているときは、カードへ移ったときに頭がプレビューの裏に隠れないようにする */
-  html.is-map-open .gm-card { scroll-margin-top: calc(var(--gm-preview) + 12px); }
-  /* プレビューを押して大きくするときだけ、高さをなめらかに変える（スクロールで縮むときは指に合わせるので動かさない） */
-  .gm-mapbox.is-animating,
-  .gm-sec--map.is-animating { transition: height .25s ease-out; }
-  /* プレビューは、どこを押してもマップだけが大きくなる（goodsmap.js の expand） */
-  .gm-mapbox.is-preview .gm-map { cursor: pointer; }
-  .gm-mapbox.is-preview .gm-map * { cursor: pointer; pointer-events: none; } /* プレビューのタッチは拡大専用：ブースは押せず、押下・ホバーの色も付かない（押すと .gm-map のクリックで大きくなる） */
 }
 
 /* ---------- フッター ---------- */

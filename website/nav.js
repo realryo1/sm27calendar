@@ -55,7 +55,7 @@
     }
     return u.href;
   };
-  // url の無い項目（カレンダー以外。いまはマップ）は、iframe を入れず背景だけの枠にする（data.js の nav）
+  // url の無い項目（カレンダー以外。いまは無い）は、iframe を入れず背景だけの枠にする（data.js の nav）
   const viewFor = (it) => {
     if (!it || it === home) return null;
     let $v = views.get(it.id);
@@ -196,6 +196,69 @@
     ev.preventDefault();
     show(a.dataset.view, true);
   });
+
+  // マップ（id: map）と会場・グッズ（id: goods）はどちらも goodsmap/ のページ（?part=）で、別の iframe。
+  // マップのブースを押す→グッズのそのカードへ、カードの番号を押す→マップでそのブースを示す、しぼり込みの結果をマップで濃く出す、を、ここで切り替えと取り次ぎをする
+  // （メッセージの中身は goodsmap/goods.js の「表示どうしのやりとり」）。相手がまだ読み込み中なら、読み込み終わり（ready）に渡す
+  if (enabled) {
+    const TALK = "goodsmap";
+    const PARTS = ["map", "goods"];
+    const frameOf = (id) => views.get(id)?.querySelector("iframe");
+    const ready = new Set();
+    const waiting = { map: [], goods: [] }; // 読み込み前の相手に渡すもの
+    let lastHits = null; // グッズのしぼり込みの結果（マップが後から読み込まれても渡せるよう、最後のものを持つ）
+    const send = (id, msg) => {
+      if (ready.has(id)) frameOf(id)?.contentWindow?.postMessage({ sm27: TALK, ...msg }, location.origin);
+      else waiting[id]?.push(msg);
+    };
+    const go = (id, msg) => {
+      if (!items.some((x) => x.id === id)) return;
+      show(id, true);
+      send(id, msg);
+    };
+    window.addEventListener("message", (ev) => {
+      const m = ev.data;
+      if (ev.origin !== location.origin || m?.sm27 !== TALK) return;
+      const from = PARTS.find((id) => frameOf(id)?.contentWindow === ev.source);
+      if (!from) return;
+      switch (m.type) {
+        case "ready": {
+          ready.add(from);
+          const msgs = waiting[from].splice(0);
+          if (from === "map" && lastHits) send("map", lastHits);
+          msgs.forEach((x) => send(from, x));
+          break;
+        }
+        case "map": // グッズ → マップ：切り替えて、そのブースを示す
+          go("map", { type: "pick", id: m.id, show: true });
+          break;
+        case "booth": // マップ → グッズ：切り替えて、そのカードへ
+          go("goods", { type: "card", id: m.id });
+          break;
+        case "select": // グッズでカードを開いた：切り替えず、マップでそのブースを選んでおく
+          send("map", { type: "pick", id: m.id, show: false });
+          break;
+        case "hits":
+          lastHits = { type: "hits", hits: m.hits, active: m.active };
+          if (ready.has("map")) send("map", lastHits);
+          break;
+        case "year": {
+          // 前年の見本（?year=2026）の切り替え：どちらも同じ年で読み込み直す（年は goodsmap/goods.js のフッターのリンクが決める）
+          for (const id of PARTS) {
+            const f = frameOf(id);
+            if (!f) continue;
+            ready.delete(id);
+            waiting[id].length = 0;
+            const u = new URL(f.src);
+            if (m.year === 2027) u.searchParams.delete("year");
+            else u.searchParams.set("year", String(m.year));
+            f.src = u.href;
+          }
+          break;
+        }
+      }
+    });
+  }
 
   // 日付ボタン（.day-nav）は、2カラム（641px〜）ではサイドバーに移す（左に縦のときは切り替えボタンの下、下に横一列のときは左。style.css）。
   // スマホは元の場所（時間割の下端）に戻す

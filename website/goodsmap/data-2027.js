@@ -34,9 +34,6 @@ window.GM_DATA = {
   // 公式のグッズ一覧は、2026-10-31時点では404（26年と同じ場所に出ると見込んで置いておく）
   notices: [
     { id: "official", kind: "official", label: "公式のグッズ一覧", url: "https://snowmiku.com/2027/goods.html" },
-    // （仮）27年の動きを確かめるための仮のお品書き（リンク先は各社の公式サイト）。公式の発表が出たら消す
-    { id: "kari-cospa", kind: "maker", booth: "1", label: "（仮）コスパのお品書き", url: "https://www.cospa.com/" },
-    { id: "kari-movic", kind: "maker", booth: "2", label: "（仮）ムービックのお品書き", url: "https://www.movic.jp/" },
   ],
 
   // ライブ（SNOW MIKU LIVE! 2027）のグッズ。グッズは goods に floor: "ライブ物販" で入れ、places に売る場所（ライブ会場は live、チ・カ・ホは chikaho など）。
@@ -44,7 +41,10 @@ window.GM_DATA = {
   live: {
     title: "SNOW MIKU LIVE! 2027",
     lines: ["会場はZepp Sapporo（2/5〜2/7）"],
-    status: ["グッズの内容・売り場・販売方法（ライブ会場での物販か、ウイングベイ・チ・カ・ホでも売るか、通販か）は未発表"],
+    status: [
+      "ペンライト・ハッピ・リングライトは、公式の発表（11/19）の前に出た店頭の告知（Loppiで11/20〜12/21に予約）による。公式のページは未確認",
+      "ほかのグッズ、売り場・販売方法（ライブ会場での物販か、ウイングベイ・チ・カ・ホでも売るか、通販か）は未発表",
+    ],
   },
 
   // 売り場の名前（品名の前のタグ）
@@ -91,8 +91,7 @@ window.GM_DATA = {
         // 海側
         { kind: "void", x: 10, y: 410, w: 830, h: 24, label: ["マリンデッキ"], size: 13 },
       ],
-      // （仮）27年の動きを確かめるための仮のブース（5番街の吹抜けの上に、くっつけて置く。吹抜けに重なるので「売り場に近すぎます」の警告が出る）。公式の発表が出たら消す
-      booths: { 1: [335, 305], 2: [405, 305] },
+      booths: {},
     },
     {
       id: "chikaho",
@@ -139,23 +138,13 @@ window.GM_DATA = {
     },
   },
 
-  // （仮）27年の動きを確かめるための仮のブース・グッズ。品名・ブース名の頭に（仮）を付けてある。公式の発表が出たら消す
-  booths: [
-    { no: "1", name: "（仮）コスパ" },
-    { no: "2", name: "（仮）ムービック" },
-  ],
+  // ブースは未発表
+  booths: [],
   goods: [
-    // 公式物販
-    { id: "kari-shopper", maker: "（仮）公式", name: "（仮）ショッパー", price: 4000, places: ["chikaho"], floor: "公式物販" },
-    { id: "kari-keyholder", maker: "（仮）公式", name: "（仮）アクリルキーホルダー", price: 1000, places: ["chikaho"], floor: "公式物販" },
-    { id: "kari-stand", maker: "（仮）公式", name: "（仮）アクリルブロック", price: 1500, places: ["chikaho"], floor: "公式物販" },
-    // 企業ブース（ウイングベイ）
-    { id: "kari-cospa-tsumamare", booth: "1", src: ["kari-cospa"], maker: "（仮）コスパ", name: "（仮）つままれ2027", price: 1500, places: ["wingbay"], floor: "出展ブース" },
-    { id: "kari-cospa-tshirt", booth: "1", src: ["kari-cospa"], maker: "（仮）コスパ", name: "（仮）Tシャツ2027", price: 3000, places: ["wingbay"], floor: "出展ブース" },
-    { id: "kari-movic-cheki", booth: "2", src: ["kari-movic"], maker: "（仮）ムービック", name: "（仮）チェキ2027", price: 500, note: "限定", places: ["wingbay"], floor: "出展ブース" },
-    { id: "kari-movic-stand", booth: "2", src: ["kari-movic"], maker: "（仮）ムービック", name: "（仮）アクリルスタンド2027", price: 2000, note: "限定", places: ["wingbay"], floor: "出展ブース" },
-    // ライブ物販
-    { id: "kari-penlight", maker: "（仮）公式", name: "（仮）ペンライト", price: 4000, places: ["chikaho"], floor: "ライブ物販" },
-    { id: "kari-ringlight", maker: "（仮）公式", name: "（仮）リングライト", price: 1000, places: ["chikaho"], floor: "ライブ物販" },
+    // ライブ物販：公式の発表（11/19）の前に店頭に出ていた告知（Loppiの予約案内、11/20発売）による。公式のURLは無いので、リンクは公式のグッズ一覧に向けておく。売り場は未確認。
+    // 予約は@Loppi 11/20〜12/21。税込。デザインは監修中で変わることがある
+    { id: "live-penlight", maker: "公式", name: "ペンライト（商品番号 AW17383625）", price: 4000, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
+    { id: "live-happi", maker: "公式", name: "ハッピ（商品番号 AW17383628）", price: 7000, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
+    { id: "live-ringlight", maker: "公式", name: "リングライト（商品番号 AW17383626）", price: 1500, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
   ],
 };

@@ -1,8 +1,7 @@
 // グッズの一覧の部品（会場・グッズのページの goods.js が使う。会場マップ goodsmap.js・ほしいものリスト wishlist.js も、整理したデータをここから受け取る）。
 // 品の行・タグ・ブースのカード・公式物販のカード・売り場の記載なしのカード・カードの開け閉めを作る。
-// 使い方：const L = window.GM_LIST(window.GM_DATA, { boothNo, beforeScroll })。boothNo(b) はカードの見出しのブースの番号の HTML（マップでそのブースを示すボタン）、
-// beforeScroll() はカードを開いてスクロールする前に呼ぶ（スマホでマップを縮める。待つ ms を返す）
-window.GM_LIST = (D, { boothNo, beforeScroll }) => {
+// 使い方：const L = window.GM_LIST(window.GM_DATA, { boothNo })。boothNo(b) はカードの見出しのブースの番号の HTML（マップでそのブースを示すボタン）
+window.GM_LIST = (D, { boothNo }) => {
   const { esc } = window.TT_UTIL; // カレンダーの ../util.js
 
   // 一覧の文言（年に関係しないもの）
@@ -218,35 +217,6 @@ window.GM_LIST = (D, { boothNo, beforeScroll }) => {
     $el.open = true;
     delete $el.dataset.auto;
   };
-
-  // 見出しを押して開いたら、そのカードの頭が見える位置（検索欄の下。scroll-margin-top）までスクロールする。
-  // しぼり込み・検索・マップから開いたときは動かさない（押した見出しのカードだけ）。動きを減らす設定のときは、すぐ移る
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
-  let tapped = null;
-  document.addEventListener("click", (ev) => {
-    const card = ev.target.closest("summary.gm-card__head, summary.gm-official__head")?.parentElement;
-    tapped = card && !card.open && !ev.target.closest(".gm-no") ? card : null; // 番号（マップへ移るボタン・リンク）は開け閉めしない
-  });
-  document.addEventListener(
-    "toggle",
-    (ev) => {
-      const card = ev.target;
-      if (card !== tapped || !card.open) return;
-      tapped = null;
-      // マップが開いた高さのままだと、スクロール中に縮んで一覧がずれる。先にプレビューへ縮め（アニメーション）、終わってから位置を決めて移る
-      const wait = beforeScroll?.() || 0;
-      const go = () =>
-        requestAnimationFrame(() => {
-          // マップが縮んだ分で、すでにほぼ目的の位置にいるときは動かさない（数pxだけ動くと、ずれたように見える）
-          const gap = card.getBoundingClientRect().top - parseFloat(getComputedStyle(card).scrollMarginTop || "0");
-          if (Math.abs(gap) < 24) return;
-          card.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" });
-        });
-      if (wait) setTimeout(go, wait);
-      else go();
-    },
-    true
-  );
 
   return {
     TEXT, norm, short, yen, srcOf, urlOf, onSale, boothBy, noticeBy, goodsAt, official, live, loose, info, boothLabel, boothName,

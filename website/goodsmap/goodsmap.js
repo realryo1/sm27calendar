@@ -1,11 +1,13 @@
 // 会場マップ（会場・グッズのページの部品。window.GM_MAP）
 // データは data-○○○○.js の window.GM_DATA（年ごとに差し替える）。ここは年に関係なく使う。
 // 会場マップは公式の画像を使わず、データのブース・売り場の位置から SVG で描く。
-// 一覧・しぼり込み・ハッシュは goods.js が受け持ち、ここはマップの描画と操作（拡大・移動・回す・全画面・スマホで縮むプレビュー）だけ。
-// 使い方：const M = window.GM_MAP(D, L, { $list, onActivate, visible })
-//   L は goodslist.js の部品、$list は一覧（選んだカードを強調する）、onActivate(id) はマップのブース・売り場を押したとき、
-//   visible() はマップが見えているか（スマホで開いている・2カラム）
-window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
+// 一覧・しぼり込み・ハッシュは goods.js が受け持ち、ここはマップの描画と操作（拡大・移動・回す・全画面）だけ。
+// 使い方：const M = window.GM_MAP(D, L, { onActivate, visible, fixed })
+//   L は goodslist.js の部品、onActivate(id) はマップのブース・売り場を押したとき、
+//   visible() はマップが見えているか、$list（あれば）は一覧（選んだカードを強調する）。
+//   fixed は、マップが画面いっぱいに固定されているとき（マップの表示。スマホでも2カラムと同じ扱い）。
+//   スマホの一覧の上で開け閉めして縮むプレビューは、いまは使わない（fixed のときは通らない）
+window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => {
   // 書き写しの確認（コンソールの警告）は、手元で開いたときだけ行う。公開版では毎回は行わない
   const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
 
@@ -28,8 +30,9 @@ window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
   const { esc } = window.TT_UTIL; // カレンダーの ../util.js
   const r1 = (n) => Math.round(n * 10) / 10;
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  // 2カラム（左の列にマップ）にする幅。goodsmap.css・goods.js と合わせる
-  const twoCol = matchMedia("(min-width: 641px)");
+  // 2カラムにする幅。goodsmap.css・goods.js と合わせる。fixed のときは、スマホでも2カラムと同じ（縮むプレビューを使わない）
+  const twoCol = fixed ? { matches: true, addEventListener() {} } : matchMedia("(min-width: 641px)");
+  const narrow = matchMedia("(max-width: 640px)"); // スマホの幅（開いたときの拡大に使う）
 
   const { short, yen, onSale, boothBy, goodsAt, info, boothLabel, srcOf, urlOf, noticeBy } = L;
   const booths = D.booths;
@@ -367,7 +370,7 @@ window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
     if (!$map.clientWidth) return void (inited = false); // 隠しているあいだは、見せたとき（show）にする
     zoom = 1;
     setZoom(1);
-    if (twoCol.matches || rot) return;
+    if (!narrow.matches || rot) return;
     const [vx, , vw, vh] = floor.view;
     const fit = Math.min($map.clientWidth / vw, $map.clientHeight / vh);
     if (!Object.keys(floor.booths).length) return; // ブースがまだ無いフロアは全体のまま
@@ -388,7 +391,8 @@ window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
   // 中身は押した時の大きさのまま、枠だけが動く。手を止めたら持ち手の処理が sizeMap を呼ぶ
   let resizing = false;
   new ResizeObserver(() => {
-    if (resizing || !$map.clientWidth) return; // 隠している（スマホで閉じている）あいだは測らない
+    if (resizing || !$map.clientWidth) return; // 隠している（大きさが0の）あいだは測らない
+    if (!inited) return show(); // 大きさが0で読み込まれたときは、大きさが決まってから初めの拡大をする
     sizeMap();
     if (anchored) toCorner();
   }).observe($map);
@@ -540,7 +544,7 @@ window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
       el.classList.toggle("is-picked", on);
       if (el.hasAttribute("role")) el.setAttribute("aria-pressed", String(on));
     });
-    $list.querySelectorAll(".gm-card").forEach((el) => el.classList.toggle("is-picked", ids.has(el.dataset.no)));
+    $list?.querySelectorAll(".gm-card").forEach((el) => el.classList.toggle("is-picked", ids.has(el.dataset.no)));
   }
 
   function pick(id, { toMap = false } = {}) {
@@ -813,7 +817,7 @@ window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
   }
   // 全画面にする・戻す。拡大率はそのまま。全画面のあいだ、うしろのページはスクロールさせない
   function setFull(on) {
-    if (on === full) return;
+    if (on === full || (fixed && !on && narrow.matches)) return; // マップの表示は、スマホでは常に全画面（PCは枠つき）
     if (on) window.GM_SYNC?.(); // カレンダーの中なら、下のバーの位置を測り直す
     full = on;
     $mapbox.classList.toggle("is-full", on);
@@ -957,6 +961,8 @@ window.GM_MAP = (D, L, { $list, onActivate, visible }) => {
   // ---------- 開始 ----------
   renderStatic();
   renderMap();
+  if (fixed && narrow.matches) setFull(true); // マップの表示は、スマホでは常に全画面（先に全画面にしてから、大きさを測って初めの拡大をする）
+  if (fixed) narrow.addEventListener("change", () => setFull(narrow.matches)); // 幅が変わったら、PCは枠つき・スマホは全画面
   show();
 
   return { pick, showOnMap, onMap, setHits, setFloor, holdPreview, show, hide, holdSize, releaseSize, isPicked: (id) => picked === id };
