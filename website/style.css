@@ -660,6 +660,8 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   font-size: .95rem;
   line-height: 1.6;
   text-align: center;
+  pointer-events: auto;
+  cursor: pointer;
 }
 .tt-hint__arrow {
   display: block;

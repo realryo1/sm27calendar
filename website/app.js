@@ -215,7 +215,7 @@
         const hintSpan = i === 0 && site.scrollHint && !sorting ? (empty < 0 ? shown.length : empty) : 0;
         const hint =
           hintSpan >= 2
-            ? `<div class="tt-hint" style="--span:${hintSpan}"><p class="tt-hint__card">${br(site.scrollHint)}<span class="tt-hint__arrow" aria-hidden="true">↓</span></p></div>`
+            ? `<div class="tt-hint" style="--span:${hintSpan}"><p class="tt-hint__card" data-goto-day="2027-02-06">${br(site.scrollHint)}<span class="tt-hint__arrow" aria-hidden="true">↓</span></p></div>`
             : "";
         const cols = shown
           .map((v, vi) => {
@@ -765,6 +765,12 @@
   $tt.addEventListener("click", (ev) => {
     if (ev.target.closest("[data-refresh]")) return hardRefresh();
     if (ev.target.closest("[data-sort]")) return toggleSort();
+    const goto = ev.target.closest("[data-goto-day]");
+    if (goto) {
+      pinnedDay = dayIndex(goto.dataset.gotoDay);
+      scrollToDay(goto.dataset.gotoDay);
+      return updateActiveChip();
+    }
     const mv = ev.target.closest("[data-move]");
     if (mv) return moveVenue(...mv.dataset.move.split(":").map((x, i) => (i ? Number(x) : x)).slice(0, 2));
     const vis = ev.target.closest("[data-vis]");
