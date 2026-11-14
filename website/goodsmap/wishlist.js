@@ -68,6 +68,23 @@ window.GM_WISH = (D, L) => {
   const H2C_SRC = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
   const H2C_SRI = "sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H";
 
+  // リストが空のときのイラスト：品の行（♡・品名・値段を線で）の♡を指（矢印）が押し、♡が塗られる。動きは goodsmap.css の gm-demo-○○
+  // ♡の形は goodsmap.css の --gm-heart-line・--gm-heart と同じ
+  const EMPTY_ART = `<svg class="gm-demo" viewBox="0 0 220 76" aria-hidden="true">
+    <rect class="gm-demo__row" x="4" y="10" width="212" height="44" rx="10"/>
+    <g transform="translate(14 20)">
+      <path class="gm-demo__line" d="M12 20s-7-4.3-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.5 1.2 5.2 3.1C13.7 6.2 15.2 5 17.2 5c3.3 0 5.2 3.3 3.8 6.4C19 15.7 12 20 12 20z"/>
+      <path class="gm-demo__fill" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/>
+    </g>
+    <circle class="gm-demo__ring" cx="26" cy="32" r="14"/>
+    <rect class="gm-demo__bar" x="48" y="22" width="96" height="9" rx="4.5"/>
+    <rect class="gm-demo__bar gm-demo__bar--sub" x="48" y="36" width="56" height="7" rx="3.5"/>
+    <rect class="gm-demo__bar gm-demo__bar--sub" x="166" y="26" width="38" height="11" rx="5.5"/>
+    <g transform="translate(28 36)">
+      <path class="gm-demo__hand" d="M0 0v22l6-5 4 9 4-2-4-9h8z"/>
+    </g>
+  </svg>`;
+
   const goodsBy = new Map(D.goods.map((g) => [g.id, g]));
   const { yen } = L;
 
@@ -197,7 +214,7 @@ window.GM_WISH = (D, L) => {
     return `<li class="gm-wishitem">
       ${showWhere ? `<p class="gm-wishitem__where">${esc(L.whereOf(g).label)}</p>` : ""}
       <span class="gm-wishitem__tags">${L.tagsOf(g, tagOpts(g))}</span>
-      <p class="gm-wishitem__name"><a href="${esc(L.urlOf(g))}" target="_blank" rel="noopener">${esc(name)}</a></p>
+      <p class="gm-wishitem__name">${esc(name)}</p>
       <div class="gm-wishitem__buy">
         <span class="gm-wishitem__price">${g.price == null ? esc(TEXT.noPrice) : `${g.unit ? `<small>${esc(g.unit)}</small>` : ""}${yen(g.price)}`}</span>
         <span class="gm-wishitem__qty">
@@ -258,7 +275,7 @@ window.GM_WISH = (D, L) => {
           <button type="button" class="gm-wishlist__print gm-wishlist__image" data-image${gs.length ? "" : " disabled"}>${esc(TEXT.image)}</button>
         </div>
       </div>
-      <div class="gm-wishlist__body gm-wishlist__body--list${showTags ? "" : " is-notags"}">${gs.length ? listHtml() : `<p class="gm-wishlist__empty">${esc(TEXT.empty)}</p>`}</div>
+      <div class="gm-wishlist__body gm-wishlist__body--list${showTags ? "" : " is-notags"}">${gs.length ? listHtml() : `<div class="gm-wishlist__empty">${EMPTY_ART}<p>${esc(TEXT.empty)}</p></div>`}</div>
       <footer class="gm-wishlist__foot">
         <p class="gm-wishlist__total"><span>${esc(TEXT.total)} ${esc(TEXT.count(t.n))}</span><b>${yen(t.sum)}</b></p>
         ${t.unpriced ? `<p class="gm-wishlist__note">${esc(TEXT.noPriceNote(t.unpriced))}</p>` : ""}

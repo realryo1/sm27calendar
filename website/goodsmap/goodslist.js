@@ -40,9 +40,8 @@ window.GM_LIST = (D, { boothNo }) => {
   const booths = D.booths;
   const boothBy = new Map(booths.map((b) => [b.no, b]));
   const noticeBy = new Map((D.notices ?? []).map((n) => [n.id, n]));
-  // 情報元：src が無いグッズは公式のグッズ一覧だけに載るもの。url が無ければ先頭の情報元（企業のお品書きなど）へリンクする
+  // 情報元：src が無いグッズは公式のグッズ一覧だけに載るもの
   const srcOf = (g) => g.src ?? ["official"];
-  const urlOf = (g) => g.url ?? noticeBy.get(srcOf(g)[0])?.url;
   // 会場（ウイングベイ・チ・カ・ホ）で売るか
   const onSale = (g) => g.places.some((p) => p === "wingbay" || p === "chikaho");
   // 売り場ごとに分ける：ブース／公式物販／ライブ物販／売り場の記載なし（会場で売らず、ブースで展示もしないものは出さない）
@@ -111,14 +110,15 @@ window.GM_LIST = (D, { boothNo }) => {
   const wishBtn = (id) => `<button type="button" class="gm-wish" data-wish="${esc(id)}" aria-pressed="false" aria-label="${esc(TEXT.wish)}"></button>`;
   const itemRow = (text, body, price = "", mod = "", wish = "") =>
     `<li class="gm-item${mod}${wish ? " gm-item--wish" : ""}" data-text="${esc(norm(text))}">${wish ? wishBtn(wish) : ""}<span class="gm-item__body">${body}</span>${price}</li>`;
-  const goodsLink = (g) => `<a class="gm-item__name" href="${esc(urlOf(g))}" target="_blank" rel="noopener">${esc(short(g.name))}</a>`;
+  // 品名はリンクにしない（情報元へはブースのカードのリンクから）
+  const goodsName = (g) => `<span class="gm-item__name">${esc(short(g.name))}</span>`;
   const goodsText = (g) => `${g.name}|${g.maker}|${g.booth ? boothText(boothBy.get(g.booth)) : ""}`;
   // 売る品。opts は tagKeys と同じ（src: 情報元のタグを付ける、here: 出さない売り場）
-  const goodsRow = (g, opts) => itemRow(goodsText(g), tagsOf(g, opts) + goodsLink(g), priceOf(g), "", g.id);
+  const goodsRow = (g, opts) => itemRow(goodsText(g), tagsOf(g, opts) + goodsName(g), priceOf(g), "", g.id);
   // ブースで売る品（情報元のタグ付き）
   const boothRow = (g) => goodsRow(g, { src: true });
   // ブースで展示だけする品（会場では売らない）。ほかで売るなら、その売り場のタグ（空港など）を付け、どこでも売らないなら「会場では販売なし」
-  const showRow = (g) => itemRow(goodsText(g), (g.places.length ? "" : tag("no", TEXT.notSold)) + tagsOf(g) + goodsLink(g), priceOf(g), "", g.id);
+  const showRow = (g) => itemRow(goodsText(g), (g.places.length ? "" : tag("no", TEXT.notSold)) + tagsOf(g) + goodsName(g), priceOf(g), "", g.id);
   // 品名・展示・配布などの文だけの行（値段は公式に無い）
   const textRow = (t, { note = "", b } = {}) =>
     itemRow(`${t}|${b ? boothText(b) : ""}`, `<span class="gm-item__name">${esc(t)}</span>`, note ? `<span class="gm-price gm-price--none">${esc(note)}</span>` : "", " gm-item--text");
@@ -151,7 +151,7 @@ window.GM_LIST = (D, { boothNo }) => {
       ${body}
     </details>`;
 
-  // 出展ブースのカード：販売（公式の一覧に載る品が先。情報元のタグ付き）・公式掲載（公式のブース紹介にある品名）・展示・体験・配布・特典、補足、リンク（企業のお品書き・告知を先に）
+  // 出展ブースのカード：リンク（見出しのすぐ下。企業のお品書き・告知を先に）、販売（公式の一覧に載る品が先。情報元のタグ付き）・公式掲載（公式のブース紹介にある品名）・展示・体験・配布・特典、補足
   function boothCard(b) {
     const gs = goodsAt.get(b.no) ?? [];
     const sale = saleOf(b.no);
@@ -163,12 +163,12 @@ window.GM_LIST = (D, { boothNo }) => {
       before: boothNo(b),
       title: b.name,
       sub: b.org ? `<p class="gm-card__org">${esc(b.org)}</p>` : "",
-      body: `${block("sale", sale.map(boothRow))}
+      body: `${linkList([...(D.notices ?? []).filter((n) => n.booth === b.no), ...(b.links ?? [])])}
+        ${block("sale", sale.map(boothRow))}
         ${block("intro", (b.more ?? []).map((t) => textRow(t, { note: TEXT.noPrice, b })))}
         ${block("exhibit", [...gs.filter((g) => !onSale(g)).map(showRow), ...(b.shows ?? []).map((t) => textRow(t, { b }))])}
         ${block("gift", (b.gifts ?? []).map((t) => textRow(t, { b })))}
-        ${(b.notes ?? []).map((t) => `<p class="gm-note">${esc(t)}</p>`).join("")}
-        ${linkList([...(D.notices ?? []).filter((n) => n.booth === b.no), ...(b.links ?? [])])}`,
+        ${(b.notes ?? []).map((t) => `<p class="gm-note">${esc(t)}</p>`).join("")}`,
     });
   }
 
@@ -219,7 +219,7 @@ window.GM_LIST = (D, { boothNo }) => {
   };
 
   return {
-    TEXT, norm, short, yen, srcOf, urlOf, onSale, boothBy, noticeBy, goodsAt, official, live, loose, info, boothLabel, boothName,
+    TEXT, norm, short, yen, srcOf, onSale, boothBy, noticeBy, goodsAt, official, live, loose, info, boothLabel, boothName,
     tag, byTags, tagKeys, tagHtml, rank, tagsOf, whereOf, priceOf, goodsRow, textRow, block, linkList, foldCard, boothCard, officialCard, looseCard, fold, openCard,
   };
 };

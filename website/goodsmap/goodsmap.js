@@ -34,7 +34,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   const twoCol = fixed ? { matches: true, addEventListener() {} } : matchMedia("(min-width: 641px)");
   const narrow = matchMedia("(max-width: 640px)"); // スマホの幅（開いたときの拡大に使う）
 
-  const { short, yen, onSale, boothBy, goodsAt, info, boothLabel, srcOf, urlOf, noticeBy } = L;
+  const { short, yen, onSale, boothBy, goodsAt, info, boothLabel, srcOf, noticeBy } = L;
   const booths = D.booths;
   // 中にブースがある売り場（ガチャコーナー）。ブース → 売り場
   const spotOf = new Map(Object.entries(D.spots).flatMap(([id, s]) => (s.booths ?? []).map((no) => [no, id])));
@@ -51,7 +51,6 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
       if (g.booth && !boothBy.has(g.booth)) warn(`グッズのブースが一覧に無い: ${g.id} → ${g.booth}`);
       if (!g.booth && onSale(g) && g.floor && g.floor !== "公式物販" && g.floor !== "ライブ物販") warn(`売り場が「${g.floor}」なのにブースが無い: ${g.id}`);
       for (const n of srcOf(g)) if (n !== "official" && !noticeBy.has(n)) warn(`グッズの情報元が notices に無い: ${g.id} → ${n}`);
-      if (!urlOf(g)) warn(`グッズのリンク先が無い: ${g.id}`);
     }
     const onMap = new Set(D.floors.flatMap((f) => [...Object.keys(f.booths), ...f.areas.flatMap((a) => D.spots[a.spot]?.booths ?? [])]));
     for (const b of booths) if (!onMap.has(b.no)) warn(`マップに無いブース: ${b.no}`);
