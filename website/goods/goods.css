@@ -1,14 +1,12 @@
 /* グッズ（index.html）の並べ方と、一覧だけの部品（クラス名は gd- で始める）。
-   配色・フォント・背景・フッターはカレンダーと共通の ../base.css、会場マップ・カード・品の行・タグ・検索欄は goodsmap.css を使う。
+   配色・フォント・背景・フッターはカレンダーと共通の ../base.css、会場マップ（../map/）と共通の部品は common.css、カード・品の行・タグ・検索欄・ほしいものリストは list.css を使う。
    色は売り場ごと：公式物販＝.theme-gold、企業ブース＝.theme-pink、ライブ物販・会場の案内＝.theme-violet、売り場の記載なし＝.theme-indigo */
 
 /* ---------- 並べ方 ----------
-   html の .is-part-goods（グッズの表示）と .is-part-map（マップの表示）。どちらも同じページ（goods.js が ?part= で決める）。
-   グッズ：2カラム（641px〜）はページ全体がスクロールせず、左の列（ほしいものリスト）と、右の一覧がそれぞれスクロールする。
-           スマホ（〜640px）は左の列を隠し、ページ全体をスクロールする。ほしいものリストは浮かぶボタンから dialog で開く
-   マップ：会場マップを画面いっぱいに出す（ページ全体はスクロールしない。左の列にマップだけが入る） */
+   2カラム（641px〜）はページ全体がスクロールせず、左の列（ほしいものリスト）と、右の一覧がそれぞれスクロールする。
+   スマホ（〜640px）は左の列を隠し、ページ全体をスクロールする。ほしいものリストは浮かぶボタンから dialog で開く */
 @media (max-width: 640px) {
-  .is-part-goods .gd-side,
+  .gd-side,
   .gm-split { display: none; }
   .gd-main { max-width: 760px; margin: 0 auto; padding-bottom: var(--gap); }
   /* ページ全体のスクロールバーは消す（ホイール・タッチ・キーではスクロールできる。カレンダーの2カラムと同じ） */
@@ -35,7 +33,7 @@
   @media (prefers-reduced-motion: reduce) {
     .gd-cols { transition: none; }
   }
-  /* 左の列：グッズの表示ではほしいものリスト（.gd-drawer）が列の高さいっぱいに入る。マップの表示では会場マップの節が入る */
+  /* 左の列：ほしいものリスト（.gd-drawer）が列の高さいっぱいに入る */
   .gd-side { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .gd-drawer { flex: 1; min-height: 0; }
   .gd-drawer__sheet {
@@ -73,24 +71,6 @@
 .gd-sec[hidden],
 .gm-card[hidden],
 .gm-item[hidden] { display: none; }
-
-/* ---------- マップの表示（?part=map） ----------
-   会場マップを画面いっぱいに出す。ページ全体はスクロールしない（スマホも。2カラムの規則は goodsmap.css の min-width: 641px の html, body と同じ） */
-html.is-part-map,
-html.is-part-map body { height: 100%; overflow: hidden; }
-.is-part-map .gm { height: 100%; padding: var(--gap); }
-.is-part-map .gm-full { display: none; } /* 常に全画面なので、全画面のボタンは出さない */
-.is-part-map .gd-cols { display: block; height: calc(var(--app-h, 100dvh) - var(--gap) * 2); }
-.is-part-map .gd-side { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; }
-@media (min-width: 641px) and (max-height: 500px) {
-  .is-part-map .gm { padding-block: calc(var(--gap) / 2); }
-  .is-part-map .gd-cols { height: calc(var(--app-h, 100dvh) - var(--gap)); }
-}
-@media (max-width: 640px) {
-  /* 下のバー（カレンダーの中）の分は、body ではなく高さから引く（body の下の余白は、はみ出して見えなくなるため） */
-  .is-part-map.is-embed body { padding-bottom: 0; }
-  .is-part-map.is-embed .gd-cols { height: calc(var(--app-h, 100dvh) - var(--gap) * 2 - 80px - var(--safe-b, 0px)); }
-}
 
 /* ---------- 検索・売り場のしぼり込み ---------- */
 .gd-guide {

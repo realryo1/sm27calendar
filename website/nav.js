@@ -197,11 +197,11 @@
     show(a.dataset.view, true);
   });
 
-  // マップ（id: map）とグッズ（id: goods）はどちらも goodsmap/ のページ（?part=）で、別の iframe。
+  // マップ（id: map。map/）とグッズ（id: goods。goods/）は別のページで、別の iframe。
   // マップのブースを押す→グッズのそのカードへ、カードの番号を押す→マップでそのブースを示す、しぼり込みの結果をマップで濃く出す、を、ここで切り替えと取り次ぎをする
-  // （メッセージの中身は goodsmap/goods.js の「表示どうしのやりとり」）。相手がまだ読み込み中なら、読み込み終わり（ready）に渡す
+  // （メッセージの中身は goods/goods.js の「ページどうしのやりとり」）。相手がまだ読み込み中なら、読み込み終わり（ready）に渡す
   if (enabled) {
-    const TALK = "goodsmap";
+    const TALK = "goodsmap"; // goods/goods.js・map/map.js と合わせる（グッズとマップのやりとりの名前）
     const PARTS = ["map", "goods"];
     const frameOf = (id) => views.get(id)?.querySelector("iframe");
     const ready = new Set();

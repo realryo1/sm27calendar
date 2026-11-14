@@ -1,9 +1,9 @@
-// 会場マップ（グッズのページの部品。window.GM_MAP）
-// データは data-○○○○.js の window.GM_DATA（年ごとに差し替える）。ここは年に関係なく使う。
+// 会場マップ（map/index.html）。前半はマップの部品（window.GM_MAP）、最後にページの開始（「ページ」）。
+// データはグッズと同じ ../goods/data-○○○○.js の window.GM_DATA（年ごとに差し替える）。ここは年に関係なく使う。
 // 会場マップは公式の画像を使わず、データのブース・売り場の位置から SVG で描く。
-// 一覧・しぼり込み・ハッシュは goods.js が受け持ち、ここはマップの描画と操作（拡大・移動・回す・全画面）だけ。
+// 一覧・しぼり込みはグッズのページ（../goods/goods.js）が受け持ち、ここはマップの描画と操作（拡大・移動・回す・全画面）だけ。
 // 使い方：const M = window.GM_MAP(D, L, { onActivate, visible, fixed })
-//   L は goodslist.js の部品、onActivate(id) はマップのブース・売り場を押したとき、
+//   L は ../goods/goodslist.js の部品、onActivate(id) はマップのブース・売り場を押したとき、
 //   visible() はマップが見えているか、$list（あれば）は一覧（選んだカードを強調する）。
 //   fixed は、マップが画面いっぱいに固定されているとき（マップの表示。スマホでも2カラムと同じ扱い）。
 //   スマホの一覧の上で開け閉めして縮むプレビューは、いまは使わない（fixed のときは通らない）
@@ -30,7 +30,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   const { esc } = window.TT_UTIL; // カレンダーの ../util.js
   const r1 = (n) => Math.round(n * 10) / 10;
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  // 2カラムにする幅。goodsmap.css・goods.js と合わせる。fixed のときは、スマホでも2カラムと同じ（縮むプレビューを使わない）
+  // 2カラムにする幅。map.css・goods.js と合わせる。fixed のときは、スマホでも2カラムと同じ（縮むプレビューを使わない）
   const twoCol = fixed ? { matches: true, addEventListener() {} } : matchMedia("(min-width: 641px)");
   const narrow = matchMedia("(max-width: 640px)"); // スマホの幅（開いたときの拡大に使う）
 
@@ -43,7 +43,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
 
   // 書き写しの確認（27年のデータを作るときに、ブースの割り当て漏れ・重複・マップとのずれに気づけるように）。画面には出さない
   if (DEV) {
-    const warn = (msg) => console.warn(`[goodsmap] ${msg}`);
+    const warn = (msg) => console.warn(`[map] ${msg}`);
     const ids = new Set();
     for (const g of D.goods) {
       if (ids.has(g.id)) warn(`グッズの id が重複: ${g.id}`);
@@ -100,13 +100,13 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     if (DEV) for (const [no, g] of big) {
       const t = tiles.find((x) => x.no === no);
       const edge = Math.min(g.x - vx, vx + vw - g.x - g.w, g.y - vy, vy + vh - g.y - g.h);
-      if (edge < AISLE / 2) console.warn(`[goodsmap] ブース ${no} を大きくすると、マップの端に近すぎます（${r1(edge)}）`);
+      if (edge < AISLE / 2) console.warn(`[map] ブース ${no} を大きくすると、マップの端に近すぎます（${r1(edge)}）`);
       for (const [no2, g2] of big) {
         if (no2 <= no) continue;
         const t2 = tiles.find((x) => x.no === no2);
-        if (near(g, g2) && gapOf(t, t2) >= AISLE && gapOf(g, g2) < AISLE) console.warn(`[goodsmap] ブース ${no} と ${no2} の間の通路が狭すぎます（${r1(gapOf(g, g2))}）`);
+        if (near(g, g2) && gapOf(t, t2) >= AISLE && gapOf(g, g2) < AISLE) console.warn(`[map] ブース ${no} と ${no2} の間の通路が狭すぎます（${r1(gapOf(g, g2))}）`);
       }
-      for (const w of walls) if (near(g, w) && gapOf(g, w) < AISLE / 2) console.warn(`[goodsmap] ブース ${no} を大きくすると、売り場に近すぎます（${r1(gapOf(g, w))}）`);
+      for (const w of walls) if (near(g, w) && gapOf(g, w) < AISLE / 2) console.warn(`[map] ブース ${no} を大きくすると、売り場に近すぎます（${r1(gapOf(g, w))}）`);
     }
     grownCache.set(f, big);
     return big;
@@ -197,7 +197,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     const tile = ([no, [x, y]]) => {
       const b = boothBy.get(no);
       const g = big.get(no);
-      // 元の大きさの四角と、ブース名が出るときの大きい四角（goodsmap.css で入れ替える）
+      // 元の大きさの四角と、ブース名が出るときの大きい四角（map.css で入れ替える）
       return `<g class="gm-tile theme-${info.get(no)?.theme ?? "pink"}" data-pick="${esc(no)}" tabindex="0" role="button" aria-label="${esc(L.TEXT.boothName(no) + (b ? `：${b.name}` : ""))}">
         <rect class="gm-tile__box" x="${x}" y="${y}" width="${tw}" height="${th}" rx="8"/>
         <rect class="gm-tile__big" x="${r1(g.x)}" y="${r1(g.y)}" width="${r1(g.w)}" height="${r1(g.h)}" rx="8"/>
@@ -650,8 +650,8 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   }
 
   // 2カラムの持ち手（goods.js）を動かしているあいだは、マップを測り直さない（中身は押した時の大きさのまま、枠だけが動く）。
-  // 手を止めたら、持ち手の列が広がる動き（goodsmap.css の --gm-split-extra）が終わってから、止めた幅で1回だけ測り直す（回すときと同じ動きで）
-  const $cols = $("gdCols");
+  // 手を止めたら、持ち手の列が広がる動き（map.css の --gm-split-extra）が終わってから、止めた幅で1回だけ測り直す（回すときと同じ動きで）
+  const $cols = $("mapPage");
   let held = 0; // 持ち手で止めた回数（止め直したら、前の手を止めた処理は何もしない）
   function holdSize() {
     held++;
@@ -674,8 +674,8 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   // プレビューはどこを押しても、一覧はそのままでマップだけが大きくなる（一覧をスクロールすると、またプレビューに戻る）。カードの番号を押せばプレビューの中で光る。
   // 2カラムではマップが常に見えているので、縮むプレビューは使わない（全画面だけ使える）
   const $sec = $("map");
-  const PREVIEW = 160; // goodsmap.css の --gm-preview と合わせる
-  // 縮む高さと位置は、使う要素に直接入れる（:root に入れると、スクロールのたびにページ全体のスタイルを計算し直して重い。goodsmap.css の @property）
+  const PREVIEW = 160; // map.css の --gm-preview と合わせる
+  // 縮む高さと位置は、使う要素に直接入れる（:root に入れると、スクロールのたびにページ全体のスタイルを計算し直して重い。map.css の @property）
   const boxStyle = $mapbox.style;
   const secStyle = $sec.style;
   let top0Cache = null; // ページの中での、マップの列の上端。測るとレイアウトを確かめるので、スクロールのたびには測らない
@@ -833,7 +833,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     centerOn([vx + cx * vw, vy + cy * vh]);
   }
   // マップを右へ90度回す（turned）。拡大率はそのままで、まん中に見えていたところをまん中に保つ。
-  // 回すあいだは文字を消し、TURN ms かけて回してから文字を出す（goodsmap.css の .is-turning）。
+  // 回すあいだは文字を消し、TURN ms かけて回してから文字を出す（map.css の .is-turning）。
   // 縦横が入れ替わると枠に収まる大きさ（1倍）も変わるので、先に回したデータで描き直し、その絵に「回す前の向き・大きさ・位置」に見える変形をかけてから、
   // 変形を外していく（回転と拡大縮小が一緒に滑らかに動く）
   const TURN = 375; // 0.3秒の0.8倍速
@@ -966,3 +966,59 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
 
   return { pick, showOnMap, onMap, setHits, setFloor, holdPreview, show, hide, holdSize, releaseSize, isPicked: (id) => picked === id };
 };
+
+// ---------- ページ（map/index.html） ----------
+// 会場マップだけを画面いっぱいに出す。ブース・売り場を押すと、グッズのページ（../goods/）のそのカードへ移る。
+// カレンダーの中（iframe）では、親（nav.js）にメッセージを送ってグッズのページに切り替えてもらい、取り次いでもらう（やりとりの中身は ../goods/goods.js の「ページどうしのやりとり」）。
+//   送る：{ type: "booth", id }（グッズに切り替えてそのカードへ）／{ type: "ready" }（読み込み終わり）
+//   受ける：{ type: "pick", id, show }（showならそのブースを枠のまん中へ）／{ type: "hits", hits, active }（しぼり込みの結果）
+// 親が無いとき（このページを直接開いたとき）は、グッズのページを、ブースの番号つきのハッシュ（#booth-○○）で開く
+(() => {
+  const D = window.GM_DATA;
+  if (!D) return;
+  const $ = (id) => document.getElementById(id);
+  const EMBED = new URLSearchParams(location.search).has("embed"); // .is-embed は ../goods/embed.js が付ける
+  const TALK = "goodsmap"; // nav.js・../goods/goods.js と合わせる
+  const embedded = EMBED && parent !== window;
+  const tell = (msg) => parent.postMessage({ sm27: TALK, ...msg }, location.origin);
+  const toGoods = (id) => {
+    if (embedded) return tell({ type: "booth", id });
+    const url = new URL("../goods/", location.href);
+    url.search = location.search;
+    url.hash = id ? `#booth-${id}` : "";
+    location.assign(url);
+  };
+
+  // 高さは dvh ではなく innerHeight で決める（map.css の --app-h）
+  const $page = $("mapPage");
+  const resize = () => $page.style.setProperty("--app-h", `${innerHeight}px`);
+  window.addEventListener("resize", resize);
+  resize();
+
+  // 一覧の部品（../goods/goodslist.js）から、ブース・グッズを整理したデータを受け取る
+  const L = window.GM_LIST(D);
+  const M = window.GM_MAP(D, L, { fixed: true, visible: () => true, onActivate: toGoods });
+  // #booth-○○ ならそのブースをマップで示す。#map-○○ ならそのフロアのタブ
+  function openHash() {
+    let id = "";
+    let tab = "";
+    try {
+      id = decodeURIComponent(location.hash.match(/^#booth-(.+)$/)?.[1] ?? "");
+      tab = decodeURIComponent(location.hash.match(/^#map-(.+)$/)?.[1] ?? "");
+    } catch {
+      return; // 壊れたハッシュは無視する
+    }
+    if (tab) M.setFloor(tab);
+    else if (M.onMap(id)) M.pick(id, { toMap: true });
+  }
+  window.addEventListener("hashchange", openHash);
+  openHash();
+  if (!embedded) return;
+  addEventListener("message", (ev) => {
+    const m = ev.data;
+    if (ev.origin !== location.origin || ev.source !== parent || m?.sm27 !== TALK) return;
+    if (m.type === "pick") M.onMap(m.id) && M.pick(m.id, { toMap: m.show });
+    else if (m.type === "hits") M.setHits(new Set(m.hits), m.active);
+  });
+  tell({ type: "ready" });
+})();

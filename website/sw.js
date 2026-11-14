@@ -1,7 +1,7 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v51";
+const VERSION = "v52";
 const CACHE = `sm27-${VERSION}`;
 importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）・self.SM27_SITE（公開先）
 const PRECACHE = self.PRECACHE;
@@ -68,8 +68,8 @@ self.addEventListener("fetch", (event) => {
   if (sameOrigin && url.pathname.includes("/delay/")) return;
   // test_ で始まるフォルダは試験ページ（グッズマップなど）。PWA の対象外で、キャッシュを通すとカレンダーが返るので、そのまま取得させる
   if (sameOrigin && url.pathname.includes("/test_")) return;
-  // github.io ではグッズマップを保存しない（precache.js）。サイドバーを出さないので、直接開かれたときもそのまま取得させる
-  if (sameOrigin && self.SM27_SITE === "pages" && url.pathname.includes("/goodsmap/")) return;
+  // github.io ではグッズ・会場マップを保存しない（precache.js）。サイドバーを出さないので、直接開かれたときもそのまま取得させる
+  if (sameOrigin && self.SM27_SITE === "pages" && /\/(goods|map)\//.test(url.pathname)) return;
 
   // 画像は版つきのキャッシュにあればそれを返し、なければ取得して保存する
   if (sameOrigin && IMG_PATHS.has(url.pathname)) {
@@ -110,7 +110,7 @@ self.addEventListener("fetch", (event) => {
           throw err;
         }
       }
-      // ?at= などのクエリ付きでもページ本体はキャッシュを使う。ページはフォルダごとの index.html（カレンダーと goodsmap/。iframe もここを通る）
+      // ?at= などのクエリ付きでもページ本体はキャッシュを使う。ページはフォルダごとの index.html（カレンダーと goods/・map/。iframe もここを通る）
       const key = sameOrigin && req.mode === "navigate" && url.pathname.endsWith("/") ? new URL("index.html", url).href : plain;
       const cached = await cache.match(key, { ignoreSearch: sameOrigin });
       // 取って間もないキャッシュ（更新ボタン・インストールの直後など）は、裏で取り直さない（回線を食って、画面に出す分が遅れるため）。

@@ -365,7 +365,7 @@
         ...performance.getEntriesByType("resource").map((r) => r.name),
       ]
         .filter((u) => new URL(u).origin === location.origin && !imgPaths.has(new URL(u).pathname))
-        // フォルダのページ（カレンダー・goodsmap/）は ?embed=1 などの引数が付いても中身は同じ（sw.js も引数を無視して保存する）。
+        // フォルダのページ（カレンダー・goods/・map/）は ?embed=1 などの引数が付いても中身は同じ（sw.js も引数を無視して保存する）。
         // 引数を外して、条件付き取得（304）のできる URL に寄せる
         .map((u) => {
           const x = new URL(u);
@@ -909,7 +909,7 @@
     const dy = Math.abs(t[0].clientY - t[1].clientY);
     return { dx, dy, d: Math.hypot(dx, dy), x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 };
   };
-  // 指の間隔の変化（goodsmap と同じ二点間の距離）を、指の向きに応じて縦と横に振り分ける。
+  // 指の間隔の変化（会場マップ map/map.js と同じ二点間の距離）を、指の向きに応じて縦と横に振り分ける。
   // 縦向きなら時間方向だけ、横向きなら列の幅だけ、斜めなら両方が同じ割合で動く。
   // 向きは連続的に変わるので、縦横の軸ごとに間隔を測る方式のように、指の開きが小さい軸で急に拡大率が跳ねたり止まったりしない。
   // 縦横に近い向きでは、指の少しの傾きで逆の軸まで動かないよう、傾きが小さいうちは振り分けない

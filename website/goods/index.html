@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <!-- 末尾スラッシュを強制する（カレンダーの index.html と同じ）。無いと相対パスが1階層上を指して壊れる -->
+  <script>
+    if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
+  </script>
+  <!-- 試験ページ：検索に載せない。カレンダーからはサイドバー（nav.js。github.io では出さない）から ?embed=1 の iframe で開く。オフライン保存は新しいドメインと手元だけ（precache.js の PRECACHE_GOODS） -->
+  <meta name="robots" content="noindex">
+  <!-- グッズの一覧とほしいものリスト（goods.js）。会場マップは別のページ（../map/） -->
+  <title>グッズ（試験版）</title>
+  <meta name="description" content="ウイングベイ小樽の出展ブース・チ・カ・ホで売っているものを、売り場ごと・出展企業ごとにまとめた非公式ページの試験版。ほしいものリストも作れます。">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="../favicon.ico" sizes="48x48">
+  <link rel="icon" href="../image/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- フォントの CSS は表示を止めないよう非同期で読み込む（カレンダーと同じ） -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap"></noscript>
+  <!-- 配色・フォント・背景・フッターはカレンダーと共通の base.css をそのまま使う（変えたときに、このページも一緒に変わるように） -->
+  <link rel="stylesheet" href="../base.css">
+  <link rel="stylesheet" href="common.css">
+  <link rel="stylesheet" href="list.css">
+  <link rel="stylesheet" href="goods.css">
+  <!-- カレンダーの中（?embed=1）の下ごしらえと、年ごとのデータの場所（会場マップと共通） -->
+  <script src="embed.js"></script>
+  <!-- 年ごとのデータ。既定は27年（data-2027.js）。?year=2026 で前年の見本（data-2026fix.js）。defer の順番を守るため document.write で書く -->
+  <script>document.write(`<script src="${GM_DATA_SRC("")}" defer><\/script>`);</script>
+  <script src="../util.js" defer></script>
+  <!-- 一覧の部品（品の行・タグ・カード。window.GM_LIST。会場マップも使う） -->
+  <script src="goodslist.js" defer></script>
+  <!-- ほしいものリスト（window.GM_WISH。一覧を描いたあとに goods.js が呼ぶ） -->
+  <script src="wishlist.js" defer></script>
+  <script src="goods.js" defer></script>
+</head>
+<body>
+  <div class="gm">
+    <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2026/location_wingbay.html#wingbay_sponsor">出展ブース</a>もご覧ください。</p></noscript>
+    <!-- 2カラム（641px〜）は、左にほしいものリスト、右に一覧。それぞれの列がスクロールし、ページ全体はスクロールしない。間の持ち手で幅を変える。
+         スマホは、ページ全体がスクロールする。ほしいものリストは浮かぶボタンから dialog -->
+    <div class="gd-cols" id="gdCols">
+      <!-- 左の列：ほしいものリスト（wishlist.js が描く。スマホは隠す） -->
+      <div class="gd-side" id="gdSide">
+        <div class="gd-drawer" id="gdDrawer">
+          <div class="gd-drawer__sheet">
+            <div class="gd-drawer__handle">
+              <span class="gd-drawer__label" id="gdDrawerLabel"></span>
+              <span class="gd-drawer__sum" id="gdWishSum"></span>
+            </div>
+            <aside class="gd-wish gm-wishlist" id="gdWish" aria-label="ほしいものリスト"></aside>
+          </div>
+        </div>
+      </div>
+      <!-- 2カラムのときだけ出る、左の列と一覧の幅を変える持ち手（goods.js） -->
+      <div class="gm-split" id="gdSplit" role="separator" aria-orientation="vertical" aria-label="左の列と一覧の幅" tabindex="0"></div>
+      <main class="gd-main" id="gdMain">
+        <h1 class="gm-visually-hidden">グッズ</h1>
+        <!-- 検索と、売り場（すべて・公式物販・企業ブース・ライブ物販）のしぼり込み -->
+        <section class="gd-guide" aria-label="さがす・しぼり込む">
+          <label class="gm-search">
+            <span class="gm-search__icon" aria-hidden="true"></span>
+            <input type="search" id="gdQuery" autocomplete="off" enterkeyhint="search">
+          </label>
+          <div id="gdGuide"></div>
+        </section>
+        <p class="gm-lead" id="gdLead"></p>
+        <div class="gd-list" id="gdList"></div>
+        <p class="gm-empty" id="gdEmpty" hidden></p>
+        <footer class="site-footer gm-footer" id="gdFooter"></footer>
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>

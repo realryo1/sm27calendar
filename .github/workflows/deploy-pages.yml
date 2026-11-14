@@ -65,7 +65,7 @@ jobs:
       - name: Minify JS / CSS
         run: |
           for d in website _pages; do
-            npx -y esbuild@0.25.10 $d/*.js $d/base.css $d/style.css $d/goodsmap/*.js $d/goodsmap/*.css --minify --charset=utf8 --outdir=$d --allow-overwrite --log-level=warning
+            npx -y esbuild@0.25.10 $d/*.js $d/base.css $d/style.css $d/goods/*.js $d/goods/*.css $d/map/*.js $d/map/*.css --minify --charset=utf8 --outdir=$d --allow-overwrite --log-level=warning
           done
 
       - name: Upload github.io directory

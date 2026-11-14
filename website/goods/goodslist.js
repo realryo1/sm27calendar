@@ -1,7 +1,7 @@
-// グッズの一覧の部品（グッズのページの goods.js が使う。会場マップ goodsmap.js・ほしいものリスト wishlist.js も、整理したデータをここから受け取る）。
+// グッズの一覧の部品（グッズのページの goods.js が使う。会場マップ ../map/map.js・ほしいものリスト wishlist.js も、整理したデータをここから受け取る）。
 // 品の行・タグ・ブースのカード・公式物販のカード・売り場の記載なしのカード・カードの開け閉めを作る。
-// 使い方：const L = window.GM_LIST(window.GM_DATA, { boothNo })。boothNo(b) はカードの見出しのブースの番号の HTML（マップでそのブースを示すボタン）
-window.GM_LIST = (D, { boothNo }) => {
+// 使い方：const L = window.GM_LIST(window.GM_DATA, { boothNo })。boothNo(b) はカードの見出しのブースの番号の HTML（マップでそのブースを示すボタン。カードを作らない会場マップは省く）
+window.GM_LIST = (D, { boothNo = () => "" } = {}) => {
   const { esc } = window.TT_UTIL; // カレンダーの ../util.js
 
   // 一覧の文言（年に関係しないもの）
@@ -77,7 +77,7 @@ window.GM_LIST = (D, { boothNo }) => {
   const boothName = (b) => b.label ?? TEXT.boothName(b.no);
 
   // ---------- 品の行とタグ ----------
-  // タグはどれも同じ大きさ（goodsmap.css の .gm-tag）で、品名の前に TAG_ORDER の順に並べる：
+  // タグはどれも同じ大きさ（list.css の .gm-tag）で、品名の前に TAG_ORDER の順に並べる：
   // 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注（限定・先行・受注はデータの note、企業・公式は情報元でブースの品だけ、ほかは places。名前はデータの places）。
   // TAG_ORDER に無いもの（ライブ会場などの売り場・ほかの note）は最後。その節の売り場（here。ライブ物販の節のライブ会場など）のタグは出さない。
   // カードの中の品もこの順に並べる（限定のある品が先、次に企業のタグのある品…。byTags）
@@ -142,7 +142,7 @@ window.GM_LIST = (D, { boothNo }) => {
   }
 
   // ---------- カード ----------
-  // カードは開け閉めできる（details.gm-fold。goodsmap.css）。初めは閉じていて、選んだ・しぼった・さがしたときに開く（fold）。
+  // カードは開け閉めできる（details.gm-fold。list.css）。初めは閉じていて、選んだ・しぼった・さがしたときに開く（fold）。
   // 見出しの中のブースの番号を押したときは開け閉めしない（summary の中のボタン・リンクは、それ自体として働くため）
   // title はカードの名前、sub は名前の下の行（会社名など）、before は名前の左（ブースの番号）。件数は名前の行のすぐ右（公式物販の見出しと同じ位置）
   const foldCard = ({ theme, title, sub = "", before = "", body, n = 0, id = "", no = id, cls = "" }) =>

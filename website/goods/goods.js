@@ -1,18 +1,13 @@
 // グッズ（試験ページ）
-// データ（data-○○○○.js の window.GM_DATA）・一覧の部品（goodslist.js）・会場マップ（goodsmap.js）・ほしいものリスト（wishlist.js）をまとめるページ本体。
-// 同じページを2つの表示に使い分ける（?part=）。カレンダーのサイドバーでは、どちらも iframe で開く（nav.js）。
-//   グッズ（既定）：グッズを売り場（公式物販・企業ブース・ライブ物販）ごとにまとめ、最後に会場の売り場・設備の説明を置く。2カラム（641px〜）は左にほしいものリスト、右に一覧
-//   マップ（?part=map）：会場マップだけを画面いっぱいに出す
-// マップのブースを押すとグッズの一覧のそのカードへ、カードの番号を押すとマップでそのブースを示す（表示をまたぐので、親の nav.js が取り次ぐ。下の「表示どうしのやりとり」）
+// データ（data-○○○○.js の window.GM_DATA）・一覧の部品（goodslist.js）・ほしいものリスト（wishlist.js）をまとめるページ本体。
+// グッズを売り場（公式物販・企業ブース・ライブ物販）ごとにまとめ、最後に会場の売り場・設備の説明を置く。2カラム（641px〜）は左にほしいものリスト、右に一覧。
+// 会場マップは別のページ（../map/）。カレンダーのサイドバーでは、どちらも iframe で開く（nav.js）。
+// マップのブースを押すとグッズの一覧のそのカードへ、カードの番号を押すとマップでそのブースを示す（ページをまたぐので、親の nav.js が取り次ぐ。下の「ページどうしのやりとり」）
 (() => {
   const D = window.GM_DATA;
   if (!D) return;
-  // カレンダーのサイドバーから iframe で開いたとき（?embed=1。カレンダーの nav.js）。goodsmap.css の .is-embed（金の帯を消す・スマホで下を空ける）も効く
-  const params = new URLSearchParams(location.search);
-  const EMBED = params.has("embed");
-  if (EMBED) document.documentElement.classList.add("is-embed");
-  const PART = params.get("part") === "map" ? "map" : "goods";
-  document.documentElement.classList.add(`is-part-${PART}`);
+  // カレンダーのサイドバーから iframe で開いたとき（?embed=1。カレンダーの nav.js。.is-embed は embed.js が付ける）
+  const EMBED = new URLSearchParams(location.search).has("embed");
 
   const TEXT = {
     // 売り場。上のしぼり込みのボタンと節の見出し（spot は会場の売り場・設備の説明。しぼり込みのボタンは無い）
@@ -40,27 +35,26 @@
   const br = (s) => esc(s).replace(/\n/g, "<br>");
   const dateOf = (s) => s.split("-").map(Number);
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  // 2カラムにする幅。goods.css・goodsmap.css と合わせる
+  // 2カラムにする幅。goods.css・list.css と合わせる
   const twoCol = matchMedia("(min-width: 641px)");
 
-  // ---------- 表示どうしのやりとり ----------
-  // カレンダーの中（iframe）では、マップとグッズが別のページなので、親（nav.js）にメッセージを送って表示を切り替えてもらい、相手のページへ取り次いでもらう。
-  //   送る：{ type: "map", id }（マップの表示に切り替えてそのブースを示す）／{ type: "booth", id }（グッズの表示に切り替えてそのカードへ）／
-  //         { type: "select", id }（切り替えずに、マップでそのブースを選んでおく）／{ type: "hits", hits, active }（しぼり込みの結果。マップで濃く出す）／
-  //         { type: "ready" }（読み込み終わり）
-  //   受ける：{ type: "pick", id, show }（マップ。showならそのブースを枠のまん中へ）／{ type: "hits", … }（マップ）／{ type: "card", id }（グッズ）
-  // 親が無いとき（このページを直接開いたとき）は、もう一方の表示のページを、ブースの番号つきのハッシュ（#booth-○○）で開く
-  const TALK = "goodsmap";
+  // ---------- ページどうしのやりとり ----------
+  // カレンダーの中（iframe）では、親（nav.js）にメッセージを送ってマップのページに切り替えてもらい、マップのページへ取り次いでもらう。
+  //   送る：{ type: "map", id }（マップに切り替えてそのブースを示す）／{ type: "select", id }（切り替えずに、マップでそのブースを選んでおく）／
+  //         { type: "hits", hits, active }（しぼり込みの結果。マップで濃く出す）／{ type: "ready" }（読み込み終わり）
+  //   受ける：{ type: "card", id }（マップのブースを押したとき。そのカードへ）
+  // マップのページ（../map/map.js）は、{ type: "booth", id } を送り、{ type: "pick", id, show }・{ type: "hits", … } を受ける。
+  // 親が無いとき（このページを直接開いたとき）は、マップのページを、ブースの番号つきのハッシュ（#booth-○○）で開く
+  const TALK = "goodsmap"; // nav.js と合わせる（グッズとマップのやりとりの名前）
   const embedded = EMBED && parent !== window;
   const tell = (msg) => parent.postMessage({ sm27: TALK, ...msg }, location.origin);
-  const partHref = (part, id) => {
-    const url = new URL(location.href);
-    if (part === "map") url.searchParams.set("part", "map");
-    else url.searchParams.delete("part");
+  const toMap = (id) => {
+    if (embedded) return tell({ type: "map", id });
+    const url = new URL("../map/", location.href);
+    url.search = location.search;
     url.hash = id ? `#booth-${id}` : "";
-    return url.search + url.hash || "?";
+    location.assign(url);
   };
-  const toPart = (part, id) => (embedded ? tell({ type: part === "map" ? "map" : "booth", id }) : location.assign(partHref(part, id)));
   const listen = (handlers) =>
     addEventListener("message", (ev) => {
       const m = ev.data;
@@ -68,23 +62,17 @@
       handlers[m.type]?.(m);
     });
 
-  // 年・読み込み直しのたびに、同じデータを両方の表示で作る。一覧の部品（goodslist.js）はどちらの表示でも使う
   // カードの番号は、押すとマップでそのブースを示すボタン
   const L = window.GM_LIST(D, {
     boothNo: (b) => `<button type="button" class="gm-no" data-map="${esc(b.no)}" aria-label="${esc(L.TEXT.showOnMap(L.boothName(b)))}">${esc(L.boothLabel(b))}</button>`,
   });
   const { boothBy } = L;
 
-  if (PART === "map") return startMap();
-
   const { norm, onSale, official, live, loose } = L;
   // 企業ブースのカードは、すべてのブース（マップのブースを押したときに移る先）
   const booths = D.booths;
   const boothSale = D.goods.filter((g) => g.booth && onSale(g)).length;
   const COUNT = { official: official.length, booth: boothSale, live: live.length, loose: loose.length };
-
-  // この表示にはマップを置かない（マップは別の表示）
-  $("map").remove();
 
   // ---------- 売り場のしぼり込み ----------
   const THEME = { official: "gold", booth: "pink", live: "violet", loose: "indigo", spot: "violet" };
@@ -141,7 +129,7 @@
   // ---------- しぼり込み ----------
   // 売り場は節ごとに、検索は品の行ごとに隠す。検索中は、中に見える行が無いカード・節を隠す。会場の案内は「すべて」のときだけ。
   // しぼり込み・検索中は見えているカードを開き、外したらそうして開いたものだけ閉じる（goodslist.js の fold）。
-  // 見えているカードは、マップの表示にも送り、当たったところとして濃く出す（goodsmap.js の setHits）
+  // 見えているカードは、マップのページにも送り、当たったところとして濃く出す（../map/map.js の setHits）
   const state = { at: "all", q: "" };
   const $list = $("gdList");
   const $query = $("gdQuery");
@@ -241,18 +229,18 @@
     state.q = $query.value;
     applyFilter();
   });
-  // カードの番号を押すと、マップの表示に切り替えてそのブースを示す。
-  // カードを開いたときは、マップでそのブース・売り場を選んでおく（切り替えはしない。マップに無いものは、マップの表示が無視する）
+  // カードの番号を押すと、マップのページに切り替えてそのブースを示す。
+  // カードを開いたときは、マップでそのブース・売り場を選んでおく（切り替えはしない。マップに無いものは、マップのページが無視する）
   $list.addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-map]");
-    if (el) return toPart("map", el.dataset.map);
+    if (el) return toMap(el.dataset.map);
     const $card = ev.target.closest(".gm-card__head, .gm-official__head")?.parentElement;
     if ($card && !$card.open && $card.dataset.no && embedded) tell({ type: "select", id: $card.dataset.no });
   });
   if (embedded) listen({ card: (m) => showCard(m.id) });
 
   // 2カラムの持ち手：カレンダー（app.js）と同じ操作・同じ処理（util.js の splitter）。ドラッグ（ダブルクリックで既定、← → キーでも動く）で左の列の幅（割合）を変え、この端末に覚える。
-  // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（goodsmap.css の .is-frozen）。手を止めたら、その幅で組み直す
+  // ドラッグ中はカードの枠だけを幅に合わせ、中身は押した時の幅のまま組み直さない（list.css の .is-frozen）。手を止めたら、その幅で組み直す
   {
     const $cols = $("gdCols");
     const $main = $("gdMain");
@@ -305,42 +293,4 @@
   window.addEventListener("hashchange", () => openHash());
   openHash({ instant: true });
   if (embedded) tell({ type: "ready" });
-
-  // ---------- マップの表示（?part=map） ----------
-  // 会場マップだけを画面いっぱいに出す。ブース・売り場を押すと、グッズの表示のそのカードへ移る
-  function startMap() {
-    const $side = $("gdSide");
-    $side.append($("map"));
-    $("gdMain").remove();
-    $("gdSplit").remove();
-    $("gdDrawer").remove();
-    // 高さは innerHeight で決める（グッズの表示と同じ。goods.css の --app-h）
-    const $cols = $("gdCols");
-    const resize = () => $cols.style.setProperty("--app-h", `${innerHeight}px`);
-    window.addEventListener("resize", resize);
-    resize();
-
-    const M = window.GM_MAP(D, L, { fixed: true, visible: () => true, onActivate: (id) => toPart("goods", id) });
-    // #booth-○○ ならそのブースをマップで示す。#map-○○ ならそのフロアのタブ
-    function openHash() {
-      let id = "";
-      let tab = "";
-      try {
-        id = decodeURIComponent(location.hash.match(/^#booth-(.+)$/)?.[1] ?? "");
-        tab = decodeURIComponent(location.hash.match(/^#map-(.+)$/)?.[1] ?? "");
-      } catch {
-        return; // 壊れたハッシュは無視する
-      }
-      if (tab) M.setFloor(tab);
-      else if (M.onMap(id)) M.pick(id, { toMap: true });
-    }
-    window.addEventListener("hashchange", openHash);
-    openHash();
-    if (!embedded) return;
-    listen({
-      pick: (m) => M.onMap(m.id) && M.pick(m.id, { toMap: m.show }),
-      hits: (m) => M.setHits(new Set(m.hits), m.active),
-    });
-    tell({ type: "ready" });
-  }
 })();

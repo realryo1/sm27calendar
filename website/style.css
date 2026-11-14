@@ -1644,7 +1644,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   cursor: pointer;
   transition: opacity .2s, transform .2s;
 }
-.to-board:hover { filter: brightness(1.05); } /* ほしいものリストのボタン（goodsmap.css の .gm-wishfab）と同じ */
+.to-board:hover { filter: brightness(1.05); } /* ほしいものリストのボタン（goods/list.css の .gm-wishfab）と同じ */
 .to-board[hidden] { display: block; opacity: 0; transform: translateY(12px); pointer-events: none; }
 
 @media (max-width: 640px) {
@@ -2112,7 +2112,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
-.has-nav .day-nav .day-chip--train:hover { filter: brightness(1.05); } /* ほしいものリストのボタン（goodsmap.css の .gm-wishfab）と同じ */
+.has-nav .day-nav .day-chip--train:hover { filter: brightness(1.05); } /* ほしいものリストのボタン（goods/list.css の .gm-wishfab）と同じ */
 
 /* ---------- 曜日の色（平日は灰色、土曜は青、日曜は赤。:root の --col-weekday・--col-sat・--col-sun） ---------- */
 [data-wd="weekday"] { color: var(--col-weekday); }

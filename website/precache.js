@@ -29,17 +29,23 @@ self.PRECACHE_IMAGES = {
   "image/souchou.png": 1,
 };
 
-// グッズ（会場マップとグッズ一覧の1ページ。サイドバーから開く）。github.io ではサイドバーを出さないので保存しない（sw.js もキャッシュを通さない）
-self.PRECACHE_GOODSMAP = [
-  "goodsmap/",
-  "goodsmap/index.html",
-  "goodsmap/goodsmap.css",
-  "goodsmap/goods.css",
-  "goodsmap/data-2027.js",
-  "goodsmap/data-2026fix.js",
-  "goodsmap/goodslist.js",
-  "goodsmap/wishlist.js",
-  "goodsmap/goodsmap.js",
-  "goodsmap/goods.js",
+// グッズ（goods/）と会場マップ（map/。データと一覧の部品は goods/ のもの）。サイドバーから開く。
+// github.io ではサイドバーを出さないので保存しない（sw.js もキャッシュを通さない）
+self.PRECACHE_GOODS = [
+  "goods/",
+  "goods/index.html",
+  "goods/common.css",
+  "goods/list.css",
+  "goods/goods.css",
+  "goods/embed.js",
+  "goods/data-2027.js",
+  "goods/data-2026fix.js",
+  "goods/goodslist.js",
+  "goods/wishlist.js",
+  "goods/goods.js",
+  "map/",
+  "map/index.html",
+  "map/map.css",
+  "map/map.js",
 ];
-if (self.SM27_SITE !== "pages") self.PRECACHE.push(...self.PRECACHE_GOODSMAP);
+if (self.SM27_SITE !== "pages") self.PRECACHE.push(...self.PRECACHE_GOODS);

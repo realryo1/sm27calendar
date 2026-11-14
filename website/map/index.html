@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <!-- 末尾スラッシュを強制する（カレンダーの index.html と同じ）。無いと相対パスが1階層上を指して壊れる -->
+  <script>
+    if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
+  </script>
+  <!-- 試験ページ：検索に載せない。カレンダーからはサイドバー（nav.js。github.io では出さない）から ?embed=1 の iframe で開く。オフライン保存は新しいドメインと手元だけ（precache.js の PRECACHE_GOODS） -->
+  <meta name="robots" content="noindex">
+  <!-- 会場マップ（map.js）。データと一覧の部品はグッズのページ（../goods/）のものを使う -->
+  <title>会場マップ（試験版）</title>
+  <meta name="description" content="ウイングベイ小樽・チ・カ・ホの出展ブースと売り場の場所を、拡大して中身まで見られる非公式の会場マップの試験版。">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="../favicon.ico" sizes="48x48">
+  <link rel="icon" href="../image/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- フォントの CSS は表示を止めないよう非同期で読み込む（カレンダーと同じ） -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap"></noscript>
+  <!-- 配色・フォント・背景はカレンダーと共通の base.css、グッズと共通の部品は common.css -->
+  <link rel="stylesheet" href="../base.css">
+  <link rel="stylesheet" href="../goods/common.css">
+  <link rel="stylesheet" href="map.css">
+  <!-- カレンダーの中（?embed=1）の下ごしらえと、年ごとのデータの場所（グッズと共通） -->
+  <script src="../goods/embed.js"></script>
+  <!-- 年ごとのデータ（グッズと同じファイル）。defer の順番を守るため document.write で書く -->
+  <script>document.write(`<script src="${GM_DATA_SRC("../goods/")}" defer><\/script>`);</script>
+  <script src="../util.js" defer></script>
+  <!-- 一覧の部品（window.GM_LIST。ブース・グッズを整理したデータを受け取る） -->
+  <script src="../goods/goodslist.js" defer></script>
+  <script src="map.js" defer></script>
+</head>
+<body>
+  <div class="gm">
+    <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2027/info-venue.html">会場一覧</a>もご覧ください。</p></noscript>
+    <!-- 会場マップを画面いっぱいに出す（スマホは常に全画面、PCは枠つき） -->
+    <div class="gm-page" id="mapPage">
+      <h1 class="gm-visually-hidden">会場マップ</h1>
+      <section class="gm-sec gm-sec--map" id="map" aria-label="会場マップ">
+        <div class="gm-mapbox" id="gmMapbox">
+          <!-- フロアのタブ（スマホではマップの枠が上に重なるので、枠の中に置く） -->
+          <div class="gm-floors" id="gmFloors" hidden></div>
+          <div class="gm-maptools">
+            <p class="gm-maptools__floor" id="gmFloorLabel"></p>
+            <div class="gm-zoom" id="gmZoom"></div>
+          </div>
+          <!-- 会場マップ（map.js が SVG で描く） -->
+          <div class="gm-map" id="gmMap"></div>
+          <p class="gm-maphint" id="gmMapHint"></p>
+          <ul class="gm-legend" id="gmLegend"></ul>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

@@ -77,7 +77,7 @@ window.TT_DATA = {
   // 新しいドメインと手元だけで出し、github.io では切り替えボタンを出さない（日付のガラスのバーは出す。precache.js の SM27_SITE）。先頭の項目がカレンダー。
   // url のページは iframe で重ねて表示する（?embed=1 で、向こうのページのカレンダーへ戻るリンクなどを隠す）。
   // url の無い項目（カレンダー以外）は、中身の無い表示（背景だけ）。
-  // マップとグッズは同じページ（goodsmap/）の別の表示（?part=map がマップ）で、別の iframe。行き来は nav.js が取り次ぐ。
+  // マップ（map/）とグッズ（goods/）は別のページで、別の iframe。データはどちらも goods/ のもの。行き来は nav.js が取り次ぐ。
   // localUrl は、手元（localhost・127.0.0.1）で開いたときに url の代わりに開くページ（運行情報は、公開前の変更を手元の hokkaido_delay/ で確かめるため）。
   // preload: true は、開く前に裏で読み込んでおく（運行情報は1分ごとに取得し続けるので、押そうとしたときだけ読み込む）。
   // pass は、カレンダーの URL からそのページへ渡す引数（ほしいものリストのリンク ?view=goods&wish=… の wish と、年の year）
@@ -85,8 +85,8 @@ window.TT_DATA = {
     label: "表示の切り替え",
     items: [
       { id: "calendar", label: "カレンダー", icon: "calendar" },
-      { id: "map", label: "マップ", icon: "map", url: "goodsmap/?embed=1&part=map", preload: true, pass: ["year"] },
-      { id: "goods", label: "グッズ", icon: "bag", url: "goodsmap/?embed=1", preload: true, pass: ["year", "wish"] },
+      { id: "map", label: "マップ", icon: "map", url: "map/?embed=1", preload: true, pass: ["year"] },
+      { id: "goods", label: "グッズ", icon: "bag", url: "goods/?embed=1", preload: true, pass: ["year", "wish"] },
       { id: "delay", label: "運行情報", icon: "train", url: "https://realryo1.github.io/hokkaido_delay/?embed=1", localUrl: "/hokkaido_delay/website/?embed=1" },
     ],
   },

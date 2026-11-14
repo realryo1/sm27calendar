@@ -1,6 +1,6 @@
 // ほしいものリスト（グッズのページ）。品の行の左端の♡（goodslist.js の .gm-wish）で入れ、浮かぶボタンからリストを開く。
 // リストは年ごとにブラウザ（localStorage の sm27-wish-年）に保存する（別のタブ・カレンダーの中の iframe とは storage イベントで合わせる）。
-// まとめ方（タグ・ブース）と並び順（値段・ブース）、個数を持ち、PDF はブラウザの印刷で、画像は印刷と同じ表を写して PNG で出す（印刷用の表 #gmWishPrint だけを印刷する。goodsmap.css の @media print）。
+// まとめ方（タグ・ブース）と並び順（値段・ブース）、個数を持ち、PDF はブラウザの印刷で、画像は印刷と同じ表を写して PNG で出す（印刷用の表 #gmWishPrint だけを印刷する。list.css の @media print）。
 // リストはリンク（カレンダーの ?view=goods&wish=id.個数,…）にでき、PDF にはそのリンクと QR コードを載せる。リンクを開くと、今のリストに合わせるか置き換えるかを選んで読み込む。
 // 2カラム（641px〜）では、浮かぶボタンの代わりに、左の列の下から引き出すリスト（#gdWish。会場マップの上に重なる）に出す。
 // 使い方：ページの一覧を描いたあとに window.GM_WISH(GM_DATA, GM_LIST の戻り値)
@@ -68,8 +68,8 @@ window.GM_WISH = (D, L) => {
   const H2C_SRC = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
   const H2C_SRI = "sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H";
 
-  // リストが空のときのイラスト：品の行（♡・品名・値段を線で）の♡を指（矢印）が押し、♡が塗られる。動きは goodsmap.css の gm-demo-○○
-  // ♡の形は goodsmap.css の --gm-heart-line・--gm-heart と同じ
+  // リストが空のときのイラスト：品の行（♡・品名・値段を線で）の♡を指（矢印）が押し、♡が塗られる。動きは list.css の gm-demo-○○
+  // ♡の形は list.css の --gm-heart-line・--gm-heart と同じ
   const EMPTY_ART = `<svg class="gm-demo" viewBox="0 0 220 76" aria-hidden="true">
     <rect class="gm-demo__row" x="4" y="10" width="212" height="44" rx="10"/>
     <g transform="translate(14 20)">
@@ -155,7 +155,7 @@ window.GM_WISH = (D, L) => {
   // タグの名前と色（goodslist.js の tagHtml と同じ決まり。タグの無いまとまりは「タグなし」）
   const tagName = (k) => (!k ? TEXT.noTag : k === "maker" || k === "official" ? L.TEXT.tags[k] : D.places[k] ?? k);
   const tagKind = (k) => (!k ? "" : k === "maker" || k === "official" || k in D.places ? k : "note");
-  // まとまり（[{ head: 見出しの文字, kind: 見出しの帯の色（タグでまとめたときのタグの色。goodsmap.css の .gm-tag--○○）, items }]）。
+  // まとまり（[{ head: 見出しの文字, kind: 見出しの帯の色（タグでまとめたときのタグの色。list.css の .gm-tag--○○）, items }]）。
   // まとめ方で分け、まとまりの順はタグなら TAG_ORDER、ブースならブースの順。中は並び順で並べる。
   // map は { id: 個数 }（既定は今のリスト。リンクから読み込む前のプレビューでも使う）
   function groupsOf(map = wish) {
@@ -210,7 +210,7 @@ window.GM_WISH = (D, L) => {
   function rowHtml(g, showWhere) {
     const q = wish[g.id];
     const name = short(g);
-    // タグ・品名・値段と個数の3列（goodsmap.css の .gm-wishlist__body--list。列の幅はリスト全体でそろえる）
+    // タグ・品名・値段と個数の3列（list.css の .gm-wishlist__body--list。列の幅はリスト全体でそろえる）
     return `<li class="gm-wishitem">
       ${showWhere ? `<p class="gm-wishitem__where">${esc(L.whereOf(g).label)}</p>` : ""}
       <span class="gm-wishitem__tags">${L.tagsOf(g, tagOpts(g))}</span>
@@ -442,7 +442,7 @@ window.GM_WISH = (D, L) => {
     const t = totals();
     const name = D.event?.name ?? "";
     // まとまりごとに見出しの行（小計つき）と品の行。ブースでまとめたときは見出しがブースなので、売り場の列を出さない。
-    // タグでまとめたときは、見出しの行の背景をそのタグの薄い色にする（goodsmap.css の --tag-bg）
+    // タグでまとめたときは、見出しの行の背景をそのタグの薄い色にする（list.css の --tag-bg）
     const showWhere = group === "tag";
     const cols = TEXT.printCols.filter((_, i) => showWhere || i !== 1);
     const row = (g) => {
@@ -492,7 +492,7 @@ window.GM_WISH = (D, L) => {
   }
 
   // ---------- 画像で保存 ----------
-  // PDF（印刷）と同じ表（buildPrint）を、画面の外に A4 の幅で出して html2canvas で写し、PNG にする（goodsmap.css の .gm-wishprint.is-capture）。
+  // PDF（印刷）と同じ表（buildPrint）を、画面の外に A4 の幅で出して html2canvas で写し、PNG にする（list.css の .gm-wishprint.is-capture）。
   // できた画像はそのまま画面に出し、長押し（パソコンは右クリック）で保存してもらう（共有シートは、ホーム画面に追加した PWA でうまく動かないため）。パソコン向けにダウンロードのボタンも置く
   const loadH2c = loadLib(H2C_SRC, H2C_SRI, "html2canvas");
   async function saveImage($b) {

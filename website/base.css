@@ -22,7 +22,7 @@
   --brand-gradient: linear-gradient(135deg, #9185de 0%, #e9a1eb 100%); /* 公式サイト準拠 */
   --gold-gradient: linear-gradient(to right, #736B32 0%, #D9CA5E 20%, #FFFFFF 30%, #D9CA5E 50%, #736B32 90%);
   /* ページの隙間（画面の端・時間割と会場一覧の間・時間割の上下・下のバーとの間など）。ここだけ変えればそろって変わる。
-     グッズマップ（goodsmap/）も base.css を読むので同じ値になる。持ち手の位置の計算（app.js・goodsmap.js）もこれを読む */
+     グッズ（goods/）と会場マップ（map/）も base.css を読むので同じ値になる。持ち手の位置の計算（app.js・goods/goods.js）もこれを読む */
   --gap: 10px;
   /* 画面の下端の安全な余白（iPhone のホームバーなど）。下のバーの位置・高さはこれを使う */
   --safe-b: env(safe-area-inset-bottom, 0px);

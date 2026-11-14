@@ -1,4 +1,4 @@
-// 共通の小さな関数（app.js・train-view.js・nav.js と、グッズマップの goodsmap.js で使う）
+// 共通の小さな関数（app.js・train-view.js・nav.js と、グッズ goods/・会場マップ map/ で使う）
 // タッチでページ全体を拡大させない（iPhoneで拡大のあと「繰り返しエラー」になることがある）。
 // iOS は viewport の user-scalable=no を無視するので、ジェスチャーごと止める。カレンダーの表とマップのピンチは自前の処理で行う
 document.addEventListener("gesturestart", (ev) => ev.preventDefault());
@@ -125,7 +125,7 @@ window.TT_UTIL = {
   // "YYYY-MM-DD" の曜日（0＝日〜6＝土）
   weekday: (id) => new Date(`${id}T00:00:00Z`).getUTCDay(),
 
-  // 2カラムの持ち手（カレンダー app.js・グッズマップ goodsmap.js・グッズ一覧 goods.js で共通）。
+  // 2カラムの持ち手（カレンダー app.js・グッズ goods/goods.js で共通）。
   // ドラッグ（ダブルクリックで def、← → キーでも動く）で左の列の幅（$main の cssVar に %）を変え、この端末（localStorage の key）に覚える。
   // 左は minA px、右は minB px（と持ち手の列）を残す。ドラッグのあいだは freeze() で中身の組み直しを止め、手を止めて SETTLE ms たつか離したら thaw() で戻す。
   // hold: 持ち手を選ぶ・外すと持ち手の列が広がる・戻る（CSS の --split-extra）ので、そのあいだも freeze() しておく。
