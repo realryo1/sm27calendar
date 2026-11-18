@@ -26,6 +26,15 @@
   --gap: 10px;
   /* 画面の下端の安全な余白（iPhone のホームバーなど）。下のバーの位置・高さはこれを使う */
   --safe-b: env(safe-area-inset-bottom, 0px);
+  /* すりガラスのバー（カレンダーの切り替えバー・日付ボタン・マップのフロアタブ。nav.js / map.js） */
+  --glass-bg: rgb(244 241 255 / .9); /* バー・案内 */
+  --glass-dark-bg: rgb(79 69 143 / .9); /* 市電いまどこ */
+  --glass-blur: blur(14px) saturate(1.8);
+  --glass-knob-bg: rgb(255 255 255 / .7); /* 選んでいるボタンの下の板 */
+  --glass-knob-drag-bg: rgb(255 255 255 / .45); /* 押したまま動かしている間の板 */
+  --glass-knob-blur: blur(6px) saturate(1.8);
+  --glass-h: 50px;
+  --glass-radius: 999px;
   /* 曜日の色（app.js が曜日の文字に付ける [data-wd]。ファイルの最後で当てる） */
   --col-weekday: #8a8799;
   --col-sat: #3b78d4;
@@ -95,3 +104,53 @@ button { font: inherit; color: inherit; }
 .site-footer__updated { margin: 0 0 6px; font-weight: 700; }
 .site-footer__repo { margin: 8px 0 0; }
 .site-footer__repo a { color: inherit; text-decoration: underline; }
+
+/* iOS のタブバー（Liquid Glass）風のバー（util.js の glassBar が .glass-bar を付ける）。
+   板の向き・大きさは各ページの CSS（style.css・map.css）で決める */
+.glass-bar {
+  position: relative;
+  display: flex !important; /* 日付のボタンの枠（#dayNav）は、index.html で display: contents にしている */
+  padding: 4px;
+  border-radius: var(--glass-radius);
+  /* すりガラス：下の内容をぼかして透かす。縁の白い線と、浮いて見える影 */
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / .55),
+    inset 0 1px 1px rgb(255 255 255 / .8),
+    0 2px 8px rgb(79 69 143 / .16); /* PCの縦バーは外側の余白（--gap）で切れるので、影はその中に収める */
+  pointer-events: auto;
+  touch-action: none; /* 押したまま動かすのに使う */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.glass-bar > :not(.glass-glider) {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  -webkit-touch-callout: none; /* 長押しでリンクのメニューを出さない */
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: transparent; /* 押したときにブラウザが出す色付きの四角を消す */
+  transition: color .2s;
+}
+.glass-glider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: block;
+  border-radius: calc(var(--glass-radius) - 4px);
+  background: var(--glass-knob-bg);
+  -webkit-backdrop-filter: var(--glass-knob-blur);
+  backdrop-filter: var(--glass-knob-blur);
+  /* 上の縁の照り返しと、下の淡い影でガラスの厚みを出す */
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / .95),
+    inset 0 -1px 2px rgb(79 69 143 / .08),
+    0 2px 10px rgb(79 69 143 / .16);
+  transition: transform .5s cubic-bezier(.3, 1.35, .5, 1), scale .25s cubic-bezier(.3, 1.35, .5, 1), background-color .2s;
+}
+.is-dragging > .glass-glider { background-color: var(--glass-knob-drag-bg); transition: scale .25s cubic-bezier(.3, 1.35, .5, 1), background-color .2s; }
+@media (prefers-reduced-motion: reduce) {
+  .glass-glider { transition: none; }
+}

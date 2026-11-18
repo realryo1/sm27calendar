@@ -12,13 +12,11 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
 
   // 会場のタブ（このデータのフロア）
-  const TABS = D.floors.map((f) => ({ floor: f.id, label: f.label }));
+  const TABS = D.floors.map((f) => ({ floor: f.id, label: f.label, sub: f.sub }));
 
   // 画面の文言（年に関係しないもの）。日付・会場・注意書きなど、年ごとに変わるものはデータ側
   const TEXT = {
     floors: "会場",
-    mapHint: "二本指で拡大するとブースの中身が出ます",
-    mapHintMouse: "ホイールで拡大するとブースの中身が出ます", // マウスのとき（指で触る端末は mapHint）
     fullOn: "全画面で表示",
     fullOff: "全画面を閉じる",
     legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示", goods: "グッズ販売・展示など", marche: "マルシェ" },
@@ -27,7 +25,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   };
 
   const $ = (id) => document.getElementById(id);
-  const { esc } = window.TT_UTIL; // カレンダーの ../util.js
+  const { esc, glassBar } = window.TT_UTIL; // カレンダーの ../util.js
   const r1 = (n) => Math.round(n * 10) / 10;
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   // 2カラムにする幅。map.css・goods.js と合わせる。fixed のときは、スマホでも2カラムと同じ（縮むプレビューを使わない）
@@ -61,6 +59,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   const $map = $("gmMap");
   const $mapbox = $("gmMapbox");
   let floor = D.floors[0];
+  let setFloorIndex = () => {};
   const tileOf = (f) => f.tile ?? [57, 35]; // ブースの大きさ（フロアごとのデータ。無ければ公式の会場マップのブースと同じ）
   const INSET = 2.5; // 売り場・設備の四角を少し縮めて、となりとの間を空ける
   // ブース名が出る拡大率（NAMED 以上）では、通路を狭めてその分ブースを大きくする（番号だけのあいだは元の大きさ）。
@@ -281,14 +280,11 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
 
   function renderMap() {
     shown = turned(floor, rot);
-    $("gmFloorLabel").innerHTML = `${esc(floor.label)}${floor.sub ? `<small>${esc(floor.sub)}</small>` : ""}`;
-    // 会場（ウイングベイ・チ・カ・ホ）はタブで切り替える
-    const $floors = $("gmFloors");
-    $floors.hidden = TABS.length < 2;
-    $floors.innerHTML = TABS.map(
-      (t) => `<button type="button" class="gm-chip gm-tab" role="tab" data-floor="${esc(t.floor)}" aria-selected="${t.floor === floor.id}">${esc(t.label)}</button>`
-    ).join("");
-    $("gmMapHint").textContent = floor.hint ?? (booths.length ? (matchMedia("(pointer: coarse)").matches ? TEXT.mapHint : TEXT.mapHintMouse) : "");
+    // 会場（ウイングベイ・チ・カ・ホ）のタブとガラスの板を今のフロアに合わせる
+    $("gmFloors")
+      .querySelectorAll("[data-floor]")
+      .forEach((b) => b.setAttribute("aria-selected", b.dataset.floor === floor.id));
+    setFloorIndex(Math.max(0, TABS.findIndex((t) => t.floor === floor.id)));
     // マップの絵（SVG）と、拡大したときにブースの上に出す中身（HTML）を、同じ大きさの台に重ねる
     $map.innerHTML = `<div class="gm-canvas">${mapSvg(shown)}<div class="gm-minis" aria-hidden="true">${labelsHtml(shown)}${minisHtml(shown)}</div></div>`;
     sizeMap();
@@ -598,8 +594,15 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
       Object.entries(TEXT.zoom)
         .map(([z, [label, aria]]) => `<button type="button" data-zoom="${z}" aria-label="${esc(aria)}">${esc(label)}</button>`)
         .join("") + `<button type="button" class="gm-full" id="gmFull" aria-pressed="false" aria-label="${esc(TEXT.fullOn)}"></button>`;
-    $("gmFloors").setAttribute("role", "tablist");
-    $("gmFloors").setAttribute("aria-label", TEXT.floors);
+    const $floors = $("gmFloors");
+    $floors.hidden = TABS.length < 2;
+    $floors.setAttribute("role", "tablist");
+    $floors.setAttribute("aria-label", TEXT.floors);
+    $floors.innerHTML = TABS.map(
+      (t) =>
+        `<button type="button" class="gm-chip gm-tab" role="tab" data-floor="${esc(t.floor)}" aria-selected="${t.floor === floor.id}"><span>${esc(t.label)}</span>${t.sub ? `<small>${esc(t.sub)}</small>` : ""}</button>`
+    ).join("");
+    setFloorIndex = glassBar($floors, "[data-floor]", (el) => el.click());
   }
 
   // ---------- 操作 ----------

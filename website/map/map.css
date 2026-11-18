@@ -52,18 +52,50 @@ body { height: 100%; overflow: hidden; }
 @media (max-width: 640px) {
   .gm-sec--map { margin: 0 calc(-1 * var(--gap)); border-radius: 0; box-shadow: none; } /* 画面の幅いっぱい */
 }
+/* フロアのタブ（ウイングベイ・チ・カ・ホ）：カレンダーの日付バー（.day-nav / .glass-bar）と同じ寸法・高さ・すりガラス */
 .gm-floors {
+  flex: none;
+  width: 100%;
+  height: var(--glass-h);
+  margin: 2px 0 0;
+}
+.gm-floors[hidden] { display: none !important; }
+.gm-floors > :not(.glass-glider) { flex: 1 1 0; }
+.gm-floors .glass-glider {
+  bottom: 4px;
+  width: calc((100% - 8px) / var(--n, 1));
+  transform: translateX(calc(var(--i, 0) * 100%));
+}
+.gm-floors.is-pressed > .glass-glider { scale: 1.06 1.12; }
+.gm-floors.is-dragging > .glass-glider { scale: 1.12 1.22; }
+.gm-floors .gm-tab {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 3px;
+  min-height: 0;
+  padding: 0 4px;
+  border: 0;
+  border-radius: calc(var(--glass-radius) - 4px);
+  font-size: .88rem;
+  line-height: 1.1;
+  background: none;
 }
-/* フロアのタブ（ウイングベイ・チ・カ・ホ）：ほしいものリストの設定の札より少し大きく */
-.gm-tab { padding: 6px 18px; font-size: .88rem; }
-@media (max-width: 640px) {
-  .gm-tab { padding: 5px 11px; font-size: .78rem; }
+.gm-floors .gm-tab small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .58rem;
+  font-weight: 700;
+  opacity: .75;
 }
+.gm-floors .gm-tab:hover { background: none; }
+.gm-floors .gm-tab[aria-selected="true"],
+.gm-floors .gm-tab.is-hover { color: var(--col-ink-primary); background: none; }
+.gm-floors.is-dragging .gm-tab[aria-selected="true"]:not(.is-hover) { color: var(--col-ink); }
+.gm-floors .gm-tab:focus-visible { outline: 2px solid var(--col-ink-primary); outline-offset: -2px; }
 .gm-mapbox {
   padding: 10px 10px 12px;
   border-radius: 16px;
@@ -77,14 +109,16 @@ body { height: 100%; overflow: hidden; }
 }
 .gm-maptools {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 8px 12px;
+  margin-top: 8px;
 }
-.gm-maptools__floor { margin: 0; font-size: .88rem; font-weight: 900; color: var(--col-secondary-dark); }
-.gm-maptools__floor small { margin-left: .5em; font-size: .85em; font-weight: 700; color: var(--col-ink); opacity: .7; }
-.gm-zoom { display: flex; flex: none; gap: 4px; }
+.gm-zoom { display: flex; flex: none; gap: 4px; margin-left: auto; }
+@media (min-width: 641px) {
+  /* 2カラム以上は凡例・ズームボタン・フロアタブを横1列にまとめる（フロアを切り替えてもボタンとタブの位置を動かさない） */
+  .gm-floors { width: clamp(240px, 31vw, 410px); margin: 0; }
+}
 .gm-zoom button {
   min-width: 36px;
   height: 32px;
@@ -153,8 +187,7 @@ body { height: 100%; overflow: hidden; }
 @media (max-width: 640px) {
   /* スマホは左右の余白も使い、マップを画面の幅いっぱいにする（カレンダーの時間割と同じ。.gm-sec--map が余白の分だけ広がる） */
   .gm-mapbox { padding: 10px 0 12px; border-radius: 0; }
-  .gm-maptools,
-  .gm-legend { padding: 0 12px; }
+  .gm-maptools { gap: 6px 8px; padding: 0 var(--gap); }
   .gm-map { border-radius: 0; }
 }
 
@@ -330,16 +363,19 @@ body { height: 100%; overflow: hidden; }
 
 /* 凡例 */
 .gm-legend {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 14px;
-  margin: 10px 0 0;
-  padding: 0 2px;
+  justify-content: flex-start;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
   list-style: none;
   font-size: .72rem;
   font-weight: 700;
 }
+.gm-legend:empty { display: none; }
 .gm-legend li { display: flex; align-items: center; gap: 5px; }
 .gm-legend i {
   flex: none;
@@ -353,14 +389,9 @@ body { height: 100%; overflow: hidden; }
   border-color: var(--col-secondary-light);
   background: repeating-linear-gradient(45deg, #ddd6ff 0 3px, var(--col-secondary-lighter) 3px 6px);
 }
-/* 操作の案内（スマホは二本指、マウスはホイール。文言は map.js が端末で切り替える。スマホでは、全画面のときだけ出す） */
-.gm-maphint { margin: 6px 0 0; font-size: .7rem; text-align: center; opacity: .7; }
-.gm-maphint:empty { display: none; }
-
 /* スマホ：画面いっぱいに出す */
 @media (max-width: 640px) {
-  /* 案内と凡例は全画面のときだけ出す（ふだんはマップ全体だけを、すき間なく見せる） */
-  .gm-mapbox:not(.is-full) .gm-maphint,
+  /* 凡例は全画面のときだけ出す（ふだんはマップ全体だけを、すき間なく見せる） */
   .gm-mapbox:not(.is-full) .gm-legend { display: none; }
   /* 全画面：画面いっぱいの表示。うしろのページはスクロールさせない */
   .gm-mapbox.is-full {
@@ -370,7 +401,7 @@ body { height: 100%; overflow: hidden; }
     padding: calc(10px + env(safe-area-inset-top)) 0 calc(10px + env(safe-area-inset-bottom));
     background: var(--col-paper);
   }
-  .is-embed .gm-mapbox.is-full { padding-bottom: calc(10px + var(--embed-nav-h, 0px)); } /* 2カラムと同じ（上の @media (min-width: 641px) の同じ規則） */
+  .is-embed .gm-mapbox.is-full { padding-bottom: max(10px, var(--embed-nav-h, 0px)); } /* カレンダーの日付バー（.day-nav）と同じ高さ位置にそろえる */
   html.gm-noscroll,
   html.gm-noscroll body { overflow: hidden; }
 }

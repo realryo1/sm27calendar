@@ -69,81 +69,8 @@
   };
   const itemOf = (el) => items.find((x) => x.id === el?.closest?.("[data-view]")?.dataset.view);
 
-  // スマホのガラスのバー（切り替えバー・日付ボタンのバー）：iOS のタブバー（Liquid Glass）のように、
-  // 選んでいるボタンの下に板（.glass-glider）を敷く。押した瞬間に板が膨らんでそのボタンまで動き、押したまま横に動かすと板が指について動く。
-  // 離したところのボタンを pick に渡す（クリックは待たない）。hover は指が乗ったボタン（読み込みの先回りなど）。
-  // 左のサイドバーでは縦に並ぶので（style.css）、縦に動かす。返す関数で、板を置くボタンの番号を決める
   const twoCol = matchMedia("(min-width: 641px)");
-  const glassBar = ($bar, sel, pick, hover = () => {}) => {
-    const $glider = document.createElement("span");
-    $glider.className = "glass-glider";
-    $glider.setAttribute("aria-hidden", "true");
-    $bar.prepend($glider);
-    $bar.classList.add("glass-bar");
-    let drag = null;
-    let suppressUntil = 0;
-    const indexAt = (p) => Math.max(0, Math.min(drag.slots.length - 1, Math.floor((p - drag.start) / drag.w)));
-    const posOf = (ev) => (drag.vert ? ev.clientY : ev.clientX);
-    const moveTo = (px) => ($glider.style.transform = `translate${drag.vert ? "Y" : "X"}(${px}px)`);
-    const hoverAt = (i) => {
-      drag.slots.forEach((el, k) => el.classList.toggle("is-hover", k === i));
-      hover(drag.slots[i]);
-    };
-    const end = (ev) => {
-      if (!drag) return;
-      const el = ev.type === "pointerup" ? drag.slots[indexAt(posOf(ev))] : null;
-      drag.slots.forEach((s) => s.classList.remove("is-hover"));
-      drag = null;
-      $bar.classList.remove("is-pressed", "is-dragging");
-      $glider.style.transform = ""; // 選んだボタンの位置へ、はねるように戻る（style.css の transition）
-      if (!el) return;
-      suppressUntil = performance.now() + 500;
-      pick(el);
-    };
-    $bar.addEventListener("pointerdown", (ev) => {
-      // 新しいタブで開く操作（中クリック・Ctrl などを押しながら）は、ふつうのリンクのままにする
-      if (ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
-      const slots = [...$bar.querySelectorAll(sel)];
-      const r = $bar.getBoundingClientRect();
-      const cs = getComputedStyle($bar);
-      const vert = cs.flexDirection === "column";
-      const pad = parseFloat(vert ? cs.paddingTop : cs.paddingLeft);
-      const size = vert ? r.height : r.width;
-      drag = { id: ev.pointerId, vert, p0: vert ? ev.clientY : ev.clientX, start: (vert ? r.top : r.left) + pad, w: (size - pad * 2) / slots.length, slots, moved: false };
-      $bar.setPointerCapture(ev.pointerId); // 押したまま外へ出ても追い、外で離しても終わらせる（選ぶのは離したときにここで行う）
-      $bar.classList.add("is-pressed");
-      const i = indexAt(drag.p0);
-      moveTo(i * drag.w); // 押したボタンへ、はねるように動く
-      hoverAt(i);
-    });
-    $bar.addEventListener("pointermove", (ev) => {
-      if (!drag || ev.pointerId !== drag.id) return;
-      if (!drag.moved) {
-        if (Math.abs(posOf(ev) - drag.p0) < 6) return;
-        drag.moved = true;
-        $bar.classList.add("is-dragging");
-      }
-      moveTo(Math.max(0, Math.min(drag.w * (drag.slots.length - 1), posOf(ev) - drag.start - drag.w / 2)));
-      hoverAt(indexAt(posOf(ev)));
-    });
-    // lostpointercapture は使わない（指を置いたボタンが持っていた捕捉を、動かし始めにバーへ移すときにも起きるため）
-    for (const type of ["pointerup", "pointercancel"]) $bar.addEventListener(type, end);
-    // 指を離して選んだ直後に、指を置いたボタンへ届く本物のクリックは止める（選んだボタンへは pick が直接行う）
-    $bar.addEventListener(
-      "click",
-      (ev) => {
-        if (!ev.isTrusted || performance.now() >= suppressUntil) return;
-        ev.preventDefault();
-        ev.stopImmediatePropagation();
-      },
-      true
-    );
-    return (i) => {
-      if (!$glider.isConnected) $bar.prepend($glider); // 中身を描き直されたとき（app.js の日付ボタン）は戻す
-      $bar.style.setProperty("--n", $bar.querySelectorAll(sel).length);
-      $bar.style.setProperty("--i", i);
-    };
-  };
+  const { glassBar } = window.TT_UTIL;
 
   const $main = document.querySelector(".main");
   const baseTitle = document.title;

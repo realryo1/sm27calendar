@@ -41,16 +41,14 @@
       <h1 class="gm-visually-hidden">会場マップ</h1>
       <section class="gm-sec gm-sec--map" id="map" aria-label="会場マップ">
         <div class="gm-mapbox" id="gmMapbox">
-          <!-- フロアのタブ（スマホではマップの枠が上に重なるので、枠の中に置く） -->
-          <div class="gm-floors" id="gmFloors" hidden></div>
-          <div class="gm-maptools">
-            <p class="gm-maptools__floor" id="gmFloorLabel"></p>
-            <div class="gm-zoom" id="gmZoom"></div>
-          </div>
           <!-- 会場マップ（map.js が SVG で描く） -->
           <div class="gm-map" id="gmMap"></div>
-          <p class="gm-maphint" id="gmMapHint"></p>
-          <ul class="gm-legend" id="gmLegend"></ul>
+          <!-- マップの下の帯（PCは1列、スマホは情報＋操作／凡例／フロアタブの3段） -->
+          <div class="gm-maptools">
+            <ul class="gm-legend" id="gmLegend"></ul>
+            <div class="gm-zoom" id="gmZoom"></div>
+            <div class="gm-floors" id="gmFloors" hidden></div>
+          </div>
         </div>
       </section>
     </div>

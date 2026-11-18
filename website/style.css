@@ -2,13 +2,7 @@
 :root {
   --col-logo-dark: #B87CAC; /* ロゴの濃い部分の色。--col-logo だと淡くて文字が読みにくいときに使う */
   --col-logo: #D4A8C0; /* 公式ロゴ（logo-header.webp）の主な色。base.css の配色ではなくこのサイトだけの色 */
-  /* すりガラス（スマホの下のバー。nav.js）。bg の最後の数字が濃さ（0〜1、大きいほど透けにくい）、blur がぼかし */
-  --glass-bg: rgb(244 241 255 / .9); /* バー・案内 */
-  --glass-dark-bg: rgb(79 69 143 / .9); /* 市電いまどこ */
-  --glass-blur: blur(14px) saturate(1.8);
-  --glass-knob-bg: rgb(255 255 255 / .7); /* 選んでいるボタンの下の板 */
-  --glass-knob-drag-bg: rgb(255 255 255 / .45); /* 押したまま動かしている間の板 */
-  --glass-knob-blur: blur(6px) saturate(1.8);
+  /* すりガラスの色・ぼかし（--glass-*）と .glass-bar・.glass-glider の共通部分は base.css */
 
   --hour: 72px;
   --head: 56px;
@@ -2049,56 +2043,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
      内容の下端を時間割の下端とそろえる */
   .app-view { inset: 0 0 calc(var(--nav-h) - var(--gap)) 0; }
 }
-/* iOS のタブバー（Liquid Glass）風のバー（nav.js の glassBar が .glass-bar を付ける。切り替えボタンと、日付のボタン。PCは縦、スマホは横）：
-   ボタンは枠なしで1本の丸いバーに並べ、選んでいるボタンの下にガラスの板（.glass-glider）を敷く。
-   押すと板が膨らんでそのボタンまで動き、押したまま動かすと板が指（マウス）について動く。板の向きと大きさは上の PC・スマホそれぞれで決める */
-.glass-bar {
-  position: relative;
-  display: flex !important; /* 日付のボタンの枠（#dayNav）は、index.html で display: contents にしている */
-  padding: 4px;
-  border-radius: var(--glass-radius);
-  /* すりガラス：下の内容をぼかして透かす。縁の白い線と、浮いて見える影 */
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / .55),
-    inset 0 1px 1px rgb(255 255 255 / .8),
-    0 2px 8px rgb(79 69 143 / .16); /* PCの縦バーは外側の余白（--gap）で切れるので、影はその中に収める */
-  pointer-events: auto;
-  touch-action: none; /* 押したまま動かすのに使う */
-  user-select: none;
-  -webkit-user-select: none;
-}
-.glass-bar > :not(.glass-glider) {
-  position: relative;
-  z-index: 1;
-  min-width: 0;
-  -webkit-touch-callout: none; /* 長押しでリンクのメニューを出さない */
-  -webkit-user-drag: none;
-  -webkit-tap-highlight-color: transparent; /* 押したときにブラウザが出す色付きの四角を消す */
-  transition: color .2s;
-}
-.glass-glider {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  display: block;
-  border-radius: calc(var(--glass-radius) - 4px);
-  background: var(--glass-knob-bg);
-  -webkit-backdrop-filter: var(--glass-knob-blur);
-  backdrop-filter: var(--glass-knob-blur);
-  /* 上の縁の照り返しと、下の淡い影でガラスの厚みを出す */
-  box-shadow:
-    inset 0 1px 1px rgb(255 255 255 / .95),
-    inset 0 -1px 2px rgb(79 69 143 / .08),
-    0 2px 10px rgb(79 69 143 / .16);
-  transition: transform .5s cubic-bezier(.3, 1.35, .5, 1), scale .25s cubic-bezier(.3, 1.35, .5, 1), background-color .2s;
-}
-.is-dragging > .glass-glider { background-color: var(--glass-knob-drag-bg); transition: scale .25s cubic-bezier(.3, 1.35, .5, 1), background-color .2s; }
-@media (prefers-reduced-motion: reduce) {
-  .glass-glider { transition: none; }
-}
+/* ガラスのバーの共通部分（.glass-bar・.glass-glider）は base.css。ここではボタンの見た目だけ */
 /* 切り替えボタン（ガラスのバーの中）。選んでいるボタンは塗らず、文字の色と板で示す */
 .glass-bar .app-nav__item { border-radius: calc(var(--glass-radius) - 4px); }
 .glass-bar .app-nav__item:hover,

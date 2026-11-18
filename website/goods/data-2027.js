@@ -95,7 +95,6 @@ window.GM_DATA = {
     {
       id: "chikaho",
       label: "チ・カ・ホ",
-      sub: "札幌駅前通地下歩行空間",
       hint: "仮マップ。時間と情報は未発表です。",
       view: [0, 0, 1200, 500],
       tile: [70, 60],
