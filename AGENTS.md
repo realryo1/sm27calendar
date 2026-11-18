@@ -10,6 +10,7 @@
 ・website/image/のPNGを置き換えたら、READMEの手順でPNG-8に減色する。
 ・タスク（これから・食い違い・解決）はdocument/sm27progress.mdに書き、進めたら更新する。仕様や経緯はそこに書かない。
 ・グッズ・出展ブースマップの構成・仕様・注意はdocument/goodsmap.mdに書く。
+・不要なセカンダリラベルや説明を避ける。レイアウトに説明させる。
 
 姉妹プロジェクト（hokkaido_delay/）
 ・運行情報はhokkaido_delay/の別リポジトリ。作業するときはhokkaido_delay/AGENTS.mdに従う。
