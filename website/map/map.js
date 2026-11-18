@@ -993,8 +993,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   };
 
   // 高さは dvh ではなく innerHeight で決める（map.css の --app-h）
-  const $page = $("mapPage");
-  const resize = () => $page.style.setProperty("--app-h", `${innerHeight}px`);
+  const resize = () => document.documentElement.style.setProperty("--app-h", `${innerHeight}px`);
   window.addEventListener("resize", resize);
   resize();
 

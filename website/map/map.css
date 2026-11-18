@@ -4,18 +4,23 @@
 /* ---------- 並べ方 ---------- */
 html,
 body { height: 100%; overflow: hidden; }
-.gm { height: 100%; padding: var(--gap); }
-.gm-full { display: none; } /* 常に画面いっぱいなので、全画面のボタンは出さない */
 /* 高さは dvh ではなく innerHeight で決める（--app-h。map.js が入れる。カレンダーと同じ。Android の Chrome は、読み込み直したあと dvh が古い高さのまま残ることがある） */
-.gm-page { display: flex; flex-direction: column; height: calc(var(--app-h, 100dvh) - var(--gap) * 2); min-width: 0; min-height: 0; }
+.gm {
+  height: var(--app-h, 100dvh);
+  padding: max(var(--gap), var(--safe-t)) calc(var(--gap) + var(--safe-r)) calc(var(--gap) + var(--safe-b)) calc(var(--gap) + var(--safe-l));
+}
+/* カレンダーの下に横バーがあるとき（641〜1023px）は、親の枠がすでにバーの上端＋--gap で切れているので --safe-b を重ねない */
+.is-embed-bar .gm { padding-bottom: var(--gap); }
+.gm-full { display: none; } /* 常に画面いっぱいなので、全画面のボタンは出さない */
+.gm-page { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; }
 @media (min-width: 641px) and (max-height: 500px) {
-  .gm { padding-block: calc(var(--gap) / 2); }
-  .gm-page { height: calc(var(--app-h, 100dvh) - var(--gap)); }
+  .gm { padding-top: max(calc(var(--gap) / 2), var(--safe-t)); padding-bottom: calc(var(--gap) / 2 + var(--safe-b)); }
+  .is-embed-bar .gm { padding-bottom: var(--gap); }
 }
 @media (max-width: 640px) {
-  /* 下のバー（カレンダーの中）の分は、body ではなく高さから引く（body の下の余白は、はみ出して見えなくなるため） */
+  /* 下のバー（カレンダーの中）の分は、body ではなく .gm の下の余白で引く（body の下の余白は、はみ出して見えなくなるため） */
   .is-embed body { padding-bottom: 0; }
-  .is-embed .gm-page { height: calc(var(--app-h, 100dvh) - var(--gap) * 2 - 80px - var(--safe-b, 0px)); }
+  .is-embed .gm { padding-bottom: calc(var(--gap) + 80px + var(--safe-b, 0px)); }
 }
 @media (min-width: 641px) {
   /* 全画面：画面いっぱいにマップを出す（スマホは下の @media (max-width: 640px) の .is-full） */
@@ -23,7 +28,7 @@ body { height: 100%; overflow: hidden; }
     position: fixed;
     inset: 0;
     z-index: 50;
-    padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
+    padding: max(10px, var(--safe-t)) calc(10px + var(--safe-r)) calc(10px + var(--safe-b)) calc(10px + var(--safe-l));
     background: var(--col-paper);
   }
   .is-embed .gm-mapbox.is-full { padding-bottom: calc(10px + var(--embed-nav-h, 0px)); } /* カレンダーの下のバー（親の --nav-h。../goods/embed.js が写す）の上まで */
@@ -398,7 +403,7 @@ body { height: 100%; overflow: hidden; }
     position: fixed;
     inset: 0;
     z-index: 50;
-    padding: calc(10px + env(safe-area-inset-top)) 0 calc(10px + env(safe-area-inset-bottom));
+    padding: max(10px, var(--safe-t)) var(--safe-r) calc(10px + var(--safe-b)) var(--safe-l);
     background: var(--col-paper);
   }
   .is-embed .gm-mapbox.is-full { padding-bottom: max(10px, var(--embed-nav-h, 0px)); } /* カレンダーの日付バー（.day-nav）と同じ高さ位置にそろえる */

@@ -1,5 +1,5 @@
 // カレンダーの中（?embed=1。nav.js の iframe）で開いたときの下ごしらえ（グッズ goods/ と会場マップ map/ で共通。head で defer なしに読む）。
-// 下の安全な余白（--safe-b）は親のものを使う。iframe の中は env(safe-area-inset-bottom) が 0 になるので、そのままだと浮かぶボタンなどが親の下のバーに重なる
+// 画面の端の安全な余白（--safe-t/r/b/l）は親のものを使う。iframe の中は env(safe-area-inset-*) が 0 になるので、そのままだとパンチホールや下のバーに重なる
 // （スマホのブラウザは親が 24px。アプリ表示は親も iframe も fullscreen の最低 16px で偶然そろう）
 if (new URLSearchParams(location.search).has("embed")) {
   document.documentElement.classList.add("is-embed"); // common.css の .is-embed（金の帯を消す・スマホで下を空ける）
@@ -7,7 +7,7 @@ if (new URLSearchParams(location.search).has("embed")) {
     try {
       const cs = getComputedStyle(parent.document.documentElement);
       const st = document.documentElement.style;
-      st.setProperty("--safe-b", cs.getPropertyValue("--safe-b"));
+      for (const k of ["--safe-t", "--safe-r", "--safe-b", "--safe-l"]) st.setProperty(k, cs.getPropertyValue(k));
       // 下のバーの帯（.app-nav。ボタンの10px上から色がつく）に iframe が重なっている高さ（スマホは帯全体、2カラムはバーの上で止まるので帯の上の余白の分）。
       // 全画面のマップがバーの上で止まるのに使う。下にバーが無いPCの縦バーのときは 0
       const bar = parent.document.querySelector(".app-nav");

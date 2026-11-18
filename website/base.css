@@ -24,8 +24,12 @@
   /* ページの隙間（画面の端・時間割と会場一覧の間・時間割の上下・下のバーとの間など）。ここだけ変えればそろって変わる。
      グッズ（goods/）と会場マップ（map/）も base.css を読むので同じ値になる。持ち手の位置の計算（app.js・goods/goods.js）もこれを読む */
   --gap: 10px;
-  /* 画面の下端の安全な余白（iPhone のホームバーなど）。下のバーの位置・高さはこれを使う */
+  /* 画面の端の安全な余白（パンチホール・ノッチ・ホームバーなど）。
+     上は縦持ちのパンチホール・ノッチ、左右は横持ちのパンチホール・ノッチ、下はホームバー・ジェスチャーバー */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
   /* すりガラスのバー（カレンダーの切り替えバー・日付ボタン・マップのフロアタブ。nav.js / map.js） */
   --glass-bg: rgb(244 241 255 / .9); /* バー・案内 */
   --glass-dark-bg: rgb(79 69 143 / .9); /* 市電いまどこ */

@@ -273,7 +273,7 @@
     // 画面の幅が変わったら下限をかけ直す
     const resize = () => {
       sp.setW(sp.cur(), false);
-      $cols.style.setProperty("--app-h", `${innerHeight}px`);
+      document.documentElement.style.setProperty("--app-h", `${innerHeight}px`);
     };
     window.addEventListener("resize", resize);
     resize();

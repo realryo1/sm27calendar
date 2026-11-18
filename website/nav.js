@@ -61,7 +61,8 @@
     let $v = views.get(it.id);
     if ($v) return $v;
     $v = document.createElement("div");
-    $v.className = "app-view";
+    // 外部URLのページ（運行情報など、embed.js を読まないページ）は、親の枠側で画面の端の安全な余白（パンチホール等）を空ける
+    $v.className = `app-view${it.url && /^https?:/.test(it.url) ? " app-view--ext" : ""}`;
     if (it.url) $v.innerHTML = `<iframe class="app-view__frame" src="${esc(srcOf(it))}" title="${esc(it.label)}"></iframe>`;
     document.body.append($v);
     views.set(it.id, $v);

@@ -12,7 +12,7 @@
   --gm-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5' fill='none' stroke='%23000' stroke-width='2.6'/%3E%3Cpath d='M15.5 15.5 21 21' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-.gm { padding: var(--gap) var(--gap) 0; } /* 隙間はカレンダーの style.css の --gap */
+.gm { padding: max(var(--gap), var(--safe-t)) calc(var(--gap) + var(--safe-r)) 0 calc(var(--gap) + var(--safe-l)); } /* 隙間はカレンダーの style.css の --gap（パンチホール・ノッチも避ける） */
 .gm-floors[hidden],
 .gm-empty[hidden] { display: none; }
 /* 見た目には出さない見出し（読み上げ用） */

@@ -31,7 +31,7 @@
 .main__inner {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0 var(--gap);
+  padding: 0 calc(var(--gap) + var(--safe-r)) 0 calc(var(--gap) + var(--safe-l));
 }
 
 /* ---------- Board ---------- */
@@ -44,7 +44,14 @@
   background: var(--col-paper);
 }
 @media (max-width: 640px) {
-  .board { padding: 0 0 8px; } /* 上左右の余白をなくし、表を画面いっぱいに使う */
+  /* 上左右の余白をなくし、表を画面いっぱいに使う（パンチホール・ノッチの分だけは白地のまま空ける） */
+  .board { padding: var(--safe-t) var(--safe-r) 8px var(--safe-l); }
+  /* 1カラムはページ全体がスクロールするので、予定タップ・市電いまどこでジャンプした先がパンチホールに隠れないようにする */
+  .venues,
+  .venue-card,
+  .vc-ev,
+  .vc-wait,
+  .train-live { scroll-margin-top: calc(var(--gap) + var(--safe-t)); }
 }
 /* 時間割の幅（持ち手で変える）。継承しないプロパティとして登録し、ドラッグ中に変えても .main 以外のスタイルを計算し直さないようにする */
 @property --board-w {
@@ -64,6 +71,8 @@
   /* 会場一覧の横に出るページのスクロールバーは消す（ホイール・タッチ・キーではスクロールできる） */
   html { scrollbar-width: none; }
   html::-webkit-scrollbar { display: none; }
+  /* 横向きのパンチホール・ノッチは body 側で避ける（.main に左右余白を付けると、util.js の splitter の基準幅とずれるため） */
+  body { padding-left: var(--safe-l); padding-right: var(--safe-r); }
   /* 時間割・持ち手・会場一覧の3列。時間割の幅（--board-w）は持ち手で変えられる（app.js が .main に入れる） */
   .main {
     display: grid;
@@ -79,11 +88,11 @@
   }
   .board {
     position: sticky;
-    top: var(--gap); /* 上の隙間（スクロールしていなくても sticky でこの分ずれる） */
-    height: calc(100svh - var(--gap) * 2); /* 上下に隙間（dvh が使えないブラウザ向け） */
-    height: calc(100dvh - var(--gap) * 2); /* スマホの横向きでアドレスバーが消えたときも、下に空白を作らずに伸びる */
+    top: calc(var(--gap) + var(--safe-t)); /* 上の隙間（スクロールしていなくても sticky でこの分ずれる） */
+    height: calc(100svh - var(--gap) * 2 - var(--safe-t) - var(--safe-b)); /* 上下に隙間（dvh が使えないブラウザ向け） */
+    height: calc(100dvh - var(--gap) * 2 - var(--safe-t) - var(--safe-b)); /* スマホの横向きでアドレスバーが消えたときも、下に空白を作らずに伸びる */
     /* 画面の高さは app.js が innerHeight から入れる（Android の Chrome は、更新ボタンで読み込み直したあと dvh が古い高さのまま残り、日付ボタンが画面の下にはみ出した） */
-    height: calc(var(--app-h, 100dvh) - var(--gap) * 2);
+    height: calc(var(--app-h, 100dvh) - var(--gap) * 2 - var(--safe-t) - var(--safe-b));
     margin: 0 0 0 var(--gap); /* 左の隙間（右の隙間は持ち手の列） */
     overflow: hidden;
     border-radius: 16px;
@@ -92,11 +101,11 @@
   /* 会場一覧は、ページ全体ではなく自分の枠の中でスクロールする（時間割と同じ高さ）。
      iPhoneの横向き・iPhone Duoで、ページ全体を util.js の touchPan で動かすと、ブルブル震えてスクロールできなかったため（枠の中を動かす時間割・グッズは震えない）。
      ページ全体はスクロールしない高さに収める（上の隙間は sticky ではなく .main の上の余白で作る。列が画面の高さしかないと sticky では下がらないため） */
-  .main { padding-top: var(--gap); }
+  .main { padding-top: calc(var(--gap) + var(--safe-t)); }
   .main__inner {
     max-width: none;
     width: 100%;
-    height: calc(var(--app-h, 100dvh) - var(--gap) * 2); /* .board と同じ */
+    height: calc(var(--app-h, 100dvh) - var(--gap) * 2 - var(--safe-t) - var(--safe-b)); /* .board と同じ */
     margin: 0;
     padding: 0 var(--gap) 0 0; /* 左は持ち手の列があるので0、右だけ隙間 */
     overflow-y: auto;
@@ -109,13 +118,13 @@
   /* 持ち手：画面の高さいっぱいの縦の帯（時間割と同じく画面に固定）。中央に縦長のつまみを描く */
   .split {
     position: sticky;
-    top: var(--gap);
+    top: calc(var(--gap) + var(--safe-t));
     display: flex;
     align-items: center;
     justify-content: center;
-    height: calc(100svh - var(--gap) * 2);
-    height: calc(100dvh - var(--gap) * 2);
-    height: calc(var(--app-h, 100dvh) - var(--gap) * 2); /* .board と同じ */
+    height: calc(100svh - var(--gap) * 2 - var(--safe-t) - var(--safe-b));
+    height: calc(100dvh - var(--gap) * 2 - var(--safe-t) - var(--safe-b));
+    height: calc(var(--app-h, 100dvh) - var(--gap) * 2 - var(--safe-t) - var(--safe-b)); /* .board と同じ */
     cursor: col-resize;
     touch-action: none;
     outline: none;
@@ -267,9 +276,9 @@
 }
 /* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中で日付ボタンが高さを使い切らないよう詰める */
 @media (min-width: 641px) and (max-height: 500px) {
-  .board, .split { top: calc(var(--gap) / 2); height: calc(100svh - var(--gap)); height: calc(100dvh - var(--gap)); height: calc(var(--app-h, 100dvh) - var(--gap)); } /* 上下の隙間を半分に */
-  .main { padding-top: calc(var(--gap) / 2); }
-  .main__inner { height: calc(var(--app-h, 100dvh) - var(--gap)); }
+  .board, .split { top: calc(var(--gap) / 2 + var(--safe-t)); height: calc(100svh - var(--gap) - var(--safe-t) - var(--safe-b)); height: calc(100dvh - var(--gap) - var(--safe-t) - var(--safe-b)); height: calc(var(--app-h, 100dvh) - var(--gap) - var(--safe-t) - var(--safe-b)); } /* 上下の隙間を半分に */
+  .main { padding-top: calc(var(--gap) / 2 + var(--safe-t)); }
+  .main__inner { height: calc(var(--app-h, 100dvh) - var(--gap) - var(--safe-t) - var(--safe-b)); }
   /* 日付ボタンの基本の指定はこの後ろにあるので、.board を付けて優先させる */
   .board .day-nav { bottom: 8px; padding: 4px; gap: 4px; }
   .board .day-chip { min-height: 34px; }
@@ -1662,8 +1671,8 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
 /* ---------- インストール案内（PWA） ---------- */
 .install {
   position: fixed;
-  left: var(--gap);
-  bottom: var(--gap);
+  left: calc(var(--gap) + var(--safe-l));
+  bottom: calc(var(--gap) + var(--safe-b));
   z-index: 30;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1760,7 +1769,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   z-index: 40;
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
   background: rgb(79 69 143 / .45);
   animation: install-in .3s ease-out;
 }
@@ -1846,6 +1855,15 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   pointer-events: none;
   transition: opacity .18s, visibility 0s .18s;
 }
+/* 外部ページ（運行情報など、embed.js で親の安全な余白を同期できない iframe）は、親側でパンチホール・ノッチを避ける。
+   グラデーションの中心を iframe の上端（--safe-t）に合わせて、境目に段差が出ないようにする */
+.app-view--ext {
+  padding: var(--safe-t) var(--safe-r) 0 max(var(--nav-w), var(--safe-l));
+  background:
+    radial-gradient(circle at 10% var(--safe-t), var(--col-primary-light) 0, transparent 40%),
+    radial-gradient(circle at 100% calc(20% + var(--safe-t)), var(--col-secondary-light) 0, transparent 35%),
+    var(--col-secondary-lighter);
+}
 .app-view.is-open { z-index: 26; visibility: visible; opacity: 1; pointer-events: auto; transition: opacity .18s; }
 /* 次の表示がフェードインし終わるまで、不透明のまま下に残る（nav.js） */
 .app-view.is-behind { transition: opacity 0s .18s, visibility 0s .18s; }
@@ -1859,7 +1877,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
    ・下に横のバー：それより狭いとき（スマホと、横幅が足りない2カラム。左に置くと幅を取りすぎる） */
 @media (min-width: 1024px) {
   .has-nav {
-    --nav-w: calc(var(--gap) + 68px); /* 左の隙間＋バー（68px）。時間割の左の隙間が、バーとの間になる */
+    --nav-w: calc(var(--gap) + 68px + var(--safe-l)); /* 左の隙間＋バー（68px）＋左の安全な余白。時間割の左の隙間が、バーとの間になる */
     --glass-btn: 60px; /* バーの中のボタンの大きさ（正方形。バーの幅68px − 左右の余白4px×2） */
     --glass-radius: 22px;
   }
@@ -1876,7 +1894,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
     gap: var(--gap);
     width: calc(var(--nav-w) + var(--gap));
     max-height: 100dvh;
-    padding: var(--gap);
+    padding: calc(var(--gap) + var(--safe-t)) var(--gap) calc(var(--gap) + var(--safe-b)) calc(var(--gap) + var(--safe-l));
     overflow-y: auto;
     scrollbar-width: none;
     pointer-events: none; /* 右の余白（時間割の上）は押せるように */
@@ -1910,7 +1928,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   .has-nav .day-chip--train .day-chip__label { white-space: normal; text-overflow: clip; } /* 幅が狭いので2行に折り返す */
 }
 @media (min-width: 1024px) and (max-height: 500px) {
-  .app-nav { padding-block: calc(var(--gap) / 2); }
+  .app-nav { padding-top: calc(var(--gap) / 2 + var(--safe-t)); padding-bottom: calc(var(--gap) / 2 + var(--safe-b)); }
 }
 /* 下に横のバー（スマホと、幅が1023px以下の2カラム）で共通 */
 @media (max-width: 1023px) {
@@ -1937,7 +1955,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
     justify-content: center;
     gap: var(--gap);
     height: var(--nav-h);
-    padding: var(--glass-gap) var(--gap) calc(var(--glass-gap) + var(--safe-b));
+    padding: var(--glass-gap) calc(var(--gap) + var(--safe-r)) calc(var(--glass-gap) + var(--safe-b)) calc(var(--gap) + var(--safe-l));
     pointer-events: none;
   }
   .glass-bar { flex: 1; min-width: 0; height: var(--glass-h); }
@@ -1961,7 +1979,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
     bottom: var(--glass-gap);
     z-index: 20;
     width: auto;
-    padding: 0 var(--gap);
+    padding: 0 calc(var(--gap) + var(--safe-r)) 0 calc(var(--gap) + var(--safe-l));
     border: 0;
     border-radius: 0;
     background: none;
@@ -2002,10 +2020,10 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   }
   /* 重ねたバーの裏に隠れる分だけ、時間割の最後をさらに送れるようにする */
   .has-nav .tt-scroll { padding-bottom: calc(var(--nav-h) + var(--glass-h) + 32px); } /* 下のバー・日付のバー・案内の分 */
-  .has-nav .install { left: var(--gap); right: var(--gap); width: auto; bottom: calc(var(--nav-h) + var(--glass-h) + var(--glass-gap)); } /* 日付のバーのすぐ上（「二本指で〜」の案内には重ねる） */
+  .has-nav .install { left: calc(var(--gap) + var(--safe-l)); right: calc(var(--gap) + var(--safe-r)); width: auto; bottom: calc(var(--nav-h) + var(--glass-h) + var(--glass-gap)); } /* 日付のバーのすぐ上（「二本指で〜」の案内には重ねる） */
   /* 「▲ カレンダーへ」は、画面の一番上で「市電いまどこ」がある位置・大きさにそろえる（色はいつものグラデーションのまま） */
   .has-nav .to-board {
-    right: var(--gap);
+    right: calc(var(--gap) + var(--safe-r));
     bottom: var(--nav-h);
     display: flex;
     align-items: center;
@@ -2037,11 +2055,16 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   /* 時間割（と持ち手）は、バーの帯の上端まで（バーとの間は帯の上の余白） */
   .has-nav .board,
   .has-nav .split,
-  .has-nav .main__inner { height: calc(var(--app-h, 100dvh) - var(--gap) - var(--nav-h)); }
+  .has-nav .main__inner { height: calc(var(--app-h, 100dvh) - var(--gap) - var(--nav-h) - var(--safe-t)); }
   .has-nav .install { bottom: calc(var(--nav-h) + var(--gap)); }
   /* マップ・運行情報もバーの帯の上まで。ただし向こうのページの下の隙間（2カラムで --gap。カレンダーの .board と同じ）は帯の裏に入れ、
      内容の下端を時間割の下端とそろえる */
   .app-view { inset: 0 0 calc(var(--nav-h) - var(--gap)) 0; }
+}
+@media (min-width: 641px) and (max-width: 1023px) and (max-height: 500px) {
+  .has-nav .board,
+  .has-nav .split,
+  .has-nav .main__inner { height: calc(var(--app-h, 100dvh) - var(--gap) / 2 - var(--nav-h) - var(--safe-t)); }
 }
 /* ガラスのバーの共通部分（.glass-bar・.glass-glider）は base.css。ここではボタンの見た目だけ */
 /* 切り替えボタン（ガラスのバーの中）。選んでいるボタンは塗らず、文字の色と板で示す */

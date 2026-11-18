@@ -14,7 +14,12 @@
   html::-webkit-scrollbar { display: none; }
 }
 @media (min-width: 641px) {
-  .gm { height: 100%; padding: var(--gap); }
+  .gm {
+    height: var(--app-h, 100dvh);
+    padding: max(var(--gap), var(--safe-t)) calc(var(--gap) + var(--safe-r)) calc(var(--gap) + var(--safe-b)) calc(var(--gap) + var(--safe-l));
+  }
+  /* カレンダーの下に横バーがあるとき（641〜1023px）は、親の枠がすでにバーの上端＋--gap で切れているので --safe-b を重ねない */
+  .is-embed-bar .gm { padding-bottom: var(--gap); }
   .gd-cols {
     display: grid;
     /* 持ち手の列の幅は --gap。左の列の幅（--gd-side-w）は持ち手で変える（goods.js が入れる）。
@@ -22,9 +27,7 @@
     grid-template-columns: calc(var(--gd-side-w, 50%) - var(--gm-split-extra) / 2) calc(var(--gap) + var(--gm-split-extra)) minmax(0, 1fr);
     transition: --gm-split-extra .2s cubic-bezier(.22, 1, .36, 1);
     gap: 0;
-    height: calc(100svh - var(--gap) * 2);
-    height: calc(100dvh - var(--gap) * 2);
-    height: calc(var(--app-h, 100dvh) - var(--gap) * 2);
+    height: 100%;
   }
   .gd-main { min-height: 0; margin: 0 -8px; padding: 0 8px var(--gap); /* カードの影が左右で切れないよう、8px 広げて同じ分だけ内側に戻す（持ち手の列の中央が、左の列とカードの真ん中になる） */ overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
   .gd-main::-webkit-scrollbar { display: none; }
@@ -65,8 +68,8 @@
   .gm-wishfab { display: none; }
 }
 @media (min-width: 641px) and (max-height: 500px) {
-  .gm { padding-top: calc(var(--gap) / 2); padding-bottom: calc(var(--gap) / 2); }
-  .gd-cols { height: calc(100svh - var(--gap)); height: calc(100dvh - var(--gap)); height: calc(var(--app-h, 100dvh) - var(--gap)); }
+  .gm { padding-top: max(calc(var(--gap) / 2), var(--safe-t)); padding-bottom: calc(var(--gap) / 2 + var(--safe-b)); }
+  .is-embed-bar .gm { padding-bottom: var(--gap); }
 }
 .gd-sec[hidden],
 .gm-card[hidden],
