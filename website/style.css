@@ -2046,12 +2046,14 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   .app-nav #dayNav,
   .app-nav .day-chip--train { order: -1; }
   .app-nav .glass-bar { flex: var(--n, 1) 1 8px; }
-  /* この幅では切り替えボタンが無くても日付のバーが帯に入るので、帯の高さは下げない（上の :not(.has-views) を打ち消す） */
-  .has-nav:not(.has-views) { --nav-h: calc(var(--glass-h) + var(--glass-gap) * 2 + var(--safe-b)); }
+  /* 2カラムの下の帯（Fold系・横向きスマホ・縦タブレット）は、上下の隙間を等幅（--glass-gap）にする（--safe-b を足すと下が開きすぎる）。
+     この幅では切り替えボタンが無くても日付のバーが帯に入るので、帯の高さは下げない（上の :not(.has-views) を打ち消す） */
+  .has-nav,
+  .has-nav:not(.has-views) { --nav-h: calc(var(--glass-h) + var(--glass-gap) * 2); }
   /* 切り替えボタンが無いと日付のバーが帯いっぱいに伸びて横に長すぎるので、幅に上限を付けて中央に置く */
   .has-nav:not(.has-views) .app-nav #dayNav { max-width: 400px; }
   /* バーの帯はページの背景と同じ色で塗り、スクロールする会場一覧が裏に透けないようにする */
-  .app-nav { background: var(--col-secondary-lighter); }
+  .app-nav { padding-bottom: var(--glass-gap); background: var(--col-secondary-lighter); }
   /* 時間割（と持ち手）は、バーの帯の上端まで（バーとの間は帯の上の余白） */
   .has-nav .board,
   .has-nav .split,
