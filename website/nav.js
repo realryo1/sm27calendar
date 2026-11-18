@@ -55,6 +55,16 @@
     }
     return u.href;
   };
+  // 外部URLのページ（運行情報など）は、iframe 内で env(safe-area-inset-bottom) が 0 になり親の --nav-h も読めないため、
+  // スマホで下のバーに重なる高さを postMessage で伝える（向こうが受け取らなくても無害）
+  const extFrames = [];
+  const sendExtInset = (f, origin) => {
+    const navW = getComputedStyle(document.documentElement).getPropertyValue("--nav-w").trim();
+    const navH = navW === "0px" ? Math.round(Math.max(0, f.getBoundingClientRect().bottom - $nav.getBoundingClientRect().top)) : 0;
+    f.contentWindow?.postMessage({ sm27: "embed", navH }, origin);
+  };
+  const syncExt = () => extFrames.forEach(([f, origin]) => sendExtInset(f, origin));
+  window.addEventListener("resize", syncExt);
   // url の無い項目（カレンダー以外。いまは無い）は、iframe を入れず背景だけの枠にする（data.js の nav）
   const viewFor = (it) => {
     if (!it || it === home) return null;
@@ -62,8 +72,18 @@
     if ($v) return $v;
     $v = document.createElement("div");
     // 外部URLのページ（運行情報など、embed.js を読まないページ）は、親の枠側で画面の端の安全な余白（パンチホール等）を空ける
-    $v.className = `app-view${it.url && /^https?:/.test(it.url) ? " app-view--ext" : ""}`;
-    if (it.url) $v.innerHTML = `<iframe class="app-view__frame" src="${esc(srcOf(it))}" title="${esc(it.label)}"></iframe>`;
+    const isExt = Boolean(it.url && /^https?:/.test(it.url));
+    $v.className = `app-view${isExt ? " app-view--ext" : ""}`;
+    if (it.url) {
+      const src = srcOf(it);
+      $v.innerHTML = `<iframe class="app-view__frame" src="${esc(src)}" title="${esc(it.label)}"></iframe>`;
+      if (isExt) {
+        const f = $v.firstElementChild;
+        const origin = new URL(src).origin;
+        extFrames.push([f, origin]);
+        f.addEventListener("load", () => sendExtInset(f, origin));
+      }
+    }
     document.body.append($v);
     views.set(it.id, $v);
     return $v;
@@ -85,6 +105,7 @@
     current = it.id;
     const isView = it !== home; // カレンダー以外（iframe の表示と、中身の無い表示）
     viewFor(it);
+    syncExt();
     views.forEach(($v, vid) => {
       $v.classList.toggle("is-open", vid === it.id);
       $v.classList.toggle("is-behind", isView && $v === $prev);
