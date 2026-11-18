@@ -544,9 +544,11 @@
         if ($i) $col.scrollTo({ top: [...$col.children].indexOf($i) * wheelItem(), behavior: "smooth" });
       });
       // マウスはホイールではなくドラッグで回す（タッチは標準のスクロール）。ホイールはページのスクロールに回す
+      // （カレンダーの2カラムでは、会場一覧が自分の枠の中でスクロールするので、そちらへ）
       $col.addEventListener("wheel", (ev) => {
         ev.preventDefault();
-        window.scrollBy({ left: ev.deltaX, top: ev.deltaY });
+        const $list = $root.closest(".main__inner");
+        (($list && $list.scrollHeight > $list.clientHeight + 1) ? $list : window).scrollBy({ left: ev.deltaX, top: ev.deltaY });
       }, { passive: false });
       $col.addEventListener("pointerdown", (ev) => {
         if (ev.pointerType !== "mouse" || ev.button !== 0) return;

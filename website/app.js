@@ -54,9 +54,9 @@
   const $toBoard = document.getElementById("toBoard");
   // 2カラム（641px〜）か。幅の測定は2カラムのときだけ行う（1カラムでは要らないのに、読み込み中のレイアウトを強制するため）
   const twoCol = window.matchMedia("(min-width: 641px)");
-  // 2カラムのタッチ：時間割（左）と会場一覧（右。ページのスクロール）を、別々の指で独立して動かせるようにする（util.js の touchPan）
+  // 2カラムのタッチ：時間割（左）と会場一覧（右。2カラムでは自分の枠の中でスクロールする。style.css）を、別々の指で独立して動かせるようにする（util.js の touchPan）
   TT_UTIL.touchPan($scroll, { axis: "xy", enabled: () => twoCol.matches });
-  TT_UTIL.touchPan(document.querySelector(".main__inner"), { scroller: window, enabled: () => twoCol.matches });
+  TT_UTIL.touchPan(document.querySelector(".main__inner"), { enabled: () => twoCol.matches });
   // この表の上で始まった指だけ（ev.touches は画面全体の指。右の列の指を数えると、別の列の指でピンチになってしまう）
   const mine = (ev) => [...ev.touches].filter((t) => $scroll.contains(t.target));
   // 画面の大きさが変わったときに持ち手の幅と時間割の高さを合わせる処理（下の持ち手の中で入れる。resize のまとめ処理が呼ぶ）
@@ -98,7 +98,7 @@
     const setAppH = () => {
       if (appH === innerHeight) return;
       appH = innerHeight;
-      for (const el of [$main.querySelector(".board"), $split]) el.style.setProperty("--app-h", `${appH}px`);
+      for (const el of [$main.querySelector(".board"), $split, $side]) el.style.setProperty("--app-h", `${appH}px`);
     };
     setAppH();
     // 画面の幅が変わったら（端末を回したときなど）、下限をかけ直す

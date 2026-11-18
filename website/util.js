@@ -25,6 +25,8 @@ window.TT_UTIL = {
       }
     };
     const xy = axis === "xy";
+    // 注意：window（ページ全体）を動かすのは iOS で震える（iPhoneの横向き・iPhone Duo。screenX/Y で測っても直らなかった）。列は要素のスクロールにする
+    const pos = (ev) => ({ x: ev.clientX, y: ev.clientY });
     $el.dataset.touchPan = ""; // CSS が2カラムのときだけ touch-action: none にする目印
     let pan = null; // { id, x, y, t, vx, vy, moved }
     let touching = 0; // いま $el に触れている指の数
@@ -62,12 +64,14 @@ window.TT_UTIL = {
         pan = null;
         return;
       }
-      pan = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, t: ev.timeStamp, vx: 0, vy: 0, moved: false };
+      const p = pos(ev);
+      pan = { id: ev.pointerId, x: p.x, y: p.y, t: ev.timeStamp, vx: 0, vy: 0, moved: false };
     });
     $el.addEventListener("pointermove", (ev) => {
       if (!pan || ev.pointerId !== pan.id) return;
+      const p = pos(ev);
       if (!pan.moved) {
-        if (Math.hypot(ev.clientX - pan.x, ev.clientY - pan.y) < 8) return; // 少しの手ぶれはタップのまま
+        if (Math.hypot(p.x - pan.x, p.y - pan.y) < 8) return; // 少しの手ぶれはタップのまま
         pan.moved = true;
         moved = true;
         try {
@@ -76,15 +80,15 @@ window.TT_UTIL = {
           // 取れなくても動かせる
         }
       }
-      const dx = ev.clientX - pan.x;
-      const dy = ev.clientY - pan.y;
+      const dx = p.x - pan.x;
+      const dy = p.y - pan.y;
       const dt = ev.timeStamp - pan.t;
       if (dt > 0) {
         pan.vx = 0.8 * pan.vx + 0.2 * (dx / dt);
         pan.vy = 0.8 * pan.vy + 0.2 * (dy / dt);
       }
-      pan.x = ev.clientX;
-      pan.y = ev.clientY;
+      pan.x = p.x;
+      pan.y = p.y;
       pan.t = ev.timeStamp;
       by(xy ? -dx : 0, -dy);
     });

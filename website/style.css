@@ -95,12 +95,23 @@
     border-radius: 16px;
     box-shadow: 0 4px 16px rgb(79 69 143 / .08); /* .venue-card と同じ */
   }
+  /* 会場一覧は、ページ全体ではなく自分の枠の中でスクロールする（時間割と同じ高さ）。
+     iPhoneの横向き・iPhone Duoで、ページ全体を util.js の touchPan で動かすと、ブルブル震えてスクロールできなかったため（枠の中を動かす時間割・グッズは震えない）。
+     ページ全体はスクロールしない高さに収める（上の隙間は sticky ではなく .main の上の余白で作る。列が画面の高さしかないと sticky では下がらないため） */
+  .main { padding-top: var(--gap); }
   .main__inner {
     max-width: none;
     width: 100%;
+    height: calc(var(--app-h, 100dvh) - var(--gap) * 2); /* .board と同じ */
     margin: 0;
     padding: 0 var(--gap) 0 0; /* 左は持ち手の列があるので0、右だけ隙間 */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none; /* ページのスクロールバーと同じく出さない */
   }
+  .main__inner::-webkit-scrollbar { display: none; }
+  /* 市電の欄の左と時計：会場一覧の枠の上端（＝時間割の上端）に貼り付く（ページのスクロールだったときは画面の上から --gap の位置だった） */
+  .main__inner :is(.tl-side, .tl-status) { top: 0; }
   /* 持ち手：画面の高さいっぱいの縦の帯（時間割と同じく画面に固定）。中央に縦長のつまみを描く */
   .split {
     position: sticky;
@@ -263,6 +274,8 @@
 /* 2カラムで画面の高さが低いとき（横向きのスマホ）：時間割の枠の中で日付ボタンが高さを使い切らないよう詰める */
 @media (min-width: 641px) and (max-height: 500px) {
   .board, .split { top: calc(var(--gap) / 2); height: calc(100svh - var(--gap)); height: calc(100dvh - var(--gap)); height: calc(var(--app-h, 100dvh) - var(--gap)); } /* 上下の隙間を半分に */
+  .main { padding-top: calc(var(--gap) / 2); }
+  .main__inner { height: calc(var(--app-h, 100dvh) - var(--gap)); }
   /* 日付ボタンの基本の指定はこの後ろにあるので、.board を付けて優先させる */
   .board .day-nav { bottom: 8px; padding: 4px; gap: 4px; }
   .board .day-chip { min-height: 34px; }
@@ -2029,7 +2042,8 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   .app-nav { background: var(--col-secondary-lighter); }
   /* 時間割（と持ち手）は、バーの帯の上端まで（バーとの間は帯の上の余白） */
   .has-nav .board,
-  .has-nav .split { height: calc(var(--app-h, 100dvh) - var(--gap) - var(--nav-h)); }
+  .has-nav .split,
+  .has-nav .main__inner { height: calc(var(--app-h, 100dvh) - var(--gap) - var(--nav-h)); }
   .has-nav .install { bottom: calc(var(--nav-h) + var(--gap)); }
   /* マップ・運行情報もバーの帯の上まで。ただし向こうのページの下の隙間（2カラムで --gap。カレンダーの .board と同じ）は帯の裏に入れ、
      内容の下端を時間割の下端とそろえる */
