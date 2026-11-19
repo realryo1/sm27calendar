@@ -215,7 +215,7 @@
         const hintSpan = i === 0 && site.scrollHint && !sorting ? (empty < 0 ? shown.length : empty) : 0;
         const hint =
           hintSpan >= 2
-            ? `<div class="tt-hint" style="--span:${hintSpan}"><p class="tt-hint__card" data-goto-day="2027-02-06">${br(site.scrollHint)}<span class="tt-hint__arrow" aria-hidden="true">↓</span></p></div>`
+            ? `<div class="tt-hint" style="--span:${hintSpan}"><button type="button" class="tt-hint__card" data-goto-day="2027-02-06">${br(site.scrollHint)}<span class="tt-hint__arrow" aria-hidden="true">↓</span></button></div>`
             : "";
         const cols = shown
           .map((v, vi) => {
@@ -346,25 +346,38 @@
     if (!navigator.onLine) return toast("オフラインのため更新できませんでした");
     refreshing = true;
     document.body.classList.add("is-refreshing");
-    toast("更新中です。オフラインや回線が遅いと表示に時間がかかるかもしれません", 30000);
+    const msg = "更新中です。オフラインや回線が遅いと表示に時間がかかるかもしれません";
+    toast(msg, 30000);
     try {
       // 先に最新を取得できるか確かめる（失敗したら今のキャッシュは消さない＝オフラインで真っ白にならない）
-      // 取得対象は precache.js の一覧（確実に全ファイル）＋ 読み込み済みの同一オリジンのリソース
-      // 画像（PRECACHE_IMAGES）は別のキャッシュ（sm27-img）で版ごとに持つので、版が変わったものだけ取得する
-      const imgs = self.PRECACHE_IMAGES || {};
+      // まず最新の precache.js を取得して評価し、コード側・画像側の最新一覧を得る（1回の押下で新しい画像リストも反映する）
+      const precacheUrl = new URL("precache.js", location.href).href;
+      const pcRes = await fetch(precacheUrl, { cache: "no-cache" });
+      if (!pcRes.ok) throw new Error("fetch failed");
+      const precacheText = await pcRes.text();
+      const fresh = {};
+      new Function("self", precacheText)(fresh);
+      const imgs = fresh.PRECACHE_IMAGES || self.PRECACHE_IMAGES || {};
+      const precacheList = fresh.PRECACHE || self.PRECACHE || [];
+
+      // 画像（PRECACHE_IMAGES）は別のキャッシュ（sm27-img）で版ごとに持つので、版が変わったもの・新しいものだけ取得する
       const imgPaths = new Set(Object.keys(imgs).map((p) => new URL(p, location.href).pathname));
       const imgCache = "caches" in window ? await caches.open("sm27-img") : null;
       const staleImgs = [];
       for (const p of Object.keys(imgs)) {
         const key = new URL(`${p}?v=${imgs[p]}`, location.href).href;
-        if (!(await imgCache?.match(key))) staleImgs.push(key);
+        if (!(await imgCache?.match(key))) staleImgs.push({ path: p, key });
       }
-      const urls = [
+      const precachePath = new URL(precacheUrl).pathname;
+      const codeUrls = [
         location.href,
-        ...(self.PRECACHE || []).map((u) => new URL(u, location.href).href),
+        ...precacheList.map((u) => new URL(u, location.href).href),
         ...performance.getEntriesByType("resource").map((r) => r.name),
       ]
-        .filter((u) => new URL(u).origin === location.origin && !imgPaths.has(new URL(u).pathname))
+        .filter((u) => {
+          const x = new URL(u);
+          return x.origin === location.origin && !imgPaths.has(x.pathname) && x.pathname !== precachePath;
+        })
         // フォルダのページ（カレンダー・goods/・map/）は ?embed=1 などの引数が付いても中身は同じ（sw.js も引数を無視して保存する）。
         // 引数を外して、条件付き取得（304）のできる URL に寄せる
         .map((u) => {
@@ -372,25 +385,74 @@
           if (x.pathname.endsWith("/")) x.search = "";
           return x.href;
         });
-      urls.push(...staleImgs);
-      const list = [...new Set(urls)];
-      let done = 0;
-      const res = await Promise.all(
-        list.map(async (u) => {
+      const codeList = [...new Set(codeUrls)];
+      const total = 1 + codeList.length + staleImgs.length;
+      let done = 1;
+      toast(msg, 30000, ["precache.jsを更新中…", `${done}/${total}`]);
+      const codeRes = await Promise.all(
+        codeList.map(async (u) => {
           const r = await fetch(u, { cache: "no-cache" });
           const name = decodeURIComponent(new URL(u).pathname.split("/").filter(Boolean).pop() || "index.html");
-          toast("更新中です。オフラインや回線が遅いと表示に時間がかかるかもしれません", 30000, [`${name}を更新中…`, `${++done}/${list.length}`]);
+          toast(msg, 30000, [`${name}を更新中…`, `${++done}/${total}`]);
           return r;
         }),
       );
-      if (res.some((r) => !r.ok)) throw new Error("fetch failed");
-      // フォントとライブラリのキャッシュ（sw.js の FONT_CACHE・LIB_CACHE）は変わらないので残す
+      if (codeRes.some((r) => !r.ok)) throw new Error("fetch failed");
+
+      // 更新対象の画像は、旧 sw.js（v52）が古い版をキャッシュから返さないよう既存エントリを待避・一時削除してから取得し、失敗時は復元する
+      if (staleImgs.length) {
+        const backups = new Map();
+        const stalePaths = new Set(staleImgs.map((it) => new URL(it.path, location.href).pathname));
+        if (imgCache) {
+          const existing = await imgCache.keys();
+          await Promise.all(
+            existing
+              .filter((r) => stalePaths.has(new URL(r.url).pathname))
+              .map(async (r) => {
+                const cached = await imgCache.match(r);
+                if (cached) backups.set(r.url, cached);
+                await imgCache.delete(r);
+              }),
+          );
+        }
+        try {
+          const settled = await Promise.allSettled(
+            staleImgs.map(async (item) => {
+              const r = await fetch(item.path, { cache: "reload" });
+              if (!r.ok) throw new Error("fetch failed");
+              const name = decodeURIComponent(new URL(item.path, location.href).pathname.split("/").filter(Boolean).pop() || "image");
+              toast(msg, 30000, [`${name}を更新中…`, `${++done}/${total}`]);
+              return { item, r };
+            }),
+          );
+          const failed = settled.find((s) => s.status === "rejected");
+          if (failed) throw failed.reason;
+          if (imgCache) {
+            await Promise.all(settled.map(({ value: { item, r } }) => imgCache.put(item.key, r.clone())));
+          }
+        } catch (err) {
+          if (imgCache) {
+            const keys = await imgCache.keys();
+            await Promise.all(keys.filter((r) => stalePaths.has(new URL(r.url).pathname)).map((r) => imgCache.delete(r)));
+            await Promise.all([...backups].map(([url, res]) => imgCache.put(url, res)));
+          }
+          throw err;
+        }
+      }
+
+      if (imgCache) {
+        const keep = new Set(Object.keys(imgs).map((p) => new URL(`${p}?v=${imgs[p]}`, location.href).href));
+        await Promise.all((await imgCache.keys()).filter((r) => !keep.has(r.url)).map((r) => imgCache.delete(r)));
+      }
+
+      // フォント・ライブラリ・画像のキャッシュ（sw.js の FONT_CACHE・LIB_CACHE・IMG_CACHE）は残す
       if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k !== "sm27-fonts" && k !== "sm27-lib" && k !== "sm27-img").map((k) => caches.delete(k)));
       if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
-      // サイトのリセット：インストール案内を再び出し、2カラムの分割率（持ち手）を 1:1 に戻す
+      // サイトのリセット：インストール案内を再び出し、カレンダー・グッズの2カラムの分割率（持ち手）を初期値に戻す
       try {
         localStorage.removeItem("sm27-install-dismissed");
         localStorage.removeItem("sm27-board-w");
+        localStorage.removeItem("sm27-goods-wish-w");
       } catch {}
       // 読み込み直すと吹き出しが消えるので、印を残して読み込み後に出す
       try {
@@ -483,7 +545,6 @@
         const single = groups.length === 1 && !live ? groups[0] : null;
         const place = `<dt>${L.place}</dt><dd>${v.short ? `${br(v.name)}<br>` : ""}${br(v.address)}</dd>
             <dt>${L.station}</dt><dd>${br(v.station)}</dd>`;
-        const liveEv = live ? groups[0].e : null;
         // 複数公演が並ぶカード：イベント名が共通なら見出しに出し、日付が共通なら見出しの下に1行で出す（各枠はシンプルに）
         const multi = !live && !single && groups.length > 1;
         const commonTitle = multi && groups.every((g) => g.e.title === groups[0].e.title) ? groups[0].e.title : "";
@@ -499,15 +560,15 @@
         // リンクも全公演で同じならカードの末尾に1回だけ出す
         const commonLinks = multi && groups.every((g) => JSON.stringify(g.e.links) === JSON.stringify(groups[0].e.links)) ? groups[0].e.links ?? [] : [];
         const priceRows = priceRow(single ? single.e.price : commonPrice);
-        const list = liveEv
-          ? renderLiveHead(liveEv)
+        const list = live
+          ? renderLiveHead(groups)
           : single
           ? renderVenueEventBody(single.e, single.days, place + priceRows, { simple: true })
           : `${commonDays ? `<p class="vc-days">${commonDays}</p>` : ""}<dl class="venue-card__info">${place}${priceRows}</dl>${noteBlocks(commonNote)}
             <ul class="vc-events">${groups.map(({ ids, days: ds, e }) => renderVenueEvent(e, ids, ds, { simple: true, commonTitle, commonDays, hideNote: !!commonNote, hideLinks: commonLinks.length > 0 })).join("")}</ul>${commonLinks.length ? linkButtons(commonLinks) : ""}`;
-        const flat = single ?? (live ? groups[0] : null);
+        const flatIds = single ? single.ids : live ? groups.flatMap((g) => g.ids) : null;
         return `${fanTitle}<article class="venue-card theme-${v.theme}${v.fan ? " venue-card--fan" : ""}${live ? " venue-card--wide venue-card--live" : ""}${single ? " venue-card--single" : ""}" id="venue-${v.letter}"${
-          flat ? ` data-ids="${flat.ids.join(" ")}"` : ""
+          flatIds ? ` data-ids="${flatIds.join(" ")}"` : ""
         }>
           <h3 class="venue-card__name"><span class="venue-card__letter">${v.letter}</span>${v.fan ? `${badge("fan", B.fan)} ` : ""}${cardTitle ? `${br(cardTitle)}<small class="venue-card__area">${br(v.name)}</small>` : `${headName(v)}<small class="venue-card__area">${br(v.area)}</small>`}</h3>
           ${list}
@@ -540,10 +601,14 @@
     price ? `<dt>${L.price}</dt><dd>${[].concat(price).map(br).join("<br>")}</dd>` : "";
 
   // 雪ミク電車：運行期間・時間・注記・リンクだけを見出しの下に置く（在線予測はその下）
-  function renderLiveHead(e) {
+  function renderLiveHead(groups) {
+    const e = groups[0].e;
     const links = e.links ?? [];
+    const timeLine = groups.length > 1
+      ? groups.map((g) => `${g.e.sub ? `${br(g.e.sub)} ` : ""}${hm(g.e.start)} – ${hm(g.e.end)}`).join(" ／ ")
+      : `${hm(e.start)} – ${hm(e.end)}`;
     return `<p class="vc-live__period">${br(e.period)}</p>
-      <p class="vc-live__time">${hm(e.start)} – ${hm(e.end)}</p>
+      <p class="vc-live__time">${timeLine}</p>
       ${e.price ? `<dl class="venue-card__info vc-live__info">${priceRow(e.price)}</dl>` : ""}
       ${noteBlocks(e.note)}
       ${linkButtons(links)}`;

@@ -35,7 +35,7 @@
       <linearGradient id="heart" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#E9A1EB"/><stop offset="1" stop-color="#9F6FD0"/>
       </linearGradient>
-      <!-- ♡の金のふち（style.css の --col-gold を中心に、左上が明るく、右下に向けて暗くなり、右下でまた少し照り返す） -->
+      <!-- ♡の金のふち（base.css の --col-gold を中心に、左上が明るく、右下に向けて暗くなり、右下でまた少し照り返す） -->
       <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#FFF7C8"/><stop offset=".3" stop-color="#E8D774"/><stop offset=".6" stop-color="#B9A23C"/><stop offset=".85" stop-color="#D9CA5E"/><stop offset="1" stop-color="#F3E79A"/>
       </linearGradient>
@@ -88,7 +88,7 @@
     </g>
   </svg>
   <script>
-    // favicon：♡（白いふちまで）が全面に入るよう、表示する範囲を♡のまわりの正方形にする
+    // favicon：♡（金のふちまで）が全面に入るよう、表示する範囲を♡のまわりの正方形にする
     if (document.documentElement.classList.contains("favicon")) document.querySelector("svg").setAttribute("viewBox", "28.3 31 43.4 43.4");
   </script>
 </body>

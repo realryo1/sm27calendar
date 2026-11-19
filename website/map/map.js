@@ -1,13 +1,10 @@
 // 会場マップ（map/index.html）。前半はマップの部品（window.GM_MAP）、最後にページの開始（「ページ」）。
-// データはグッズと同じ ../goods/data-○○○○.js の window.GM_DATA（年ごとに差し替える）。ここは年に関係なく使う。
-// 会場マップは公式の画像を使わず、データのブース・売り場の位置から SVG で描く。
-// 一覧・しぼり込みはグッズのページ（../goods/goods.js）が受け持ち、ここはマップの描画と操作（拡大・移動・回す・全画面）だけ。
-// 使い方：const M = window.GM_MAP(D, L, { onActivate, visible, fixed })
-//   L は ../goods/goodslist.js の部品、onActivate(id) はマップのブース・売り場を押したとき、
-//   visible() はマップが見えているか、$list（あれば）は一覧（選んだカードを強調する）。
-//   fixed は、マップが画面いっぱいに固定されているとき（マップの表示。スマホでも2カラムと同じ扱い）。
-//   スマホの一覧の上で開け閉めして縮むプレビューは、いまは使わない（fixed のときは通らない）
-window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => {
+// データはグッズと同じ../goods/data-○○○○.jsのwindow.GM_DATA（年ごとに差し替える）。ここは年に関係なく使う。
+// 会場マップは公式の画像を使わず、データのブース・売り場の位置からSVGで描く。
+// 一覧・しぼり込みはグッズのページ（../goods/goods.js）が受け持ち、ここはマップの描画と操作（拡大・移動・回す）だけ。
+// 使い方：const M = window.GM_MAP(D, L, { onActivate })
+//   Lは../goods/goodslist.jsの部品、onActivate(id)はマップのブース・売り場を押したとき。
+window.GM_MAP = (D, L, { onActivate }) => {
   // 書き写しの確認（コンソールの警告）は、手元で開いたときだけ行う。公開版では毎回は行わない
   const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
 
@@ -17,8 +14,6 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   // 画面の文言（年に関係しないもの）。日付・会場・注意書きなど、年ごとに変わるものはデータ側
   const TEXT = {
     floors: "会場",
-    fullOn: "全画面で表示",
-    fullOff: "全画面を閉じる",
     legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示", goods: "グッズ販売・展示など", marche: "マルシェ" },
     zoom: { out: ["－", "縮小"], fit: ["全体", "全体を表示"], in: ["＋", "拡大"] },
     turn: ["回転", "マップを右へ90度回す"],
@@ -28,8 +23,6 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   const { esc, glassBar } = window.TT_UTIL; // カレンダーの ../util.js
   const r1 = (n) => Math.round(n * 10) / 10;
   const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  // 2カラムにする幅。map.css・goods.js と合わせる。fixed のときは、スマホでも2カラムと同じ（縮むプレビューを使わない）
-  const twoCol = fixed ? { matches: true, addEventListener() {} } : matchMedia("(min-width: 641px)");
   const narrow = matchMedia("(max-width: 640px)"); // スマホの幅（開いたときの拡大に使う）
 
   const { short, yen, onSale, boothBy, goodsAt, info, boothLabel, srcOf, noticeBy } = L;
@@ -57,7 +50,6 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
 
   // ---------- 会場マップ ----------
   const $map = $("gmMap");
-  const $mapbox = $("gmMapbox");
   let floor = D.floors[0];
   let setFloorIndex = () => {};
   const tileOf = (f) => f.tile ?? [57, 35]; // ブースの大きさ（フロアごとのデータ。無ければ公式の会場マップのブースと同じ）
@@ -382,11 +374,8 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     $map.scrollTop = $map.scrollHeight;
   };
   // 画面の大きさが変わったら（端末を回したときなど）、枠に合わせて描き直す
-  // 2カラムの持ち手を動かしているあいだは測り直さない（毎フレーム --u が変わると、ブースの文字をすべて組み直して重い）。
-  // 中身は押した時の大きさのまま、枠だけが動く。手を止めたら持ち手の処理が sizeMap を呼ぶ
-  let resizing = false;
   new ResizeObserver(() => {
-    if (resizing || !$map.clientWidth) return; // 隠している（大きさが0の）あいだは測らない
+    if (!$map.clientWidth) return; // 大きさが0のあいだは測らない
     if (!inited) return show(); // 大きさが0で読み込まれたときは、大きさが決まってから初めの拡大をする
     sizeMap();
     if (anchored) toCorner();
@@ -404,7 +393,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   $map.addEventListener(
     "touchstart",
     (ev) => {
-      if (mine(ev).length !== 2 || preview) return; // プレビューでは拡大縮小しない
+      if (mine(ev).length !== 2) return;
       drag = null; // 1本指の移動から、ピンチに切り替える
       anchored = false;
       const s = spread(mine(ev));
@@ -445,7 +434,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   $map.addEventListener(
     "wheel",
     (ev) => {
-      if (!ev.deltaY || preview) return;
+      if (!ev.deltaY) return;
       ev.preventDefault();
       const px = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? $map.clientHeight : 1; // 行・ページ単位の届き方を px にそろえる
       const m = $map.getBoundingClientRect();
@@ -456,23 +445,19 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
 
   // 押したまま（タッチは1本指で）動かすと移動する。ブラウザのスクロールに任せると、動き始めの向きで縦か横に固定されて斜めに動かないので、自前で動かす。
   // 動かさずに離したときだけ、ブースを押したことにする。離す直前まで動かしていたら、その速さで少し流れる（慣性）。
-  // スマホ（1カラム）では、マップの上下の端まで来た分をページのスクロールに渡す（マップの上でページが止まらないように）
   let drag = null;
   let glide = 0;
-  const panBy = (dx, dy, chain) => {
+  const panBy = (dx, dy) => {
     anchored = false;
-    const top = $map.scrollTop;
     $map.scrollLeft -= dx;
     $map.scrollTop -= dy;
-    const rest = dy - (top - $map.scrollTop); // マップで動かしきれなかった縦の量
-    if (chain && rest && !twoCol.matches && !preview) window.scrollBy(0, -rest); // プレビューのマップは、一覧とは独立に動かす（端まで来ても一覧を動かさない）
   };
   const coast = (vx, vy) => {
     let prev = performance.now();
     const step = (now) => {
       const dt = Math.min(32, now - prev);
       prev = now;
-      panBy(vx * dt, vy * dt, false);
+      panBy(vx * dt, vy * dt);
       const f = Math.pow(0.995, dt); // 約1秒で止まる
       vx *= f;
       vy *= f;
@@ -510,7 +495,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     drag.x = ev.clientX;
     drag.y = ev.clientY;
     drag.t = ev.timeStamp;
-    panBy(dx, dy, true);
+    panBy(dx, dy);
   });
   const endDrag = (ev) => {
     if (!drag || ev.pointerId !== drag.id) return;
@@ -531,7 +516,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   // ---------- 選択（マップ ⇄ 一覧） ----------
   let picked = null;
 
-  // 選んだブース・売り場を、マップと一覧の両方で強調する（ガチャコーナーとその中のブースは一緒に）
+  // 選んだブース・売り場をマップで強調する（ガチャコーナーとその中のブースは一緒に）
   function markPicked() {
     const ids = new Set(picked ? [picked, spotOf.get(picked), ...(D.spots[picked]?.booths ?? [])] : []);
     $map.querySelectorAll("[data-pick]").forEach((el) => {
@@ -539,7 +524,6 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
       el.classList.toggle("is-picked", on);
       if (el.hasAttribute("role")) el.setAttribute("aria-pressed", String(on));
     });
-    $list?.querySelectorAll(".gm-card").forEach((el) => el.classList.toggle("is-picked", ids.has(el.dataset.no)));
   }
 
   function pick(id, { toMap = false } = {}) {
@@ -593,7 +577,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
       `<button type="button" class="gm-turn" data-turn aria-label="${esc(TEXT.turn[1])}">${esc(TEXT.turn[0])}</button>` +
       Object.entries(TEXT.zoom)
         .map(([z, [label, aria]]) => `<button type="button" data-zoom="${z}" aria-label="${esc(aria)}">${esc(label)}</button>`)
-        .join("") + `<button type="button" class="gm-full" id="gmFull" aria-pressed="false" aria-label="${esc(TEXT.fullOn)}"></button>`;
+        .join("");
     const $floors = $("gmFloors");
     $floors.hidden = TABS.length < 2;
     $floors.setAttribute("role", "tablist");
@@ -608,26 +592,20 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
   // ---------- 操作 ----------
   // マップのブース・売り場を押すと、一覧のそのカードへ移る（カレンダーの「予定タップで詳細」と同じ。移るのは goods.js）
   const activate = (el) => {
-    setFull(false); // フルスクリーンで押したら、閉じてから一覧へ
     pick(el.dataset.pick);
     onActivate(el.dataset.pick);
   };
   $map.addEventListener("click", (ev) => {
-    // プレビューは、どこを押してもマップだけを大きくする（一覧はスクロールさせない。ブースを選ぶのは大きくしてから）
-    if (preview) return expand();
     const el = ev.target.closest("[data-pick]");
     if (el) activate(el);
   });
   $map.addEventListener("keydown", (ev) => {
-    if (preview) return; // プレビューは拡大専用
     const el = ev.target.closest("[data-pick]");
     if (!el || (ev.key !== "Enter" && ev.key !== " ")) return;
     ev.preventDefault();
     activate(el);
   });
   $("gmZoom").addEventListener("click", (ev) => {
-    // 全画面のボタン（＋の右）。押したときだけ切り替える（拡大しても自動では全画面にしない）
-    if (ev.target.closest("#gmFull")) return setFull(!full);
     if (ev.target.closest("[data-turn]")) return turnMap();
     const el = ev.target.closest("[data-zoom]");
     if (!el) return;
@@ -652,190 +630,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     return true;
   }
 
-  // 2カラムの持ち手（goods.js）を動かしているあいだは、マップを測り直さない（中身は押した時の大きさのまま、枠だけが動く）。
-  // 手を止めたら、持ち手の列が広がる動き（map.css の --gm-split-extra）が終わってから、止めた幅で1回だけ測り直す（回すときと同じ動きで）
-  const $cols = $("mapPage");
-  let held = 0; // 持ち手で止めた回数（止め直したら、前の手を止めた処理は何もしない）
-  function holdSize() {
-    held++;
-    resizing = true;
-  }
-  function releaseSize(moved) {
-    if (!resizing) return;
-    const my = held;
-    const grow = $cols.getAnimations().filter((a) => a.transitionProperty === "--gm-split-extra");
-    Promise.allSettled(grow.map((a) => a.finished)).then(() => {
-      if (my !== held) return; // また動かし始めた
-      resizing = false;
-      if (moved && $map.clientWidth) settleMap();
-    });
-  }
-
-  // スマホ（1カラム）のマップ：一覧の上の「会場マップ」のバー（goods.js）で開け閉めする。開いたときは、画面の上半分に出す（1倍。マップと一覧が上下1:1）。
-  // マップは画面の上に貼り付き、ページを下へスクロールすると細いプレビュー（PREVIEW px）になって残る（下の一覧と一緒に上がる）。
-  // 全画面は、＋の右のボタンを押したときだけにする（拡大しても自動では切り替えない）。もう一度押すと元に戻る。
-  // プレビューはどこを押しても、一覧はそのままでマップだけが大きくなる（一覧をスクロールすると、またプレビューに戻る）。カードの番号を押せばプレビューの中で光る。
-  // 2カラムではマップが常に見えているので、縮むプレビューは使わない（全画面だけ使える）
-  const $sec = $("map");
-  const PREVIEW = 160; // map.css の --gm-preview と合わせる
-  // 縮む高さと位置は、使う要素に直接入れる（:root に入れると、スクロールのたびにページ全体のスタイルを計算し直して重い。map.css の @property）
-  const boxStyle = $mapbox.style;
-  const secStyle = $sec.style;
-  let top0Cache = null; // ページの中での、マップの列の上端。測るとレイアウトを確かめるので、スクロールのたびには測らない
-  const put = (style, k, v) => style.getPropertyValue(k) !== v && style.setProperty(k, v); // 変わらないときは書かない
-  let preview = false; // プレビューのあいだは拡大縮小しない（小さすぎて操作しにくい）
-  let expanded = null; // プレビューを押して大きくしたときの、ページのスクロール位置（一覧をスクロールしたら、プレビューに戻す）
-  let full = false;
-  let shrinkRaf = 0;
-  let lastH = null; // 前に入れたマップの枠の高さ（変わったときだけ、まん中を保つ）
-  let small = false; // プレビューの高さか
-  const SHRINK_AT = 60; // これより下へスクロールしたらプレビューに縮む
-  const OPEN_AT = 24; // ページの先頭付近（ここまで戻ったら開く）
-  const GLIDE_MS = 300; // .is-animating の 0.25 秒より少し長く
-  let glideTimer = 0;
-  let heldAt = null; // カードへ移り終わったときのスクロール位置（そこから動かしていないあいだは、プレビューのまま）
-  let holdSmall = false; // 一覧のカードへ移っているあいだ、プレビューに保つ
-  let jump = false; // 次の shrink は、動かさずにすぐ切り替える
-  let cancelHold = null; // カードへ移るあいだのプレビュー固定を、いますぐ手放す（プレビューを押して拡大するとき）
-  let holdTimer = 0;
-  // 一覧のカードへ移る前に、プレビューにすぐ切り替えておく（切り替えで一覧の場所が動くので、先に済ませてから目的の位置を計算する）。
-  // 移り終わったら（scrollend。無い環境は時間で）手放す
-  // animate のときは縮むアニメーションを付け、終わるまでの時間（ms。縮まないときは 0）を返す。呼び出し側は、その後にスクロールする
-  function holdPreview({ animate = false } = {}) {
-    if (twoCol.matches || full || !visible()) return 0;
-    holdSmall = true;
-    heldAt = null;
-    jump = !animate;
-    clearTimeout(glideTimer);
-    resizing = false;
-    $mapbox.classList.remove("is-animating");
-    $sec.classList.remove("is-animating");
-    $map.firstElementChild.style.marginBottom = "";
-    shrink();
-    jump = false;
-    const wait = resizing ? GLIDE_MS + 50 : 0;
-    cancelHold?.();
-    let done = false;
-    const release = (keep = false) => {
-      if (done) return;
-      done = true;
-      removeEventListener("scrollend", release);
-      clearTimeout(holdTimer);
-      cancelHold = null;
-      holdSmall = false;
-      if (keep !== true) heldAt = window.scrollY;
-      requestShrink();
-    };
-    cancelHold = () => release(true);
-    addEventListener("scrollend", release);
-    holdTimer = setTimeout(release, 1500 + wait);
-    return wait;
-  }
-  // 枠の高さが変わるときは、マップ本体も同じフレームで合わせて大きさを変える（止まってから測り直す2段階にしない）
-  function shrink() {
-    shrinkRaf = 0;
-    if (twoCol.matches || !visible()) {
-      for (const style of [boxStyle, secStyle]) for (const k of ["--gm-map-top", "--gm-map-h", "--gm-sec-h"]) style.removeProperty(k);
-      $mapbox.classList.remove("is-shrunk", "is-preview");
-      preview = false;
-      lastH = null; // 次に開いたときは、動かさずにその高さで描く
-      return $map.clientWidth ? sizeMap() : undefined;
-    }
-    if (full) return sizeMap();
-    // 開いたときの高さ：画面の上半分（マップと一覧が上下1:1。これがマップの列の高さになる）。マップはその中に収まる大きさで描く
-    const top0 = (top0Cache ??= $sec.getBoundingClientRect().top + window.scrollY); // ページの中での、マップの列の上端（画面の大きさが変わった・開いたときだけ測り直す）
-    const H = Math.round(window.innerHeight / 2 - top0);
-    const y = window.scrollY;
-    if (expanded != null && Math.abs(y - expanded) > 4) expanded = null;
-    if (heldAt != null && !holdSmall && Math.abs(y - heldAt) > 4) heldAt = null; // 利用者が動かしたら、ふつうの切り替えに戻る
-    // 高さは2段階だけ：開いた高さ H と、プレビューの高さ PREVIEW。下へ SHRINK_AT px スクロールしたらプレビューに、先頭付近（OPEN_AT px 以内）まで戻ったら開く
-    // （そのあいだは今の状態のまま。行き来で揺れない）。プレビューを押して開いたあと（expanded）は、スクロールしたらまたプレビューに戻る
-    if (holdSmall) small = true; // カードへ移るあいだは、プレビューのまま（スクロールの途中で開くと、一覧の場所が動いて目的の位置からずれる）
-    else if (heldAt != null && Math.abs(y - heldAt) <= 4) small = true; // 移り終わったあとも、利用者がスクロールするまでプレビューのまま（先頭のカードだと位置が先頭付近になり、すぐ開いてしまうため）
-    else if (expanded != null) small = false;
-    else if (y > SHRINK_AT) small = true;
-    else if (y <= OPEN_AT) small = false;
-    const h = small ? PREVIEW : H;
-    const resized = h !== lastH && lastH != null;
-    lastH = h;
-    // 枠の高さが変わるときだけ、マップ本体を1回だけ、変わったあとの大きさに描き直す（枠は CSS が動かす。毎フレームは測らない）。
-    // まん中に見えていたところをまん中に保つ（右下寄せのときは右下）
-    let keep = null;
-    if (resized && !anchored && $map.firstElementChild) {
-      const r0 = $map.firstElementChild.getBoundingClientRect();
-      const m = $map.getBoundingClientRect();
-      const [vx, vy, vw, vh] = shown.view;
-      keep = [vx + Math.min(1, Math.max(0, (m.left + m.width / 2 - r0.left) / r0.width)) * vw, vy + Math.min(1, Math.max(0, (m.top + m.height / 2 - r0.top) / r0.height)) * vh];
-    }
-    if (resized && !jump) {
-      resizing = true; // 動いているあいだ、ResizeObserver は測り直さない（描き直しは下の1回だけ）
-      $mapbox.classList.add("is-animating");
-      $sec.classList.add("is-animating");
-    }
-    // 一覧の頭は、枠の高さの分だけ下にある（枠と同じ高さで一覧の場所も変えるので、枠と検索欄のあいだにすき間ができない）
-    put(secStyle, "--gm-sec-h", `${h}px`);
-    put(boxStyle, "--gm-map-top", `${Math.max(0, top0 - y)}px`);
-    put(boxStyle, "--gm-map-h", `${h}px`);
-    preview = small;
-    $mapbox.classList.toggle("is-shrunk", small);
-    $mapbox.classList.toggle("is-preview", preview);
-    if (!resized) return resizing ? undefined : sizeMap(); // 動いているあいだは、途中の大きさで描かない
-    if (jump) {
-      // すぐ切り替える（動かさない）：描き直しは1回、まん中を保つ
-      sizeMap();
-      if (anchored) toCorner();
-      else if (keep) centerOn(keep);
-      return;
-    }
-    // 変わったあとの枠の大きさで描く。枠の高さはまだ動き始めの値なので、枠の高さと地図の高さの差（ボタンなどの分。上で切り替えた状態のもの）を測り、変わったあとの高さから引く。
-    // （動き始めの高さで描くと、いったん小さく描かれて、終わってから大きくなる）
-    const wf = $map.clientWidth;
-    const hf = h - ($mapbox.offsetHeight - $map.clientHeight);
-    sizeMap(wf, hf);
-    // スクロールの位置も、変わったあとの枠に合わせた値を最初に入れる（終わってから直すと、カクッと動く）。
-    // 縮むときは、枠がまだ大きいあいだはスクロールできる幅が足りず、入れた位置が途中で切られるので、マップの絵の下に余白を足して足りるようにしておく（終わったら外す。
-    // 枠（.gm-map）の padding に足すと、枠が余白の分だけ高くなって下の一覧にはみ出すので、中の絵に足す）
-    const $canvas = $map.firstElementChild;
-    const cw = $canvas.offsetWidth;
-    const ch = $canvas.offsetHeight;
-    let sx = Math.max(0, cw - wf);
-    let sy = Math.max(0, ch - hf);
-    if (!anchored && keep) {
-      const [vx, vy, vw, vh] = shown.view;
-      sx = Math.min(sx, Math.max(0, ((keep[0] - vx) / vw) * cw - wf / 2));
-      sy = Math.min(sy, Math.max(0, ((keep[1] - vy) / vh) * ch - hf / 2));
-    }
-    $canvas.style.marginBottom = `${Math.max(0, sy + $map.clientHeight - ch)}px`;
-    $map.scrollLeft = sx;
-    $map.scrollTop = sy;
-    clearTimeout(glideTimer);
-    glideTimer = setTimeout(() => {
-      resizing = false;
-      $map.firstElementChild.style.marginBottom = "";
-      $mapbox.classList.remove("is-animating");
-      $sec.classList.remove("is-animating");
-      sizeMap(); // 描いた大きさと同じはず（ずれたときだけ直る）
-    }, GLIDE_MS);
-  }
-  // 全画面にする・戻す。拡大率はそのまま。全画面のあいだ、うしろのページはスクロールさせない
-  function setFull(on) {
-    if (on === full || (fixed && !on && narrow.matches)) return; // マップの表示は、スマホでは常に全画面（PCは枠つき）
-    if (on) window.GM_SYNC?.(); // カレンダーの中なら、下のバーの位置を測り直す
-    full = on;
-    $mapbox.classList.toggle("is-full", on);
-    document.documentElement.classList.toggle("gm-noscroll", on);
-    $("gmFull").setAttribute("aria-pressed", String(on));
-    $("gmFull").setAttribute("aria-label", on ? TEXT.fullOff : TEXT.fullOn);
-    // 枠の大きさが変わるので、まん中に見えていたところをまん中に保つ
-    const r = $map.firstElementChild.getBoundingClientRect();
-    const m = $map.getBoundingClientRect();
-    const cx = (m.left + m.width / 2 - r.left) / r.width;
-    const cy = (m.top + m.height / 2 - r.top) / r.height;
-    shrink();
-    const [vx, vy, vw, vh] = shown.view;
-    centerOn([vx + cx * vw, vy + cy * vh]);
-  }
-  // マップを右へ90度回す（turned）。拡大率はそのままで、まん中に見えていたところをまん中に保つ。
+  // マップを右へ90度ずつ回す（rot は回した回数。0〜3）。絵を回すのではなく、データの座標を回してから描くので、文字は立ったまま。
   // 回すあいだは文字を消し、TURN ms かけて回してから文字を出す（map.css の .is-turning）。
   // 縦横が入れ替わると枠に収まる大きさ（1倍）も変わるので、先に回したデータで描き直し、その絵に「回す前の向き・大きさ・位置」に見える変形をかけてから、
   // 変形を外していく（回転と拡大縮小が一緒に滑らかに動く）
@@ -875,80 +670,11 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
       turning = 0;
     }, TURN);
   }
-  // 2カラムの持ち手を止めて幅が決まったとき：止めていたマップを新しい枠の大きさに測り直す。
-  // まん中に見えていたところをまん中に保ち、大きさと位置の変わり目を回すときと同じ動き（TURN ms・easeOutQuint）で動かす。文字は動かさず、終わってから出す
-  function settleMap() {
-    if (turning) return sizeMap(); // 回している途中は、絵に変形がかかっていて位置を測れない
-    const $canvas = $map.firstElementChild;
-    const r0 = $canvas.getBoundingClientRect();
-    const m = $map.getBoundingClientRect();
-    const cx = Math.min(1, Math.max(0, (m.left + m.width / 2 - r0.left) / r0.width));
-    const cy = Math.min(1, Math.max(0, (m.top + m.height / 2 - r0.top) / r0.height));
-    sizeMap();
-    if (anchored) toCorner();
-    else {
-      const [vx, vy, vw, vh] = shown.view;
-      centerOn([vx + cx * vw, vy + cy * vh]);
-    }
-    if (behavior === "auto") return; // 動きを減らす設定では、すぐ切り替える
-    const rn = $canvas.getBoundingClientRect();
-    if (Math.abs(rn.width - r0.width) < 0.5 && Math.abs(rn.left - r0.left) < 0.5 && Math.abs(rn.top - r0.top) < 0.5) return;
-    $map.classList.add("is-turning");
-    $canvas.style.transition = "none";
-    $canvas.style.transformOrigin = "0 0";
-    $canvas.style.transform = `translate(${r0.left - rn.left}px, ${r0.top - rn.top}px) scale(${r0.width / rn.width})`;
-    void $canvas.offsetWidth; // 測り直す前の見た目から動き始める
-    $canvas.style.transition = "";
-    $canvas.style.transform = "";
-    turning = setTimeout(() => {
-      $map.classList.remove("is-turning");
-      turning = 0;
-    }, TURN);
-  }
-  // プレビューを押したとき：一覧はそのまま、マップだけを開いたときの高さに戻す（大きさの変わり目は shrink がなめらかに動かす）
-  function expand() {
-    cancelHold?.(); // カードへ移っている途中（プレビュー固定中）でも、押したら拡大する
-    expanded = window.scrollY;
-    heldAt = null;
-    shrink();
-  }
-  const requestShrink = () => {
-    if (!shrinkRaf) shrinkRaf = requestAnimationFrame(shrink);
-  };
-  window.addEventListener(
-    "scroll",
-    () => requestShrink(),
-    { passive: true }
-  );
-  window.addEventListener("resize", () => {
-    top0Cache = null;
-    requestShrink();
-  });
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape" && full) setFull(false); // PCのキーボードで全画面を閉じる
-  });
-  twoCol.addEventListener("change", () => {
-    top0Cache = null;
-    setFull(false);
-    requestShrink();
-  });
-
-  // ---------- 見せる・隠す（goods.js） ----------
-  // 隠しているあいだ（スマホで閉じている）は大きさが0になるので、隠す前に見ていたところを覚えておき、
-  // 見せたときに戻す。初めて見せたときは、開いたときの拡大率（initialZoom）にする
+  // ---------- 開始とサイズ更新 ----------
+  // 読み込み時に大きさが0だったときは、見えたとき（ResizeObserver）に初めの拡大率（initialZoom）にする
   let inited = false;
-  let lastCenter = null;
-  function hide() {
-    setFull(false);
-    if (!$map.clientWidth || !$map.firstElementChild) return;
-    const r = $map.firstElementChild.getBoundingClientRect();
-    const m = $map.getBoundingClientRect();
-    const [vx, vy, vw, vh] = shown.view;
-    lastCenter = anchored ? null : [vx + ((m.left + m.width / 2 - r.left) / r.width) * vw, vy + ((m.top + m.height / 2 - r.top) / r.height) * vh];
-  }
   function show() {
-    top0Cache = null;
-    shrink(); // スマホは、先にマップの枠を開いたときの高さにしてから拡大する（右下に寄せるため）
+    window.GM_SYNC?.(); // カレンダーの中なら、下のバーに重なる高さを測り直す
     if (!$map.clientWidth) return;
     if (!inited) {
       inited = true;
@@ -957,17 +683,14 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
     }
     sizeMap();
     if (anchored) toCorner();
-    else if (lastCenter) centerOn(lastCenter);
   }
 
   // ---------- 開始 ----------
   renderStatic();
   renderMap();
-  if (fixed && narrow.matches) setFull(true); // マップの表示は、スマホでは常に全画面（先に全画面にしてから、大きさを測って初めの拡大をする）
-  if (fixed) narrow.addEventListener("change", () => setFull(narrow.matches)); // 幅が変わったら、PCは枠つき・スマホは全画面
   show();
 
-  return { pick, showOnMap, onMap, setHits, setFloor, holdPreview, show, hide, holdSize, releaseSize, isPicked: (id) => picked === id };
+  return { pick, showOnMap, onMap, setHits, setFloor, show, isPicked: (id) => picked === id };
 };
 
 // ---------- ページ（map/index.html） ----------
@@ -979,7 +702,6 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
 (() => {
   const D = window.GM_DATA;
   if (!D) return;
-  const $ = (id) => document.getElementById(id);
   const EMBED = new URLSearchParams(location.search).has("embed"); // .is-embed は ../goods/embed.js が付ける
   const TALK = "goodsmap"; // nav.js・../goods/goods.js と合わせる
   const embedded = EMBED && parent !== window;
@@ -999,7 +721,7 @@ window.GM_MAP = (D, L, { $list = null, onActivate, visible, fixed = false }) => 
 
   // 一覧の部品（../goods/goodslist.js）から、ブース・グッズを整理したデータを受け取る
   const L = window.GM_LIST(D);
-  const M = window.GM_MAP(D, L, { fixed: true, visible: () => true, onActivate: toGoods });
+  const M = window.GM_MAP(D, L, { onActivate: toGoods });
   // #booth-○○ ならそのブースをマップで示す。#map-○○ ならそのフロアのタブ
   function openHash() {
     let id = "";

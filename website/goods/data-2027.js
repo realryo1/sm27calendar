@@ -1,9 +1,8 @@
 // グッズ・出展ブースマップのデータ（2027年）。SNOW MIKU 2027 公式サイトの「会場一覧」「ウイングベイ小樽」から、事実（日時・場所）だけを書き写したもの。
-// ブース・グッズは未発表なので空。公開されたら booths・goods・各フロアの booths を足す（書き方は data-2026fix.js と同じ）。
+// ブースは未発表なので空。ライブグッズ3点のみ掲載。公開されたらbooths・goods・各フロアのboothsを足す（書き方はdata-2026fix.jsと同じ）。
 // 公式の画像（会場マップ）は使わない。マップは位置関係（事実）だけを使い、../map/map.js が SVG で描く。
 //
 // floors: ページ上部のタブ。1つ目が開いたときのマップ。
-//   hint: マップの下の説明（無ければ「二本指で拡大…」。ブースが無いあいだは出ない）。
 //   ウイングベイは、ウイングベイ小樽の店舗配置図（2F）の3番街〜5番街を略図にしたもの（店舗の番号だけ。区画の形と位置関係だけ使う）。
 //   使う区画・ブースの配置は未発表なので、決まったら store の区画を置き換えて booths を足す。
 //   チ・カ・ホは、札幌駅前通まちづくりの広場マップで見た位置関係（北3条交差点広場（西）は南側の通路、憩いの空間 北1東は北側の通路）。
@@ -17,7 +16,7 @@ window.GM_DATA = {
     venue: "ウイングベイ小樽・チ・カ・ホ",
   },
 
-  priceNote: "",
+  priceNote: "価格は税込。",
 
   sources: [
     { label: "SNOW MIKU 2027公式サイト", url: "https://snowmiku.com/2027/info-venue.html" },
@@ -34,7 +33,6 @@ window.GM_DATA = {
   ],
 
   // ライブ（SNOW MIKU LIVE! 2027）のグッズ。グッズは goods に floor: "ライブ物販" で入れ、places に売る場所（ライブ会場は live、チ・カ・ホは chikaho など）。
-  // status は、分かっていないこと（売り場・販売方法）を書く。分かったら直す
   live: {
     title: "SNOW MIKU LIVE! 2027",
     lines: [
@@ -54,7 +52,6 @@ window.GM_DATA = {
       id: "wingbay",
       label: "ウイングベイ",
       sub: "5番街2F・3番街2F ほか",
-      hint: "仮マップ。時間と情報は未発表です。",
       view: [0, 0, 860, 440],
       tile: [70, 60],
       areas: [
@@ -95,7 +92,6 @@ window.GM_DATA = {
     {
       id: "chikaho",
       label: "チ・カ・ホ",
-      hint: "仮マップ。時間と情報は未発表です。",
       view: [0, 0, 1200, 500],
       tile: [70, 60],
       areas: [
@@ -139,8 +135,8 @@ window.GM_DATA = {
   // ブースは未発表
   booths: [],
   goods: [
-    // ライブ物販：公式の発表（11/19）の前に店頭に出ていた告知（Loppiの予約案内、11/20発売）による。公式のURLは無いので、リンクは公式のグッズ一覧に向けておく。売り場は未確認。
-    // 予約は@Loppi 11/20〜12/21。税込。デザインは監修中で変わることがある
+    // ライブ物販：店頭掲示（@Loppiの予約案内）で発表済みの情報による。個別URLは無いため公式のグッズ一覧に向けておく。
+    // 予約期間：11/20〜12/21（@Loppi）、価格は税込。
     { id: "live-penlight", maker: "公式", name: "ペンライト（商品番号 AW17383625）", price: 4000, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
     { id: "live-happi", maker: "公式", name: "ハッピ（商品番号 AW17383628）", price: 7000, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
     { id: "live-ringlight", maker: "公式", name: "リングライト（商品番号 AW17383626）", price: 1500, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },

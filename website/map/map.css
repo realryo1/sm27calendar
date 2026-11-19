@@ -1,5 +1,5 @@
-/* 会場マップ（map/index.html）の並べ方と部品。共通の部品は ../goods/common.css、配色・フォント・背景は ../base.css。
-   会場マップを画面いっぱいに出す。ページ全体はスクロールしない（スマホも）。スマホは常に全画面、PCは枠つき（map.js の setFull） */
+/* 会場マップ（map/index.html）の並べ方と部品。共通の部品は../goods/common.css、配色・フォント・背景は../base.css。
+   会場マップを画面いっぱいに出す。ページ全体はスクロールしない（スマホも）。スマホは画面端まで、PCは枠つき */
 
 /* ---------- 並べ方 ---------- */
 html,
@@ -9,29 +9,14 @@ body { height: 100%; overflow: hidden; }
   height: var(--app-h, 100dvh);
   padding: max(var(--gap), var(--safe-t)) calc(var(--gap) + var(--safe-r)) calc(var(--gap) + var(--safe-b)) calc(var(--gap) + var(--safe-l));
 }
-/* カレンダーの下に横バーがあるとき（641〜1023px）は、親の枠がすでにバーの上端＋--gap で切れているので --safe-b を重ねない */
-.is-embed-bar .gm { padding-bottom: var(--gap); }
-.gm-full { display: none; } /* 常に画面いっぱいなので、全画面のボタンは出さない */
 .gm-page { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; }
+@media (min-width: 641px) {
+  /* カレンダーの下に横バーがあるとき（641〜1023px）は、親の枠がすでにバーの上端＋--gapで切れているので--safe-bを重ねない */
+  .is-embed-bar .gm { padding-bottom: var(--gap); }
+}
 @media (min-width: 641px) and (max-height: 500px) {
   .gm { padding-top: max(calc(var(--gap) / 2), var(--safe-t)); padding-bottom: calc(var(--gap) / 2 + var(--safe-b)); }
   .is-embed-bar .gm { padding-bottom: var(--gap); }
-}
-@media (max-width: 640px) {
-  /* 下のバー（カレンダーの中）の分は、body ではなく .gm の下の余白で引く（body の下の余白は、はみ出して見えなくなるため） */
-  .is-embed body { padding-bottom: 0; }
-  .is-embed .gm { padding-bottom: calc(var(--gap) + 80px + var(--safe-b, 0px)); }
-}
-@media (min-width: 641px) {
-  /* 全画面：画面いっぱいにマップを出す（スマホは下の @media (max-width: 640px) の .is-full） */
-  .gm-mapbox.is-full {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    padding: max(10px, var(--safe-t)) calc(10px + var(--safe-r)) calc(10px + var(--safe-b)) calc(10px + var(--safe-l));
-    background: var(--col-paper);
-  }
-  .is-embed .gm-mapbox.is-full { padding-bottom: calc(10px + var(--embed-nav-h, 0px)); } /* カレンダーの下のバー（親の --nav-h。../goods/embed.js が写す）の上まで */
 }
 
 /* ---------- 会場マップ ---------- */
@@ -52,11 +37,6 @@ body { height: 100%; overflow: hidden; }
   box-shadow: var(--gm-shadow);
 }
 .gm-sec--map .gm-mapbox { border-radius: 0; box-shadow: none; }
-/* 全画面のあいだは、節の枠で切らない（contain と overflow があると、position: fixed の全画面が節の中に閉じ込められる） */
-.gm-sec--map:has(.gm-mapbox.is-full) { contain: none; overflow: visible; }
-@media (max-width: 640px) {
-  .gm-sec--map { margin: 0 calc(-1 * var(--gap)); border-radius: 0; box-shadow: none; } /* 画面の幅いっぱい */
-}
 /* フロアのタブ（ウイングベイ・チ・カ・ホ）：カレンダーの日付バー（.day-nav / .glass-bar）と同じ寸法・高さ・すりガラス */
 .gm-floors {
   flex: none;
@@ -139,21 +119,6 @@ body { height: 100%; overflow: hidden; }
 }
 .gm-zoom button:hover:not(:disabled) { background: var(--col-secondary-lighter); }
 .gm-zoom button:disabled { opacity: .4; cursor: default; }
-/* 全画面のボタン（＋の右）。全画面のときは閉じる形にする（いまは上の .gm-full で出さない） */
-.gm-zoom .gm-full { display: none; position: relative; }
-.gm-full::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 14px;
-  height: 14px;
-  background: currentColor;
-  -webkit-mask: var(--gm-expand) no-repeat center / contain;
-  mask: var(--gm-expand) no-repeat center / contain;
-}
-.gm-full[aria-pressed="true"] { border-color: transparent; color: var(--col-paper); background: var(--brand-gradient) border-box; }
-.gm-full[aria-pressed="true"]::before { -webkit-mask-image: var(--gm-close); mask-image: var(--gm-close); }
 /* 回す・縮小・全体・拡大の4つが、幅320pxでもフロア名の横に収まるように詰める */
 @media (max-width: 360px) {
   .gm-zoom { gap: 3px; }
@@ -190,8 +155,12 @@ body { height: 100%; overflow: hidden; }
   -webkit-tap-highlight-color: transparent;
 }
 @media (max-width: 640px) {
-  /* スマホは左右の余白も使い、マップを画面の幅いっぱいにする（カレンダーの時間割と同じ。.gm-sec--map が余白の分だけ広がる） */
-  .gm-mapbox { padding: 10px 0 12px; border-radius: 0; }
+  /* スマホは画面端までマップを広げ、安全域とカレンダーの下のバー（../goods/embed.jsの--embed-nav-h）は.gm-mapboxで避ける */
+  .is-embed body { padding-bottom: 0; }
+  .gm { padding: 0; }
+  .gm-sec--map { margin: 0; border-radius: 0; box-shadow: none; }
+  .gm-mapbox { padding: max(10px, var(--safe-t)) var(--safe-r) calc(10px + var(--safe-b)) var(--safe-l); border-radius: 0; }
+  .is-embed .gm-mapbox { padding-bottom: max(10px, var(--embed-nav-h, 0px)); }
   .gm-maptools { gap: 6px 8px; padding: 0 var(--gap); }
   .gm-map { border-radius: 0; }
 }
@@ -304,7 +273,7 @@ body { height: 100%; overflow: hidden; }
 }
 
 /* 拡大したときにブースの上に出る中身（一覧のカードを縮めたもの）。枠はブースと同じ大きさで、マップと一緒に大きくなる。
-   文字は読める大きさにとどめ、拡大するほど行が増えて全部が見えてくる */
+   文字も四角と一緒に大きくなり、四角の中に最大4品を表示する */
 .gm-mini {
   position: absolute;
   overflow: hidden;
@@ -393,20 +362,4 @@ body { height: 100%; overflow: hidden; }
 .gm-legend .gm-legend__show {
   border-color: var(--col-secondary-light);
   background: repeating-linear-gradient(45deg, #ddd6ff 0 3px, var(--col-secondary-lighter) 3px 6px);
-}
-/* スマホ：画面いっぱいに出す */
-@media (max-width: 640px) {
-  /* 凡例は全画面のときだけ出す（ふだんはマップ全体だけを、すき間なく見せる） */
-  .gm-mapbox:not(.is-full) .gm-legend { display: none; }
-  /* 全画面：画面いっぱいの表示。うしろのページはスクロールさせない */
-  .gm-mapbox.is-full {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    padding: max(10px, var(--safe-t)) var(--safe-r) calc(10px + var(--safe-b)) var(--safe-l);
-    background: var(--col-paper);
-  }
-  .is-embed .gm-mapbox.is-full { padding-bottom: max(10px, var(--embed-nav-h, 0px)); } /* カレンダーの日付バー（.day-nav）と同じ高さ位置にそろえる */
-  html.gm-noscroll,
-  html.gm-noscroll body { overflow: hidden; }
 }

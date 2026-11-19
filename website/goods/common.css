@@ -44,9 +44,9 @@
   .is-embed .gm::before,
   .is-embed .gm::after { display: none; }
 }
-/* スマホでは、カレンダーの下のバー（高さはカレンダーの style.css の --nav-h。いまは70px＋画面の下端の余白）が重なるので、それより少し多めに（80px＋画面の下端の余白）下を空ける */
+/* スマホでは、カレンダーの下のバー（.app-nav）が重なる高さ（embed.jsの--embed-nav-h）の分だけ下を空ける */
 @media (max-width: 640px) {
-  .is-embed body { padding-bottom: calc(80px + var(--safe-b)); }
+  .is-embed body { padding-bottom: var(--embed-nav-h, 0px); }
 }
 
 /* 選ぶボタン（ほしいものリストの設定・マップのフロアのタブ） */

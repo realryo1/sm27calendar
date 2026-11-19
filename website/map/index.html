@@ -36,14 +36,14 @@
 <body>
   <div class="gm">
     <noscript><p>このページはJavaScriptを使います。公式サイトの<a href="https://snowmiku.com/2027/info-venue.html">会場一覧</a>もご覧ください。</p></noscript>
-    <!-- 会場マップを画面いっぱいに出す（スマホは常に全画面、PCは枠つき） -->
+    <!-- 会場マップを画面いっぱいに出す（スマホは画面端まで、PCは枠つき） -->
     <div class="gm-page" id="mapPage">
       <h1 class="gm-visually-hidden">会場マップ</h1>
       <section class="gm-sec gm-sec--map" id="map" aria-label="会場マップ">
         <div class="gm-mapbox" id="gmMapbox">
           <!-- 会場マップ（map.js が SVG で描く） -->
           <div class="gm-map" id="gmMap"></div>
-          <!-- マップの下の帯（PCは1列、スマホは情報＋操作／凡例／フロアタブの3段） -->
+          <!-- マップの下の帯（PCは横1列、スマホは凡例・操作とフロアタブの2段） -->
           <div class="gm-maptools">
             <ul class="gm-legend" id="gmLegend"></ul>
             <div class="gm-zoom" id="gmZoom"></div>

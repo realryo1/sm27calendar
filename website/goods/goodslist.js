@@ -78,10 +78,10 @@ window.GM_LIST = (D, { boothNo = () => "" } = {}) => {
 
   // ---------- 品の行とタグ ----------
   // タグはどれも同じ大きさ（list.css の .gm-tag）で、品名の前に TAG_ORDER の順に並べる：
-  // 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注（限定・先行・受注はデータの note、企業・公式は情報元でブースの品だけ、ほかは places。名前はデータの places）。
+  // 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注＞予約（限定・先行・受注・予約はデータのnote、企業・公式は情報元でブースの品だけ、ほかはplaces。名前はデータのplaces）。
   // TAG_ORDER に無いもの（ライブ会場などの売り場・ほかの note）は最後。その節の売り場（here。ライブ物販の節のライブ会場など）のタグは出さない。
   // カードの中の品もこの順に並べる（限定のある品が先、次に企業のタグのある品…。byTags）
-  const TAG_ORDER = ["限定", "maker", "official", "wingbay", "chikaho", "hmv", "skytown", "先行", "受注"];
+  const TAG_ORDER = ["限定", "maker", "official", "wingbay", "chikaho", "hmv", "skytown", "先行", "受注", "予約"];
   const rank = (k) => (TAG_ORDER.includes(k) ? TAG_ORDER.indexOf(k) : TAG_ORDER.length);
   const tagKeys = (g, { src = false, here = [] } = {}) =>
     [

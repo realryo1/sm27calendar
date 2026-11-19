@@ -32,7 +32,7 @@
     return;
   }
 
-  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const standalone = matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || navigator.standalone === true;
   if (standalone) return;
 
   const DISMISS_KEY = "sm27-install-dismissed";

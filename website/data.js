@@ -52,8 +52,8 @@ window.TT_DATA = {
       chipEn: "TRAM",
       title: "雪ミク<wbr>電車<wbr>いまどこ？",
       titleSub: "（在線予測）",
-      tripsSummary: "発車時刻（2024年ダイヤ）",
-      note: "すすきの～西4丁目間の時刻から計算しています。<br>27年の運行計画は未発表です。2024年の時刻を使用しています。",
+      tripsSummary: "発車時刻（2027年ダイヤ）",
+      note: "雪ミク電車2027の公式運行ダイヤから計算しています。<br>天候・交通事情や定期点検などにより、時刻・運行車両・行先が変わることがあります。",
       offPeriod: "運行期間外",
       now: "いま",
       dateLabel: "日付",
@@ -231,14 +231,13 @@ window.TT_DATA = {
         { label: "時間発表ポスト", url: "https://x.com/HatsuneGinkasai/status/2119006961656033512" },
         { label: "北海道大学ボーカロイド同好会 X", url: "https://x.com/Hokkaidouniv_VC" },
       ],
-      // 昼・夜の2公演（開場は各30分前）
+      // 昼・夜の2公演（開場は各1時間前）
       sessions: [
         { id: "ginkasai-day", sub: "昼公演", open: "12:30", start: "13:30", end: "15:00" },
         { id: "ginkasai-night", sub: "夜公演", open: "16:30", start: "17:30", end: "20:00", lead: "前半にキャラクターによる30分〜1時間程度のDJライブを予定しています。" },
       ],
     },
     {
-      id: "train",
       title: "雪ミク<wbr>電車",
       letter: "E",
       name: "雪ミク電車",
@@ -247,15 +246,16 @@ window.TT_DATA = {
       station: "市電各停留場",
       price: "1乗車 230円",
       theme: "indigo",
-      days: ["2027-02-04", "2027-02-05", "2027-02-06", "2027-02-07"],
-      start: "07:00",
-      end: "21:00",
       official: true,
       period: "2026年11月21日（土）～2027年3月21日（日）",
       live: true,
       links: [
         { label: "公式ページ", url: "https://snowmiku.com/2027/event-train.html" },
         { label: "札幌市交通事業振興公社", url: "https://www.stsp.or.jp/event/yukimiku2027/" },
+      ],
+      sessions: [
+        { id: "train-weekday", sub: "平日・内回り", days: ["2027-02-04", "2027-02-05"], start: "06:23", end: "21:20" },
+        { id: "train-holiday", sub: "土日祝・外回り", days: ["2027-02-06", "2027-02-07"], start: "07:21", end: "21:21" },
       ],
     },
   ],

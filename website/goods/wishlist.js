@@ -2,7 +2,7 @@
 // リストは年ごとにブラウザ（localStorage の sm27-wish-年）に保存する（別のタブ・カレンダーの中の iframe とは storage イベントで合わせる）。
 // まとめ方（タグ・ブース）と並び順（値段・ブース）、個数を持ち、PDF はブラウザの印刷で、画像は印刷と同じ表を写して PNG で出す（印刷用の表 #gmWishPrint だけを印刷する。list.css の @media print）。
 // リストはリンク（カレンダーの ?view=goods&wish=id.個数,…）にでき、PDF にはそのリンクと QR コードを載せる。リンクを開くと、今のリストに合わせるか置き換えるかを選んで読み込む。
-// 2カラム（641px〜）では、浮かぶボタンの代わりに、左の列の下から引き出すリスト（#gdWish。会場マップの上に重なる）に出す。
+// 2カラム（641px〜）では、浮かぶボタンの代わりに左カラム（#gdWish）に常時表示する。
 // 使い方：ページの一覧を描いたあとに window.GM_WISH(GM_DATA, GM_LIST の戻り値)
 window.GM_WISH = (D, L) => {
   const { esc } = window.TT_UTIL;
@@ -199,11 +199,10 @@ window.GM_WISH = (D, L) => {
   $print.className = "gm-wishprint";
   $print.id = "gmWishPrint";
   document.body.append($fab, $dlg, $print);
-  const $panel = document.getElementById("gdWish"); // 2カラムの左の列の下から引き出すリスト。CSS が狭い画面では隠す
-  const $sum = document.getElementById("gdWishSum"); // 引き出しの取っ手の件数・合計
+  const $panel = document.getElementById("gdWish"); // 2カラムの左カラム（常時表示）。CSSが狭い画面では隠す
+  const $sum = document.getElementById("gdWishSum"); // 左カラムの見出しの件数・合計
   const wide = window.matchMedia("(min-width: 641px)");
-  // 左の列に置いているか（2カラム。goods.css の .gd-wish と同じ条件。スタイルを測らずに分かるようにしている）。
-  // 引き出しを閉じているあいだも作っておく（引き出したらすぐ見える）
+  // 左カラムに出しているか（2カラム。goods.cssの.gd-wishと同じ条件。スタイルを測らずに分かるようにしている）
   const inPanel = () => !!$panel && wide.matches;
 
   const short = (g) => L.short(g.name);
@@ -284,7 +283,7 @@ window.GM_WISH = (D, L) => {
     $dlg.innerHTML = html;
     if ($panel) $panel.innerHTML = html;
   }
-  // リストを見せる：右カラムがあるときは出ているので何もせず、無いときは dialog で開く
+  // リストを見せる：左カラムがあるときは出ているので何もせず、無いときはdialogで開く
   const openList = () => {
     renderDialog();
     if (!inPanel() && !$dlg.open) $dlg.showModal();
@@ -304,7 +303,7 @@ window.GM_WISH = (D, L) => {
     if (t.n) $fab.setAttribute("aria-label", `${TEXT.title} ${TEXT.count(t.n)} ${yen(t.sum)}`);
     else $fab.removeAttribute("aria-label");
     $fab.classList.toggle("is-empty", !t.n);
-    // 2カラムの引き出しの取っ手（goods.js）にも、件数と合計を出す
+    // 2カラムの左カラムの見出しにも件数と合計を出す
     if ($sum) $sum.textContent = t.n ? `${TEXT.count(t.n)}　${yen(t.sum)}` : "";
     if ($dlg.open || inPanel()) renderDialog(); // 見えていないリストは作り直さない（見えるようになったとき作る）
   }
@@ -326,9 +325,7 @@ window.GM_WISH = (D, L) => {
   });
   $fab.addEventListener("click", () => {
     openList();
-    // PDF・画像を作るときに待たないよう、先に読み込んでおく（sw.js が保存するので、一度読めばオフラインでも使える）
-    loadQr().catch(() => {});
-    loadH2c().catch(() => {});
+    preloadLibs();
   });
   const onListClick = (ev) => {
     if (ev.target === $dlg || ev.target.closest("[data-close]")) return $dlg.close(); // 外側（うしろの暗いところ）か × で閉じる
@@ -345,7 +342,7 @@ window.GM_WISH = (D, L) => {
       } catch {}
       return renderDialog();
     }
-    // 全画面：dialog を画面いっぱいに広げる（右カラムに出ているときは、dialog を全画面で開く。やめたら閉じて右カラムに戻る）
+    // 全画面：dialogを画面いっぱいに広げる（左カラムに出ているときはdialogを全画面で開き、やめたら閉じて左カラムに戻る）
     if (ev.target.closest("[data-full]")) {
       full = !full;
       $dlg.classList.toggle("is-full", full);
@@ -592,10 +589,19 @@ window.GM_WISH = (D, L) => {
     $ask.showModal();
   }
 
+  // PDF・画像を作るときに待たないよう、先に読み込んでおく（sw.jsが保存するので、一度読めばオフラインでも使える）
+  const preloadLibs = () => {
+    loadQr().catch(() => {});
+    loadH2c().catch(() => {});
+  };
   wide.addEventListener("change", () => {
-    if ($dlg.open && inPanel()) $dlg.close(); // 広くなったら、開いている dialog は閉じる（右カラムに出ている）
-    if (inPanel()) renderDialog();
+    if ($dlg.open && inPanel()) $dlg.close(); // 広くなったら、開いているdialogは閉じる（左カラムに常時表示しているため）
+    if (inPanel()) {
+      renderDialog();
+      preloadLibs();
+    }
   });
   refresh();
+  if (inPanel()) preloadLibs();
   importFromUrl();
 };

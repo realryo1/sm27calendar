@@ -76,7 +76,7 @@
     $v.className = `app-view${isExt ? " app-view--ext" : ""}`;
     if (it.url) {
       const src = srcOf(it);
-      $v.innerHTML = `<iframe class="app-view__frame" src="${esc(src)}" title="${esc(it.label)}"></iframe>`;
+      $v.innerHTML = `<iframe class="app-view__frame"${isExt ? ' allow="geolocation"' : ""} src="${esc(src)}" title="${esc(it.label)}"></iframe>`;
       if (isExt) {
         const f = $v.firstElementChild;
         const origin = new URL(src).origin;

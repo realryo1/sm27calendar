@@ -1,7 +1,7 @@
 // オフライン閲覧用の Service Worker
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v52";
+const VERSION = "v53";
 const CACHE = `sm27-${VERSION}`;
 importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）・self.SM27_SITE（公開先）
 const PRECACHE = self.PRECACHE;
@@ -71,8 +71,12 @@ self.addEventListener("fetch", (event) => {
   // github.io ではグッズ・会場マップを保存しない（precache.js）。サイドバーを出さないので、直接開かれたときもそのまま取得させる
   if (sameOrigin && self.SM27_SITE === "pages" && /\/(goods|map)\//.test(url.pathname)) return;
 
-  // 画像は版つきのキャッシュにあればそれを返し、なければ取得して保存する
+  // 画像は版つきのキャッシュにあればそれを返し、なければ取得して保存する（更新ボタンの取得時は直接ネットワークから取る）
   if (sameOrigin && IMG_PATHS.has(url.pathname)) {
+    if (req.cache === "no-cache" || req.cache === "reload") {
+      event.respondWith(fetch(req));
+      return;
+    }
     const path = IMG_PATHS.get(url.pathname);
     event.respondWith(
       caches.open(IMG_CACHE).then(async (cache) => (await cache.match(imgKey(path))) || fetchImage(cache, path).catch(() => fetch(req)))

@@ -114,7 +114,6 @@
 .gm-card:not(.gm-official):not(:has(.gm-no)) { border-left: 4px solid var(--c); } /* 番号の帯が無いカードだけ、左に色の線 */
 .gm-fold > summary,
 .gm-official > .gm-official__head { min-height: 48px; padding-top: 6px; padding-bottom: 6px; box-sizing: border-box; border-radius: 0; }
-.gm-fold[open] > summary { margin-bottom: 0; }
 .gm-fold[open] { padding-bottom: 12px; } /* 開いたとき、いちばん下（リンクのボタンなど）がカードの下端にくっつかないように */
 .gm-links { margin-top: 10px; }
 .gm-fold > summary + .gm-links { margin-top: 2px; } /* ブースのカードは見出しのすぐ下（goodslist.js の boothCard） */
@@ -206,7 +205,7 @@ button.gm-no:hover { filter: brightness(1.06); }
 .gm-price { font-family: var(--font-display); font-size: .98rem; white-space: nowrap; color: var(--c-dark); }
 .gm-price small { margin-right: 2px; font-family: var(--font-base); font-size: .7rem; font-weight: 700; }
 .gm-price--none { font-family: var(--font-base); font-size: .68rem; font-weight: 700; color: #8b8b96; }
-/* タグ（goodslist.js）。背景の色は --tag-bg（ほしいものリストの見出しの帯・PDF の見出しの行でも使う）。どれも同じ大きさで、品名の前に 限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注 の順 */
+/* タグ（goodslist.js）。背景の色は--tag-bg（ほしいものリストの見出しの帯・PDFの見出しの行でも使う）。どれも同じ大きさで、品名の前に限定＞企業＞公式＞小樽＞チカホ＞HMV＞空港＞先行＞受注＞予約の順 */
 .gm-tag {
   display: inline-block;
   margin-right: 6px;
@@ -298,7 +297,10 @@ button.gm-no:hover { filter: brightness(1.06); }
 .gm-loose .gm-card__name { font-size: .92rem; }
 
 /* ---------- フッター ---------- */
-.gm-footer { margin-top: 32px; margin-bottom: 72px; } /* 一番下まで来ても、浮かぶほしいもののボタン（.gm-wishfab）に隠れないように */
+.gm-footer { margin-top: 32px; }
+@media (max-width: 640px) {
+  .gm-footer { margin-bottom: 72px; } /* 一番下まで来ても、スマホの浮かぶボタン（.gm-wishfab）に隠れないように */
+}
 .gm-footer p { margin: 0 0 6px; }
 .gm-sources a { color: inherit; }
 
@@ -344,7 +346,7 @@ button.gm-no:hover { filter: brightness(1.06); }
 .gm-wish:active::before { transform: scale(.85); }
 .gm-wish:focus-visible { outline: 2px solid var(--col-ink-primary); outline-offset: -2px; }
 
-/* 浮かぶボタン。スマホは下のまん中（カレンダーの中では、カレンダーの下のバーの上）、2カラム（641px〜）は右下 */
+/* 浮かぶボタン。スマホは右下（カレンダーの中では、下のバーの上）、2カラム（641px〜）は非表示 */
 .gm-wishfab {
   position: fixed;
   z-index: 60;
@@ -384,7 +386,7 @@ button.gm-no:hover { filter: brightness(1.06); }
   .gm-wishfab__icon { width: 18px; height: 18px; }
   .gm-wishfab__body { font-size: .78rem; }
 }
-/* カレンダーの中では、下のバーの帯（.app-nav）の上に、帯から --gap 空ける。--embed-nav-h は、iframe が帯に重なっている高さ（index.html が測る。
+/* カレンダーの中では、下のバーの帯（.app-nav）の上に、帯から--gap空ける。--embed-nav-hはiframeが帯に重なっている高さ（embed.jsが測る。
    スマホは帯全体、横バーの2カラムは帯の上の余白の分、PCの縦バーは 0）。帯が無いときは、ふつうの2カラムと同じ位置 */
 /* 下に帯があるとき（スマホ・横バーの2カラム）は、カレンダーの「市電いまどこ」と同じ形・大きさで、帯の上端のすぐ上・右端はバーにそろえる。
    スマホの1カラムでは市電いまどこが帯の上に、横バーの2カラムでは帯の中にあるので、2カラムのこのボタンは帯の上に置く */
@@ -416,12 +418,12 @@ button.gm-no:hover { filter: brightness(1.06); }
 @media (max-width: 640px) {
   /* スマホは幅いっぱいで上下のまん中に出し、角は丸めない。上下は6pxずつ空ける（iPhone SE でもリストを広く見せる。上はパンチホールも避ける） */
   .gm-wishlist { width: 100%; max-width: none; top: var(--safe-t); max-height: calc(100dvh - var(--safe-t) - 12px); margin: auto 0; padding-bottom: var(--safe-b); border-radius: 0; } /* 下の余白はホームバーの分 */
-  .is-embed .gm-wishlist { top: var(--safe-t); bottom: calc(80px + var(--safe-b)); max-height: calc(100dvh - 80px - var(--safe-b) - var(--safe-t) - 12px); padding-bottom: 0; box-shadow: 0 0 24px rgb(79 69 143 / .3); } /* 下のバー（.is-embed body の下の余白と同じ分）より上の部分のまん中 */
+  .is-embed .gm-wishlist { top: var(--safe-t); bottom: var(--embed-nav-h, 0px); max-height: calc(100dvh - var(--embed-nav-h, 0px) - var(--safe-t) - 12px); padding-bottom: 0; box-shadow: 0 0 24px rgb(79 69 143 / .3); } /* 下のバー（embed.jsの--embed-nav-h）より上の部分のまん中 */
   /* リストは中身が少なくても画面の半分の高さにする（画像で保存・読み込みの確認は中身に合わせる） */
   dialog.gm-wishlist:not(.gm-wishimg, .gm-wishask) { min-height: 50dvh; }
   /* 画像で保存はリストと違って広さがいらないので、上下に16pxずつ空ける */
   .gm-wishimg { max-height: calc(100dvh - var(--safe-t) - 32px); padding-bottom: 0; }
-  .is-embed .gm-wishimg { max-height: calc(100dvh - 80px - var(--safe-b) - var(--safe-t) - 32px); }
+  .is-embed .gm-wishimg { max-height: calc(100dvh - var(--embed-nav-h, 0px) - var(--safe-t) - 32px); }
 }
 .gm-wishlist__inner { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; } /* flex: 1（基準0%）だと、高さの決まっていない dialog の中で Safari が高さ0にして、リストが見えなくなる */
 .gm-wishlist__head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
@@ -551,7 +553,7 @@ button.gm-no:hover { filter: brightness(1.06); }
 /* 全画面のリスト：画面いっぱい（カレンダーの中のスマホは、下のバーより上いっぱい） */
 .gm-wishlist.is-full { width: 100%; max-width: none; top: 0; height: 100dvh; max-height: none; margin: 0; padding-top: var(--safe-t); padding-bottom: var(--safe-b); border-radius: 0; }
 @media (max-width: 640px) {
-  .is-embed .gm-wishlist.is-full { height: calc(100dvh - 80px - var(--safe-b)); padding-bottom: 0; }
+  .is-embed .gm-wishlist.is-full { height: calc(100dvh - var(--embed-nav-h, 0px)); padding-bottom: 0; }
 }
 .gm-wishitem__where { margin: 0 0 2px; font-size: .7rem; font-weight: 700; color: var(--col-secondary-dark); }
 .gm-wishitem__name { margin: 0; font-size: .86rem; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; color: var(--col-ink); }

@@ -28,6 +28,8 @@ self.PRECACHE_IMAGES = {
   "image/icon-maskable-512.png": 1,
   "image/souchou.png": 1,
 };
+// 引っ越しの案内（github.io と手元）で表示する新しいアイコン（Vercel ではデプロイ時に image/app/ を削除するため含めない）
+if (self.SM27_SITE !== "app") self.PRECACHE_IMAGES["image/app/icon-maskable-512.png"] = 1;
 
 // グッズ（goods/）と会場マップ（map/。データと一覧の部品は goods/ のもの）。サイドバーから開く。
 // github.io ではサイドバーを出さないので保存しない（sw.js もキャッシュを通さない）

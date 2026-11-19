@@ -46,12 +46,15 @@ jobs:
           grep -o -E "(src|href)=\"[a-z.-]+\?v=[0-9]+\"" website/index.html
 
       # 公開先ごとに分ける。website/ は新しいドメイン（Vercel）、_pages/ は github.io（GitHub Pages）。
-      # precache.js の SM27_SITE（サイドバー・保存する範囲・引っ越しの案内）と、github.io の引っ越しの案内の行き先（data.js の migrate.appUrl）を書き換える。
+      # precache.js の SM27_SITE（サイドバー・保存する範囲・引っ越しの案内）・新ドメインの manifest.webmanifest の id（"/"）・
+      # github.io の引っ越しの案内の行き先（data.js の migrate.appUrl）を書き換える。
       # 新しいドメインのアイコン（website/image/app/）があれば image/ の同じ名前のファイルに上書きする（github.io は今のアイコンのまま。
       # github.io では引っ越しの案内に新しいアイコンを出すので image/app/ を残す）
       - name: Split sites
         run: |
           cp -r website _pages
+          sed -i 's#"id": "/sm27calendar/"#"id": "/"#' website/manifest.webmanifest
+          grep -q '"id": "/"' website/manifest.webmanifest
           sed -i 's/^self.SM27_SITE = "dev";/self.SM27_SITE = "app";/' website/precache.js
           sed -i 's/^self.SM27_SITE = "dev";/self.SM27_SITE = "pages";/' _pages/precache.js
           grep -q 'SM27_SITE = "app"' website/precache.js

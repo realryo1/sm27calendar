@@ -200,7 +200,7 @@
   function pickCard($card, id) {
     $list.querySelectorAll(".gm-card.is-picked").forEach((el) => el.classList.remove("is-picked"));
     $card.classList.add("is-picked");
-    if (boothBy.has(id) || id === "official") history.replaceState(null, "", `#booth-${id}`);
+    if (cardOf(id)) history.replaceState(null, "", `#booth-${id}`);
   }
   // 一覧のカードへ移って光らせる。しぼり込みで隠れているときは、しぼり込みを解く
   function showCard(id, { instant = false } = {}) {
@@ -287,7 +287,7 @@
     } catch {
       return; // 壊れたハッシュは無視する
     }
-    if (!boothBy.has(id) && id !== "official") return;
+    if (!id || !cardOf(id)) return;
     showCard(id, { instant });
   }
   window.addEventListener("hashchange", () => openHash());

@@ -243,7 +243,7 @@
 }
 .day-chip--train .day-chip__week { color: var(--col-secondary-light); }
 .day-chip--train:hover { background: #352d6b; }
-/* 日付ボタン：スマホは画面下部のボトムバー（3等分＋操作ボタン）、それ以外は表の右下に浮かぶ角丸ウィンドウ */
+/* 日付ボタン：スマホは画面下部のボトムバー（日付ボタンと「市電いまどこ」）、それ以外は表の右下に浮かぶ角丸ウィンドウ */
 .day-chip {
   flex-direction: column;
   align-items: center;
@@ -613,14 +613,14 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   /* 塗りつぶしはなし：横にスクロールすると列が下をくぐり、時刻だけが白い丸で浮かぶ */
 }
 /* 時刻軸は画面の幅に関係なく細く：時の数字だけを小さく出す。
-   時刻は「画面端〜予定の列」の間の中央に置き、左右の余白を均等にする（8px は .tt の column-gap） */
+   時刻は「画面端〜予定の列」の間の中央に置き、左右の余白を均等にする（5px は .tt の column-gap） */
 .tt-axis__hour {
   position: absolute;
   left: 0;
   display: flex;
   align-items: baseline;
   justify-content: center;
-  width: calc(var(--axis) + 8px);
+  width: calc(var(--axis) + 5px);
   transform: translateY(-50%);
   line-height: 1;
 }
@@ -668,10 +668,12 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
 .tt-hint__card {
   margin: 0;
   padding: 16px 20px;
+  border: none;
   border-radius: 14px;
   background: rgb(255 255 255 / .85);
   box-shadow: 0 4px 16px rgb(79 69 143 / .15);
   color: var(--col-ink);
+  font: inherit;
   font-weight: 700;
   font-size: .95rem;
   line-height: 1.6;
@@ -679,6 +681,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   pointer-events: auto;
   cursor: pointer;
 }
+.tt-hint__card:focus-visible { outline: 2px solid var(--col-ink-primary); outline-offset: 2px; }
 .tt-hint__arrow {
   display: block;
   margin-top: 4px;
@@ -1812,7 +1815,7 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
 }
 
 /* ---------- サイドバー（nav.js。html に .has-nav、切り替えボタンを出すとき（github.io 以外）は .has-views も付く） ---------- */
-/* PCは左上に浮かぶ縦のバー、スマホは上に貼り付くヘッダー。切り替え先（.app-view）は iframe で、カレンダーの上に重ねる */
+/* PCは左上に浮かぶ縦のバー、スマホは画面の下のバー。切り替え先（.app-view）は iframe で、カレンダーの上に重ねる */
 .app-nav__item {
   display: flex;
   align-items: center;

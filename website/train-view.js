@@ -1,9 +1,8 @@
-// 雪ミク電車 在線予測
+// 雪ミク電車の現在位置表示（2027年公式ダイヤ）
 (() => {
   const T = window.TT_TRAIN;
   const TEXT = window.TT_DATA.site.train; // 画面の文言は data.js
   const N = T.stations.length; // pos N は一周して戻った西4丁目
-  const L = T.loopMinutes;
 
   const $root = document.getElementById("trainLive");
   if (!$root) return;
@@ -24,43 +23,22 @@
   // 1日分の走行キーポイント { t: 分, pos: 停留場位置, trip }
   function buildKeypoints(type) {
     const { direction, trips } = T[type];
-    const ts = trips.map(([a, b]) => [toMin(a), toMin(b)]);
-    const gaps = ts.slice(0, -1).map(([, b], k) => ts[k + 1][0] - b);
-    const avgGap = gaps.reduce((x, y) => x + y, 0) / gaps.length;
+    const isInner = direction === "inner";
     const kps = [];
     const push = (pos, t, trip) => kps.push({ pos, t, trip });
 
-    ts.forEach(([first, second], k) => {
-      const isLast = k === ts.length - 1;
-      const D = isLast ? avgGap : ts[k + 1][0] - second;
-      const scale = D / L;
-
-      if (direction === "outer") {
-        // 西4丁目 → 狸小路 → すすきの → … → 西8丁目 → 西4丁目
-        push(0, first, k);
-        push(1, (first + second) / 2, k);
-        push(2, second, k);
-        for (let i = 3; i < N; i++) {
-          const st = T.stations[i];
-          push(i, second + st.offset * scale, k);
-          if (st.depOffset != null && !(isLast && st.name === T.lastStop)) push(i, second + st.depOffset * scale, k);
-          if (isLast && st.name === T.lastStop) return;
+    trips.forEach((trip, k) => {
+      trip.forEach((hhmm, r) => {
+        if (!hhmm) return;
+        const t = toMin(hhmm);
+        if (r === 0) {
+          // 西4丁目で前便を完結させ、同刻で次便を始める（内回りは0→N、外回りはN→0で折り返し）
+          if (kps.length) push(isInner ? 0 : N, t, k - 1);
+          push(isInner ? N : 0, t, k);
+        } else {
+          push(isInner ? N - r : r, t, k);
         }
-        push(N, second + D, k);
-      } else {
-        // すすきの → 狸小路 → 西4丁目 → 西8丁目 → … → 資生館小学校前 → すすきの
-        push(2, first, k);
-        push(1, (first + second) / 2, k);
-        push(0, second, k);
-        push(N, second, k);
-        for (let i = N - 1; i >= 3; i--) {
-          const st = T.stations[i];
-          push(i, second + (L - (st.depOffset ?? st.offset)) * scale, k);
-          if (st.depOffset != null && !(isLast && st.name === T.lastStop)) push(i, second + (L - st.offset) * scale, k);
-          if (isLast && st.name === T.lastStop) return;
-        }
-        push(2, second + D, k);
-      }
+      });
     });
     return kps;
   }
@@ -458,14 +436,20 @@
         anim.dist = null;
       }
 
-      const [h1, h2] = cfg.direction === "outer" ? ["西4丁目発", "すすきの発"] : ["すすきの発", "西4丁目発"];
+      const [cols, idxs, chuoCol] =
+        cfg.direction === "outer"
+          ? [["西4丁目", "すすきの", "中央図書館前"], [0, 2, 13], 2]
+          : [["西4丁目", "中央図書館前", "すすきの"], [0, 11, 22], 1];
       $trips.innerHTML = `<table class="tl-table">
-        <thead><tr><th>${h1}</th><th>${h2}</th></tr></thead>
+        <thead><tr>${cols.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
         <tbody>${cfg.trips
           .map(
-            ([a, b], k) => `<tr class="${k === loc.trip ? "is-current" : ""}"><td>${a}</td><td>${b}${
-              k === cfg.trips.length - 1 ? ` <small>${T.lastStop}行</small>` : ""
-            }</td></tr>`
+            (trip, k) => `<tr class="${k === loc.trip ? "is-current" : ""}">${idxs
+              .map((idx, ci) => {
+                const tag = ci === chuoCol ? (k === 0 ? " <small>始発</small>" : k === cfg.trips.length - 1 ? " <small>終点</small>" : "") : "";
+                return `<td>${trip[idx] ?? "—"}${tag}</td>`;
+              })
+              .join("")}</tr>`
           )
           .join("")}</tbody></table>`;
     }

@@ -24,7 +24,7 @@
     display: grid;
     /* 持ち手の列の幅は --gap。左の列の幅（--gd-side-w）は持ち手で変える（goods.js が入れる）。
        持ち手を選んだときは、持ち手の列が --gm-split-extra だけ広がり、左の列の右端と一覧の左端を半分ずつ押しのける（カレンダーと同じ） */
-    grid-template-columns: calc(var(--gd-side-w, 50%) - var(--gm-split-extra) / 2) calc(var(--gap) + var(--gm-split-extra)) minmax(0, 1fr);
+    grid-template-columns: calc(var(--gd-side-w, 40%) - var(--gm-split-extra) / 2) calc(var(--gap) + var(--gm-split-extra)) minmax(0, 1fr);
     transition: --gm-split-extra .2s cubic-bezier(.22, 1, .36, 1);
     gap: 0;
     height: 100%;
