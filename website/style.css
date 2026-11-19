@@ -1786,12 +1786,16 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
 .migrate__btn {
   display: inline-block;
   padding: 8px 24px;
+  border: 0;
   border-radius: 999px;
+  font: inherit;
   font-weight: 900;
   color: var(--col-paper);
   text-decoration: none;
   background: var(--brand-gradient);
+  cursor: pointer;
 }
+.migrate__url { margin: 0 0 12px; font-size: .8rem; line-height: 1.5; word-break: break-all; user-select: all; }
 .migrate__close {
   position: absolute;
   top: 12px;
