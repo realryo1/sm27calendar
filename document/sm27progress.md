@@ -39,6 +39,8 @@
 
 ## 解決
 
+- [x] 引っ越しの案内を手元（LiveServerなど。`SM27_SITE`が`"dev"`）では出さないようにした。`pwa.js`の条件を`"pages"`だけにし、`precache.js`の案内用アイコンも`"pages"`のときだけ保存する（`sw.js`のVERSIONをv57に）。デプロイ時の値は`tools/split-sites.sh`が公開先ごとに書き換える（新しいドメインは`"app"`、github.ioは`"pages"`）ので、そのまま
+
 - [x] 非公式カレンダーから非公式アプリへの移行：名前を「SNOWMIKU2027非公式アプリ」に、github.ioに引っ越しの案内（文は「マップ・グッズ・運行情報を追加！／新サイトで再登録をお願いします。／※旧サイトは12月末で終了します」）、OGPと説明文に会場マップ・グッズ一覧・運行情報を追記し`ogp.png`を書き出し、github.ioはOGP・マニフェスト・PWAを外して`sw.js`を解除用に（`sw.js`のVERSIONはv56）。新しいドメインのURLは非公開にする理由がなくなったので直接書き、github.ioのURLは出さない。グッズのフッターの「非公式カレンダーへ戻る」はサイドバーがあるので削除。作り分けを`tools/split-sites.sh`に移し、新旧サイトを別のポートで試す`tools/test-sites.mjs`で50件すべてOK。新しいドメインの更新ボタンのあと、そのページはServiceWorkerに制御されず次に開くと制御される（以前からの動き。キャッシュは戻るのでオフラインでも開ける）
 
 - [x] ドキュメントの仕様整合・文節の半角スペース除去（`README.md`・`document/goodsmap.md`・`document/sm27progress.md`）：`README.md`のPWA更新ボタンと公開先表、および`goodsmap.md`の品名リンク・年タブ・全画面/`hint`・拡大表示・マップ寸法・2カラム・ほしいものリスト列・`TAG_ORDER`・`live.status`・`--embed-nav-h`を実態に合わせて更新

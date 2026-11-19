@@ -24,8 +24,8 @@
   // 出すときは、github.io のアプリのインストール案内は出さない
   const migrate = window.TT_DATA.migrate;
   // 見出しの下に、今のアイコン ⇒ 新しいアイコン（image/app/。github.io では消さずに残す。tools/split-sites.sh）を並べる。
-  // 手元（"dev"）でも、見た目を確かめられるよう出す
-  if (migrate?.enabled && ((self.SM27_SITE === "pages" && migrate.appUrl) || self.SM27_SITE === "dev")) {
+  // 手元（"dev"＝LiveServer など）では出さない。github.io（"pages"）だけ出す
+  if (migrate?.enabled && self.SM27_SITE === "pages" && migrate.appUrl) {
     const { esc } = window.TT_UTIL;
     // 開く代わりに URL を表示してコピーさせる。インストール済みのアプリ（Android の WebAPK）は、外のリンクをアプリ内のブラウザ（Custom Tab）で開くため
     const $m = document.createElement("div");

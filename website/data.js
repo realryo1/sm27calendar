@@ -73,7 +73,7 @@ window.TT_DATA = {
     updatedPrefix: "最終情報更新：",
   },
 
-  // github.io の引っ越しの案内（pwa.js）。enabled: true にすると、github.io で開くたびに出す（×で閉じられる。新しいドメインでは出さない。手元では見た目の確認のため出す）。
+  // github.io の引っ越しの案内（pwa.js）。enabled: true にすると、github.io で開くたびに出す（×で閉じられる。新しいドメインと手元（LiveServer など）では出さない）。
   migrate: {
     enabled: true,
     appUrl: "https://sm27app.realryo1.jp/",

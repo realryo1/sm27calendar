@@ -133,7 +133,7 @@ Vercelへは、ワークフローで加工した（`updatedAt`・`?v=`・圧縮�
 |OGP・canonical|新しいドメインのURL|OGPを消す（`OGP:start`〜`OGP:end`）。canonicalは新しいドメイン|新しいドメインのURL|
 |更新ボタン|キャッシュを入れ替える|最新を取得して読み込み直すだけ（`sm27-`のキャッシュとこのページの登録を消す。同じgithub.ioの運行情報には触れない）|キャッシュを入れ替える|
 |アイコン|`website/image/app/`のファイルで、`image/`の同じ名前のファイルを上書き（今は`icon-maskable-512.png`だけ。元は`tools/icon-app.html`）|今のまま|開発用（モノクロ）|
-|引っ越しの案内|出さない|`data.js`の`migrate.enabled`が`true`なら、開くたびに出す|`migrate.enabled`が`true`なら出す（見た目の確認用）|
+|引っ越しの案内|出さない|`data.js`の`migrate.enabled`が`true`なら、開くたびに出す|出さない（LiveServerなどで開いても出ない）|
 
 **github.ioは廃止します**（同じgithub.io配下のPWAが、Androidでインストールできない不具合があるため）。今は上の表のとおり、PWAとOGPを外したカレンダーだけのページとして残し、開くたびに引っ越しの案内で新しいドメインへ移ってもらいます。解除用の`sw.js`（`tools/sw-pages.js`）は、すでに入っている端末のキャッシュを消して登録を解除するためだけのものです（`sw.js`を消しただけでは、古いServiceWorkerが残って古いカレンダーを出し続けるため）。廃止のあとは、新しいドメインへ転送する`index.html`と、解除用の`sw.js`の2つだけにします。
 

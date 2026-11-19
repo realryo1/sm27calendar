@@ -31,8 +31,8 @@ self.PRECACHE_IMAGES = {
   "image/yukimiku_h_2027.png": 1,
   "image/yukimiku_y_2027.png": 1,
 };
-// 引っ越しの案内（github.io と手元）で表示する新しいアイコン（Vercel ではデプロイ時に image/app/ を削除するため含めない）
-if (self.SM27_SITE !== "app") self.PRECACHE_IMAGES["image/app/icon-maskable-512.png"] = 1;
+// 引っ越しの案内（github.io だけ）で表示する新しいアイコン（Vercel ではデプロイ時に image/app/ を削除するため、含めない。手元では案内を出さないので含めない）
+if (self.SM27_SITE === "pages") self.PRECACHE_IMAGES["image/app/icon-maskable-512.png"] = 1;
 // github.io はマニフェストを消している（tools/split-sites.sh）ので、更新ボタンで取得しない
 if (self.SM27_SITE === "pages") self.PRECACHE = self.PRECACHE.filter((p) => !p.endsWith(".webmanifest"));
 
