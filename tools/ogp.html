@@ -46,30 +46,13 @@
   }
   .foot { position: absolute; left: 60px; bottom: 40px; font-size: 18px; font-weight: 700; opacity: .7; }
 
-  /* 右側：カレンダーのミニチュア */
+  /* 右側：アプリアイコン（tools/icon-app.html）の白い板・4つのタイル・♡27。背景の紫はOGPの背景にまかせる */
   .board {
-    position: absolute; right: 56px; top: 64px; width: 470px; height: 500px; padding: 18px;
-    border-radius: 28px; background: #fff; box-shadow: 0 20px 50px rgb(79 69 143 / .2);
-    transform: rotate(3deg);
+    position: absolute; right: 70px; top: 72px; width: 470px; height: 470px;
+    transform: rotate(3deg); filter: drop-shadow(0 20px 40px rgb(79 69 143 / .25));
   }
-  .heads, .cols { display: grid; grid-template-columns: 30px repeat(6, 1fr); gap: 6px; }
-  .heads div { height: 40px; border-radius: 10px 10px 0 0; font-family: "Dela Gothic One"; font-size: 18px; display: grid; place-items: center; }
-  .day { margin: 12px 0 8px; font-family: "Dela Gothic One"; font-size: 24px; color: var(--pink); }
-  .day small { font-size: 14px; color: var(--violet); letter-spacing: .1em; }
-  .cols { position: relative; height: 370px; }
-  .axis { position: relative; font-family: "Dela Gothic One"; font-size: 13px; }
-  .axis b { position: absolute; right: 2px; font-weight: 400; }
-  .col { position: relative; border-radius: 0 0 8px 8px;
-    background: repeating-linear-gradient(to bottom, transparent 0 22px, #fff 22px 23px), var(--tint); }
-  .ev { position: absolute; left: 4px; right: 4px; border: 2px solid var(--c); border-radius: 8px; background: #fff;
-    display: flex; flex-direction: column; align-items: center; padding-top: 6px; gap: 4px; }
-  .ev i { display: block; width: 70%; height: 10px; border-radius: 99px; background: var(--c); }
-  .ev u { display: block; width: 55%; height: 7px; border-radius: 99px; background: var(--c); opacity: .35; }
-  .wait { position: absolute; left: 4px; right: 4px; border-radius: 8px 8px 0 0; background: linear-gradient(transparent, var(--pink-l)); }
-  .tl { position: absolute; left: 0; right: 0; height: 0; border-top: 3px solid var(--pink); }
-  .a { --c: var(--pink); --tint: #fcecfd; } .b { --c: var(--violet); --tint: #f4f1ff; }
-  .c { --c: var(--orange); --tint: #fff4dc; } .d { --c: var(--teal); --tint: #e6f6f8; } .e { --c: var(--indigo); --tint: #ecebf7; } .f { --c: var(--gold); --tint: #f8f4d8; }
-  .heads .a, .heads .b, .heads .c, .heads .d, .heads .e, .heads .f { background: var(--tint); color: var(--c); border-bottom: 3px solid var(--c); }
+  .board svg { display: block; width: 100%; height: 100%; }
+  .board .t { font-family: "Dela Gothic One"; }
 </style>
 </head>
 <body>
@@ -87,25 +70,42 @@
   </div>
   <p class="foot">非公式ファンメイド / @realryo1 作成</p>
 
+  <!-- 形・色・座標は tools/icon-app.html と同じ（表示する範囲を白い板のまわりにしただけ）。アイコンを変えたらここも合わせる -->
   <div class="board">
-    <div class="heads"><div></div><div class="a">A</div><div class="b">B</div><div class="c">C</div><div class="d">D</div><div class="e">E</div><div class="f">F</div></div>
-    <p class="day">2/6 <small>SAT</small></p>
-    <div class="cols">
-      <div class="axis"><b style="top:0">6</b><b style="top:92px">10</b><b style="top:184px">14</b><b style="top:276px">18</b><b style="top:352px">22</b></div>
-      <div class="col a">
-        <div class="wait" style="top:18px;height:74px"></div>
-        <div class="ev" style="top:92px;height:161px"><i></i><u></u></div>
-      </div>
-      <div class="col b">
-        <div class="ev" style="top:138px;height:69px"><i></i><u></u></div>
-        <div class="ev" style="top:230px;height:69px"><i></i><u></u></div>
-      </div>
-      <div class="col c"><div class="ev" style="top:322px;height:46px"><i></i></div></div>
-      <div class="col d"><div class="ev" style="top:23px;height:322px"><i></i><u></u></div></div>
-      <div class="col e"><div class="ev" style="top:23px;height:322px"><i></i><u></u></div></div>
-      <div class="col f"><div class="ev" style="top:23px;height:322px"><i></i></div></div>
-      <div class="tl" style="top:290px;left:30px"></div>
-    </div>
+    <svg viewBox="15 15 70 70">
+      <defs>
+        <linearGradient id="heart" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#E9A1EB"/><stop offset="1" stop-color="#9F6FD0"/>
+        </linearGradient>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#FFF7C8"/><stop offset=".3" stop-color="#E8D774"/><stop offset=".6" stop-color="#B9A23C"/><stop offset=".85" stop-color="#D9CA5E"/><stop offset="1" stop-color="#F3E79A"/>
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#4F458F" flood-opacity=".3"/>
+        </filter>
+        <g id="i-calendar"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></g>
+        <g id="i-map"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4zM9 4v14M15 6v14"/></g>
+        <g id="i-bag"><path d="M5 8h14l-1 12.5H6L5 8z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></g>
+        <g id="i-train"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M9 13.5h.01M15 13.5h.01M8 21l2-4M16 21l-2-4"/></g>
+      </defs>
+      <rect x="15" y="15" width="70" height="70" rx="17" fill="#fff"/>
+      <g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="21" y="21" width="27" height="27" rx="7" fill="#DD67E2" stroke="none"/>
+        <rect x="52" y="21" width="27" height="27" rx="7" fill="#9185DE" stroke="none"/>
+        <rect x="21" y="52" width="27" height="27" rx="7" fill="#F2A31B" stroke="none"/>
+        <rect x="52" y="52" width="27" height="27" rx="7" fill="#4F458F" stroke="none"/>
+        <use href="#i-calendar" transform="translate(25.5 25.5) scale(.75)"/>
+        <use href="#i-map" transform="translate(56.5 25.5) scale(.75)"/>
+        <use href="#i-bag" transform="translate(25.5 56.5) scale(.75)"/>
+        <use href="#i-train" transform="translate(56.5 56.5) scale(.75)"/>
+      </g>
+      <path d="M50 68C30 57 29.5 40 39.5 37.2c4.8-1.3 8.4 1.2 10.5 4.3 2.1-3.1 5.7-5.6 10.5-4.3 10 2.8 9.5 19.8-10.5 30.8z" fill="url(#heart)" stroke="url(#gold)" stroke-width="2.8" stroke-linejoin="round" filter="url(#shadow)"/>
+      <text class="t" x="50" y="55.5" font-size="11.5" text-anchor="middle" fill="#fff">27</text>
+      <g fill="#fff">
+        <circle cx="47.4" cy="62.3" r=".85"/><circle cx="50" cy="63.8" r=".85"/><circle cx="52.6" cy="62.3" r=".85"/>
+        <circle cx="55" cy="60.5" r=".85"/><circle cx="57.2" cy="58.5" r=".85"/><circle cx="59.2" cy="56.3" r=".85"/>
+      </g>
+    </svg>
   </div>
 </body>
 </html>
