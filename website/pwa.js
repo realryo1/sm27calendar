@@ -27,6 +27,15 @@
   // 手元（"dev"）でも、見た目を確かめられるよう出す
   if (migrate?.enabled && ((self.SM27_SITE === "pages" && migrate.appUrl) || self.SM27_SITE === "dev")) {
     const { esc } = window.TT_UTIL;
+    // インストールしたアプリ（Android）の target="_blank" は、アプリ内のブラウザ（Custom Tab）で開いてしまうので、
+    // intent:// で通常のブラウザ（端末の既定。Chrome など）に渡す。開けないときは browser_fallback_url で同じページを開く。
+    // iPhone のホーム画面のアプリは外のリンクを Safari で開くので、普通のリンクのまま
+    const android = /Android/i.test(navigator.userAgent);
+    const openHref = (() => {
+      if (!android || !migrate.appUrl) return migrate.appUrl || "#";
+      const u = new URL(migrate.appUrl);
+      return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${u.protocol.slice(0, -1)};S.browser_fallback_url=${encodeURIComponent(u.href)};end`;
+    })();
     const $m = document.createElement("div");
     $m.className = "migrate";
     $m.setAttribute("role", "dialog");
@@ -40,7 +49,7 @@
           <img src="image/app/icon-maskable-512.png" alt="新しいアイコン" width="56" height="56">
         </p>
         <p class="migrate__text">${migrate.text}</p>
-        <a class="migrate__btn" href="${esc(migrate.appUrl || "#")}" target="_blank" rel="noopener">${esc(migrate.button)}</a>
+        <a class="migrate__btn" href="${esc(openHref)}"${android ? "" : ' target="_blank"'} rel="noopener">${esc(migrate.button)}</a>
         <button type="button" class="migrate__close" aria-label="閉じる">×</button>
       </div>`;
     $m.querySelector(".migrate__close").addEventListener("click", () => $m.remove());
