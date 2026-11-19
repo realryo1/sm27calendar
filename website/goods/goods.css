@@ -48,7 +48,7 @@
     background: var(--col-paper);
     box-shadow: var(--gm-shadow);
   }
-  /* 見出し：左に名前、右に件数・合計 */
+  /* 見出し：左に名前、右に「設定・保存」（件数・合計は下のフッターにある） */
   .gd-drawer__handle {
     display: flex;
     flex: none;
@@ -59,13 +59,12 @@
     color: var(--col-secondary-dark);
   }
   .gd-drawer__label { flex: none; font-size: 1rem; font-weight: 900; }
-  .gd-drawer__sum { min-width: 0; margin-left: auto; overflow: hidden; font-size: .82rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; color: var(--col-ink); }
   /* ほしいものリストの枠は dialog（.gm-wishlist）のもの。dialog でないので、出して縦に並べ、板の残りの高さに収める。
      名前は見出しに出しているので、リストの見出しの行（名前・「設定・保存」・×）は出さない */
   .gd-wish { display: flex; flex: 1; width: auto; max-height: none; flex-direction: column; min-height: 0; overflow: hidden; border-top: 1px solid #ece8fb; border-radius: 0; box-shadow: none; }
   .gd-wish .gm-wishlist__head { display: none; }
-  /* 「設定・保存」は wishlist.js が見出しの右端（件数・合計の右）に移す */
-  .gd-drawer__handle .gm-wishlist__menubtn { height: 32px; margin-left: 0; }
+  /* 「設定・保存」は wishlist.js が見出しの右端に移す */
+  .gd-drawer__handle .gm-wishlist__menubtn { height: 32px; margin-left: auto; }
   .gm-wishfab { display: none; }
 }
 @media (min-width: 641px) and (max-height: 500px) {

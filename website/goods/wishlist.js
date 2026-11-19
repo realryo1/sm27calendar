@@ -200,8 +200,7 @@ window.GM_WISH = (D, L) => {
   $print.id = "gmWishPrint";
   document.body.append($fab, $dlg, $print);
   const $panel = document.getElementById("gdWish"); // 2カラムの左カラム（常時表示）。CSSが狭い画面では隠す
-  const $sum = document.getElementById("gdWishSum"); // 左カラムの見出しの件数・合計
-  const $handle = $sum?.closest(".gd-drawer__handle"); // 左カラムの見出し（「設定・保存」もここに置く）
+  const $handle = document.querySelector("#gdDrawer .gd-drawer__handle"); // 左カラムの見出し（「設定・保存」もここに置く）
   const wide = window.matchMedia("(min-width: 641px)");
   // 左カラムに出しているか（2カラム。goods.cssの.gd-wishと同じ条件。スタイルを測らずに分かるようにしている）
   const inPanel = () => !!$panel && wide.matches;
@@ -284,7 +283,7 @@ window.GM_WISH = (D, L) => {
     $dlg.innerHTML = html;
     if ($panel) {
       $panel.innerHTML = html;
-      // 2カラムでは「設定・保存」を左カラムの見出し（名前と件数・合計の行）に移す（リストの見出しの行は出さない。goods.css）
+      // 2カラムでは「設定・保存」を左カラムの見出し（名前の右端）に移す（リストの見出しの行は出さない。goods.css）
       if ($handle) {
         $handle.querySelector("[data-menu]")?.remove();
         $handle.append($panel.querySelector("[data-menu]"));
@@ -311,8 +310,6 @@ window.GM_WISH = (D, L) => {
     if (t.n) $fab.setAttribute("aria-label", `${TEXT.title} ${TEXT.count(t.n)} ${yen(t.sum)}`);
     else $fab.removeAttribute("aria-label");
     $fab.classList.toggle("is-empty", !t.n);
-    // 2カラムの左カラムの見出しにも件数と合計を出す
-    if ($sum) $sum.textContent = t.n ? `${TEXT.count(t.n)}　${yen(t.sum)}` : "";
     if ($dlg.open || inPanel()) renderDialog(); // 見えていないリストは作り直さない（見えるようになったとき作る）
   }
   const setQty = (id, q) => {
