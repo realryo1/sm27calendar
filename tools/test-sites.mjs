@@ -241,7 +241,10 @@ async function testPagesFresh(cdp) {
 async function checkPagesPage(p) {
   check("引っ越しの案内を出す", await p.waitFor("!!document.querySelector('.migrate')"));
   check("案内の文言", await p.eval(`document.querySelector('.migrate__text').innerText.replace(/\\s/g, "") === "マップ・グッズ・運行情報を追加！新サイトで再登録をお願いします。※旧サイトは12月末で終了します"`), await p.eval(`document.querySelector('.migrate__text')?.innerText`));
-  check("案内のボタンの行き先が新しいドメイン", await p.eval(`document.querySelector('.migrate__btn').href === ${JSON.stringify(APP_URL)}`));
+  check("案内に新しいドメインのURLを表示する", await p.eval(`document.querySelector('#migrateUrl')?.textContent === ${JSON.stringify(APP_URL)}`));
+  await p.eval("document.querySelector('.migrate [data-copy]').click()");
+  // クリップボードが使えないヘッドレスでは、URLを選ぶ表示になる（どちらでも押せたことになる）
+  check("案内のボタンでURLをコピーする（できないときは選択）", await p.waitFor(`/コピーしました|URLを選びました/.test(document.querySelector('.migrate [data-copy]')?.textContent || '')`));
   check("案内の新しいアイコンが出る", await p.waitFor(`[...document.querySelectorAll('.migrate__icons img')].every((i) => i.complete && i.naturalWidth > 0)`));
   check("OGP・Twitter のメタが無い", await p.eval(`!document.querySelector('meta[property^="og:"], meta[name^="twitter:"]')`));
   check("canonical が新しいドメイン", await p.eval(`document.querySelector('link[rel=canonical]').href === ${JSON.stringify(APP_URL)}`));
