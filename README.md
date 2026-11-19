@@ -70,7 +70,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 
 ## 姉妹プロジェクト
 
-[北海道運行情報](https://github.com/realryo1/hokkaido_delay)（<https://realryo1.github.io/hokkaido_delay/>、試験版）。札幌・新千歳空港・小樽まわりの交通の運行情報をまとめた非公式ページです。もとはこのリポジトリの`website/delay/`と`worker/`で作っていたもので、2026-10-27に別リポジトリに分けました。
+[北海道運行情報](https://github.com/realryo1/hokkaido_delay)（<https://realryo1.github.io/hokkaido_delay/>）。札幌・新千歳空港・小樽まわりの交通の運行情報をまとめた非公式ページです。もとはこのリポジトリの`website/delay/`と`worker/`で作っていたもので、2026-10-27に別リポジトリに分けました。
 
 - デザインはサイトごとに決めます。向こうの配色・フォント・背景・フッターは、こちらの`base.css`と同じ値から始めましたが、2026-11-19からはそろえる決まりをやめました（こちらの`base.css`を変えても、向こうは直しません）。
 - 手元では`hokkaido_delay/`に置いて作業しています（`.gitignore`済みの別リポジトリ）。
