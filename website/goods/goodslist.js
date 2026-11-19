@@ -144,9 +144,9 @@ window.GM_LIST = (D, { boothNo = () => "" } = {}) => {
   // ---------- カード ----------
   // カードは開け閉めできる（details.gm-fold。list.css）。初めは閉じていて、選んだ・しぼった・さがしたときに開く（fold）。
   // 見出しの中のブースの番号を押したときは開け閉めしない（summary の中のボタン・リンクは、それ自体として働くため）
-  // title はカードの名前、sub は名前の下の行（会社名など）、before は名前の左（ブースの番号）。件数は名前の行のすぐ右（公式物販の見出しと同じ位置）
-  const foldCard = ({ theme, title, sub = "", before = "", body, n = 0, id = "", no = id, cls = "" }) =>
-    `<details class="gm-card gm-fold${cls} theme-${theme}"${id ? ` id="${esc(id)}" data-no="${esc(no)}"` : ""}>
+  // title はカードの名前、sub は名前の下の行（会社名など）、before は名前の左（ブースの番号）。件数は名前の行のすぐ右（公式物販の見出しと同じ位置）。open で初めから開いておく
+  const foldCard = ({ theme, title, sub = "", before = "", body, n = 0, id = "", no = id, cls = "", open = false }) =>
+    `<details class="gm-card gm-fold${cls} theme-${theme}"${id ? ` id="${esc(id)}" data-no="${esc(no)}"` : ""}${open ? " open" : ""}>
       <summary class="gm-card__head">${before}<div class="gm-card__title"><h3 class="gm-card__name">${esc(title)}${n ? `<span class="gm-fold__n">${TEXT.count(n)}</span>` : ""}</h3>${sub}</div></summary>
       ${body}
     </details>`;

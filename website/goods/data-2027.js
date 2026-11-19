@@ -1,5 +1,5 @@
 // グッズ・出展ブースマップのデータ（2027年）。SNOW MIKU 2027 公式サイトの「会場一覧」「ウイングベイ小樽」から、事実（日時・場所）だけを書き写したもの。
-// ブースは未発表なので空。ライブグッズ3点のみ掲載。公開されたらbooths・goods・各フロアのboothsを足す（書き方はdata-2026fix.jsと同じ）。
+// ブースは未発表なので空。グッズは公式のグッズ一覧のライブグッズ5点とアルバム2点。公開されたらbooths・goods・各フロアのboothsを足す（書き方はdata-2026fix.jsと同じ）。
 // 公式の画像（会場マップ）は使わない。マップは位置関係（事実）だけを使い、../map/map.js が SVG で描く。
 //
 // floors: ページ上部のタブ。1つ目が開いたときのマップ。
@@ -27,7 +27,7 @@ window.GM_DATA = {
   ],
 
   // グッズの情報元（お品書き・告知）。書き方は data-2026fix.js と同じ。企業のお品書きが出たら maker を足す。
-  // 公式のグッズ一覧は、2026-10-31時点では404（26年と同じ場所に出ると見込んで置いておく）
+  // 公式のグッズ一覧は2026-11-19に公開
   notices: [
     { id: "official", kind: "official", label: "公式のグッズ一覧", url: "https://snowmiku.com/2027/goods.html" },
   ],
@@ -35,13 +35,18 @@ window.GM_DATA = {
   // ライブ（SNOW MIKU LIVE! 2027）のグッズ。グッズは goods に floor: "ライブ物販" で入れ、places に売る場所（ライブ会場は live、チ・カ・ホは chikaho など）。
   live: {
     title: "SNOW MIKU LIVE! 2027",
+    // カードを初めから開いておく（グッズが少ないうちだけ。増えたら消す）
+    open: true,
     lines: [
       "会場：Zepp Sapporo（2/5〜2/7）",
       "事前物販：11/20〜12/21",
       "配送・受け取り：1/28から順次",
     ],
     // 販売ページは11/20 10:00に公開予定。公開されたら、HMVのトップではなくそのページに直す
-    links: [{ label: "HMV（販売ページは11/20公開）", url: "https://www.hmv.co.jp/" }],
+    links: [
+      { label: "グッズ一覧（公式）", url: "https://snowmiku.com/2027/goods.html" },
+      { label: "HMV（販売ページは11/20公開）", url: "https://www.hmv.co.jp/" },
+    ],
   },
 
   // 売り場の名前（品名の前のタグ）
@@ -135,10 +140,15 @@ window.GM_DATA = {
   // ブースは未発表
   booths: [],
   goods: [
-    // ライブ物販：店頭掲示（@Loppiの予約案内）で発表済みの情報による。個別URLは無いため公式のグッズ一覧に向けておく。
-    // 予約期間：11/20〜12/21（@Loppi）、価格は税込。
-    { id: "live-penlight", maker: "公式", name: "ペンライト（商品番号 AW17383625）", price: 4000, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
-    { id: "live-happi", maker: "公式", name: "ハッピ（商品番号 AW17383628）", price: 7000, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
-    { id: "live-ringlight", maker: "公式", name: "リングライト（商品番号 AW17383626）", price: 1500, note: "予約", places: ["hmv"], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods.html" },
+    // ライブ物販：公式のグッズ一覧（2026-11-19公開。一覧の表示は株式会社ローソンエンタテインメント）。
+    // 事前通販（ライブグッズ）：11/20〜12/21の予約（HMV&BOOKS online・@Loppi・HMV店舗）、価格は税込。
+    { id: "live-penlight", maker: "公式", name: "ペンライト", price: 4000, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods-detail_live-penlight.html" },
+    { id: "live-happi", maker: "公式", name: "ハッピ", price: 7000, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods-detail_live-happi.html" },
+    { id: "live-ringlight", maker: "公式", name: "リングライト", price: 1500, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods-detail_live-ringlight.html" },
+    { id: "live-towel", maker: "公式", name: "マフラータオル", price: 2300, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods-detail_live-towel.html" },
+    { id: "live-tshirt", maker: "公式", name: "Tシャツ（M・L・XL・XXL）", price: 4000, note: "予約", places: [], floor: "ライブ物販", url: "https://snowmiku.com/2027/goods-detail_live-t-shirt.html" },
+    // 公式物販：アルバム（KARENT。1/27発売。アニメイト・HMV・Amazon・雪ミクスカイタウンなどと、2/6・2/7の公式物販で売る）
+    { id: "karent-cd", maker: "クリプトン・フューチャー・メディア株式会社", name: "Metamorphonic! feat. 初音ミク（限定盤）", price: 2800, places: ["wingbay", "hmv", "skytown"], floor: "公式物販", url: "https://snowmiku.com/2027/goods-detail_karent-cd.html" },
+    { id: "karent-cd-limited", maker: "クリプトン・フューチャー・メディア株式会社", name: "Metamorphonic! feat. 初音ミク（2層アクリルボード付限定盤）", price: 5550, places: ["wingbay", "hmv", "skytown"], floor: "公式物販", url: "https://snowmiku.com/2027/goods-detail_karent-cd-limited.html" },
   ],
 };

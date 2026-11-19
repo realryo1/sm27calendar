@@ -102,6 +102,7 @@
     const V = D.live ?? {};
     return L.foldCard({
       theme: "violet",
+      open: !!V.open,
       n: live.length,
       title: V.title ?? TEXT.at.live,
       body: `${[...(V.lines ?? []), ...(V.status ?? [])].map((t) => `<p class="gm-note">${esc(t)}</p>`).join("")}

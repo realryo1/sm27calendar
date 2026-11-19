@@ -201,6 +201,7 @@ window.GM_WISH = (D, L) => {
   document.body.append($fab, $dlg, $print);
   const $panel = document.getElementById("gdWish"); // 2カラムの左カラム（常時表示）。CSSが狭い画面では隠す
   const $sum = document.getElementById("gdWishSum"); // 左カラムの見出しの件数・合計
+  const $handle = $sum?.closest(".gd-drawer__handle"); // 左カラムの見出し（「設定・保存」もここに置く）
   const wide = window.matchMedia("(min-width: 641px)");
   // 左カラムに出しているか（2カラム。goods.cssの.gd-wishと同じ条件。スタイルを測らずに分かるようにしている）
   const inPanel = () => !!$panel && wide.matches;
@@ -281,7 +282,14 @@ window.GM_WISH = (D, L) => {
       </footer>
     </div>`;
     $dlg.innerHTML = html;
-    if ($panel) $panel.innerHTML = html;
+    if ($panel) {
+      $panel.innerHTML = html;
+      // 2カラムでは「設定・保存」を左カラムの見出し（名前と件数・合計の行）に移す（リストの見出しの行は出さない。goods.css）
+      if ($handle) {
+        $handle.querySelector("[data-menu]")?.remove();
+        $handle.append($panel.querySelector("[data-menu]"));
+      }
+    }
   }
   // リストを見せる：左カラムがあるときは出ているので何もせず、無いときはdialogで開く
   const openList = () => {
@@ -381,6 +389,7 @@ window.GM_WISH = (D, L) => {
     if ($panel) renderDialog();
   });
   $panel?.addEventListener("click", onListClick);
+  $handle?.addEventListener("click", onListClick);
   // リンクコピー（できないブラウザでは、選んでコピーできる欄で見せる）
   async function copyLink($b) {
     const url = shareUrl();
