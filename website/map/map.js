@@ -662,6 +662,8 @@ window.GM_MAP = (D, L, { onActivate }) => {
     const L = window.L;
     const [w, s, e, n] = D.osm.bbox;
     lmap = L.map($osm, { zoomSnap: 0.25 }).fitBounds([[s, w], [n, e]]);
+    // 右下の帰属表示のリンクは、ほかの外部リンクと同じく新しいタブ（PWA ではアプリ内ブラウザ）で開く（Leaflet の既定のリンクは同じ画面で移ってしまう）
+    lmap.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
