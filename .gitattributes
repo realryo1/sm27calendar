@@ -1,0 +1,2 @@
+# シェルスクリプトは Windows で取り出しても LF のまま（CRLF だと bash で動かない。tools/split-sites.sh）
+*.sh text eol=lf
