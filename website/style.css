@@ -1867,6 +1867,8 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   .app-view, .app-view.is-open { transition: none; }
 }
 .app-view__frame { display: block; width: 100%; height: 100%; border: 0; }
+/* 外部ページがオフラインで開けないときの表示（nav.js の fillExt）。地図のオフラインの表示（map.css の .gm-osm__off）と同じ */
+.app-view__off { height: 100%; display: grid; place-items: center; margin: 0; padding: 0 16px; font-size: .85rem; font-weight: 700; text-align: center; }
 .is-view-open { overflow: hidden; } /* 裏のカレンダーをスクロールさせない */
 /* バーの置き方は画面の幅だけで決める：
    ・左に縦のバー：幅1024px以上

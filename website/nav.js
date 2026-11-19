@@ -65,27 +65,43 @@
   };
   const syncExt = () => extFrames.forEach(([f, origin]) => sendExtInset(f, origin));
   window.addEventListener("resize", syncExt);
+  // 外部URLのページ（運行情報など）は、オフラインだと向こうを読めず、ブラウザの「開けない」の絵が枠に出てしまうので、
+  // オフラインのときは iframe を入れず「オフラインのため…」と出す（OpenStreetMap の地図と同じ。map/map.js の fillOsm）。
+  // オンラインに戻ったら、次に表示するときに iframe を入れる（online の時点で残っている枠も入れる）
+  const extOf = new Map(); // 外部URLの枠 → { label, src, origin }
+  const fillExt = ($v) => {
+    const e = extOf.get($v);
+    if (!e || $v.querySelector("iframe")) return;
+    if (!navigator.onLine) {
+      $v.innerHTML = `<p class="app-view__off">オフラインのため、${esc(e.label)}は表示できません。</p>`;
+      return;
+    }
+    $v.innerHTML = `<iframe class="app-view__frame" allow="geolocation" src="${esc(e.src)}" title="${esc(e.label)}"></iframe>`;
+    const f = $v.firstElementChild;
+    extFrames.push([f, e.origin]);
+    f.addEventListener("load", () => sendExtInset(f, e.origin));
+  };
+  window.addEventListener("online", () => views.forEach(($v) => fillExt($v)));
   // url の無い項目（カレンダー以外。いまは無い）は、iframe を入れず背景だけの枠にする（data.js の nav）
   const viewFor = (it) => {
     if (!it || it === home) return null;
     let $v = views.get(it.id);
-    if ($v) return $v;
+    if ($v) {
+      fillExt($v);
+      return $v;
+    }
     $v = document.createElement("div");
     // 外部URLのページ（運行情報など、embed.js を読まないページ）は、親の枠側で画面の端の安全な余白（パンチホール等）を空ける
     const isExt = Boolean(it.url && /^https?:/.test(it.url));
     $v.className = `app-view${isExt ? " app-view--ext" : ""}`;
     if (it.url) {
       const src = srcOf(it);
-      $v.innerHTML = `<iframe class="app-view__frame"${isExt ? ' allow="geolocation"' : ""} src="${esc(src)}" title="${esc(it.label)}"></iframe>`;
-      if (isExt) {
-        const f = $v.firstElementChild;
-        const origin = new URL(src).origin;
-        extFrames.push([f, origin]);
-        f.addEventListener("load", () => sendExtInset(f, origin));
-      }
+      if (isExt) extOf.set($v, { label: it.label, src, origin: new URL(src).origin });
+      else $v.innerHTML = `<iframe class="app-view__frame" src="${esc(src)}" title="${esc(it.label)}"></iframe>`;
     }
     document.body.append($v);
     views.set(it.id, $v);
+    fillExt($v);
     return $v;
   };
   const itemOf = (el) => items.find((x) => x.id === el?.closest?.("[data-view]")?.dataset.view);
@@ -225,6 +241,7 @@
       const it = queue.shift();
       if (!it) return;
       const $f = viewFor(it).querySelector("iframe");
+      if (!$f) return idle(next); // オフラインで iframe を入れていないときは、次へ
       let done = false;
       const go = () => {
         if (done) return;
