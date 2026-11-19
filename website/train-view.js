@@ -20,23 +20,23 @@
     return w === 0 || w === 6 || T.holidays.includes(dateId) ? "holiday" : "weekday";
   }
 
-  // 1日分の走行キーポイント { t: 分, pos: 停留場位置, trip }
+  // 1日分の走行キーポイント { t: 分, pos: 停留場位置 }
   function buildKeypoints(type) {
     const { direction, trips } = T[type];
     const isInner = direction === "inner";
     const kps = [];
-    const push = (pos, t, trip) => kps.push({ pos, t, trip });
+    const push = (pos, t) => kps.push({ pos, t });
 
-    trips.forEach((trip, k) => {
+    trips.forEach((trip) => {
       trip.forEach((hhmm, r) => {
         if (!hhmm) return;
         const t = toMin(hhmm);
         if (r === 0) {
           // 西4丁目で前便を完結させ、同刻で次便を始める（内回りは0→N、外回りはN→0で折り返し）
-          if (kps.length) push(isInner ? 0 : N, t, k - 1);
-          push(isInner ? N : 0, t, k);
+          if (kps.length) push(isInner ? 0 : N, t);
+          push(isInner ? N : 0, t);
         } else {
-          push(isInner ? N - r : r, t, k);
+          push(isInner ? N - r : r, t);
         }
       });
     });
@@ -50,9 +50,9 @@
       const a = kps[i];
       const b = kps[i + 1];
       if (a.t <= t && t < b.t) {
-        if (a.pos === b.pos) return { state: "stop", pos: a.pos, at: a, until: b, trip: a.trip };
+        if (a.pos === b.pos) return { state: "stop", pos: a.pos, at: a, until: b };
         const frac = (t - a.t) / (b.t - a.t);
-        return { state: "run", pos: a.pos + (b.pos - a.pos) * frac, from: a, to: b, frac, trip: a.trip };
+        return { state: "run", pos: a.pos + (b.pos - a.pos) * frac, from: a, to: b, frac };
       }
     }
     return { state: "after" };
@@ -269,7 +269,12 @@
       </div>
       <details class="tl-trips">
         <summary>${nl(TEXT.tripsSummary)}</summary>
-        <div id="tlTrips"></div>
+        <div class="tl-timetable" id="tlTrips">
+          <p class="vc-ev__note">${nl(TEXT.timetable.note)}</p>
+          <a class="tl-timetable__img" href="${TEXT.timetable.source}" target="_blank" rel="noopener">
+            <img id="tlTimetable" loading="lazy" decoding="async">
+          </a>
+        </div>
       </details>
     `;
 
@@ -284,6 +289,17 @@
     const $times = [...$map.querySelectorAll("[data-time]")];
     const $sts = [...$map.querySelectorAll("[data-st]")];
     const $trips = document.getElementById("tlTrips");
+    const $timetable = document.getElementById("tlTimetable");
+    // 公式の運行ダイヤの画像を日付の種別（平日・土日祝）に合わせる。運行期間外は隠す
+    const showTimetable = (type) => {
+      $trips.hidden = !type;
+      const im = type && TEXT.timetable.images[type];
+      if (im && $timetable.getAttribute("src") !== im.src) {
+        [$timetable.width, $timetable.height] = im.size;
+        $timetable.src = im.src;
+        $timetable.alt = im.alt;
+      }
+    };
 
     // 電車マーカーは線路に沿ってアニメーション（直線補間だと角で線路から外れるため）
     const anim = { dist: null, gap: 0, raf: 0 };
@@ -371,6 +387,7 @@
       setWheel(Math.floor(state.min));
 
       const type = dayType(state.dateId);
+      showTimetable(type);
 
       $sts.forEach((g) => g.classList.remove("is-current", "is-next"));
       if (!type) {
@@ -378,7 +395,6 @@
         $status.innerHTML = `<p class="tl-off">${nl(TEXT.offPeriod)}（${ymd(T.period.start)}〜${ymd(T.period.end)}）</p>`;
         $train.style.display = "none";
         $times.forEach((t) => (t.textContent = ""));
-        $trips.innerHTML = "";
         return;
       }
 
@@ -435,23 +451,6 @@
         $train.style.display = "none";
         anim.dist = null;
       }
-
-      const [cols, idxs, chuoCol] =
-        cfg.direction === "outer"
-          ? [["西4丁目", "すすきの", "中央図書館前"], [0, 2, 13], 2]
-          : [["西4丁目", "中央図書館前", "すすきの"], [0, 11, 22], 1];
-      $trips.innerHTML = `<table class="tl-table">
-        <thead><tr>${cols.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-        <tbody>${cfg.trips
-          .map(
-            (trip, k) => `<tr class="${k === loc.trip ? "is-current" : ""}">${idxs
-              .map((idx, ci) => {
-                const tag = ci === chuoCol ? (k === 0 ? " <small>始発</small>" : k === cfg.trips.length - 1 ? " <small>終点</small>" : "") : "";
-                return `<td>${trip[idx] ?? "—"}${tag}</td>`;
-              })
-              .join("")}</tr>`
-          )
-          .join("")}</tbody></table>`;
     }
 
     $now.addEventListener("click", () => {

@@ -24,7 +24,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 |`website/app.js`|カレンダー描画|
 |`website/util.js`|共通の小さな関数（エスケープ・改行・時刻・曜日）と、2カラムの持ち手の処理（`splitter`。カレンダーとグッズで共通）。iOSでページ全体の拡大（`gesturestart`・`gesturechange`）を止める処理もここ。グッズも`../util.js`を読む|
 |`website/nav.js`|サイドバー（マップ・グッズ・運行情報への切り替え。github.ioでは出さない。下の「サイドバー」）|
-|`website/train.js`/`train-view.js`|雪ミク電車の時刻表と在線予測|
+|`website/train.js`/`train-view.js`|雪ミク電車の時刻表と在線予測。発車時刻の折りたたみには公式の運行ダイヤの画像（`image/yukimiku_h_2027.png`・`yukimiku_y_2027.png`。出典は札幌市交通事業振興公社）を、選んだ日付の平日・土日祝で切り替えて出す|
 |`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連（`precache.js`には公開先`SM27_SITE`も。下の「公開先」）。github.ioの引っ越しの案内は`pwa.js`|
 |`website/base.css`|共通の土台（配色・フォント・背景・テーマ色・フッター・ページの隙間`--gap`）。カレンダーとグッズが読む|
 |`website/style.css`|カレンダー本体のスタイル（`base.css`のあとに読む）|

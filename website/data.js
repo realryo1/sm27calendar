@@ -53,6 +53,16 @@ window.TT_DATA = {
       title: "雪ミク<wbr>電車<wbr>いまどこ？",
       titleSub: "（在線予測）",
       tripsSummary: "発車時刻（2027年ダイヤ）",
+      // 発車時刻の折りたたみに出す公式の運行ダイヤ。選んだ日付が平日か土日祝かで切り替える。タップで出典（source）を開く
+      timetable: {
+        images: {
+          // size は画像の幅・高さ（読み込み前に枠を確保してレイアウトのずれを防ぐ）
+          weekday: { src: "image/yukimiku_h_2027.png", size: [800, 602], alt: "雪ミク電車 運行ダイヤ 平日（内回り）" },
+          holiday: { src: "image/yukimiku_y_2027.png", size: [800, 644], alt: "雪ミク電車 運行ダイヤ 土曜・日曜・祝日（外回り）" },
+        },
+        source: "https://www.stsp.or.jp/business/streetcar/time/#yukimiku",
+        note: "公式の運行ダイヤ。タップすると出典（札幌市交通事業振興公社）が開きます。",
+      },
       note: "雪ミク電車2027の公式運行ダイヤから計算しています。<br>天候・交通事情や定期点検などにより、時刻・運行車両・行先が変わることがあります。",
       offPeriod: "運行期間外",
       now: "いま",
@@ -252,6 +262,7 @@ window.TT_DATA = {
       links: [
         { label: "公式ページ", url: "https://snowmiku.com/2027/event-train.html" },
         { label: "札幌市交通事業振興公社", url: "https://www.stsp.or.jp/event/yukimiku2027/" },
+        { label: "運行ダイヤ（公式）", url: "https://www.stsp.or.jp/business/streetcar/time/#yukimiku" },
       ],
       sessions: [
         { id: "train-weekday", sub: "平日・内回り", days: ["2027-02-04", "2027-02-05"], start: "06:23", end: "21:20" },

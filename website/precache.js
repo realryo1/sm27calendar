@@ -27,6 +27,8 @@ self.PRECACHE_IMAGES = {
   "image/favicon-32.png": 1,
   "image/icon-maskable-512.png": 1,
   "image/souchou.png": 1,
+  "image/yukimiku_h_2027.png": 1,
+  "image/yukimiku_y_2027.png": 1,
 };
 // 引っ越しの案内（github.io と手元）で表示する新しいアイコン（Vercel ではデプロイ時に image/app/ を削除するため含めない）
 if (self.SM27_SITE !== "app") self.PRECACHE_IMAGES["image/app/icon-maskable-512.png"] = 1;

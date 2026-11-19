@@ -1458,17 +1458,11 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
 
 .tl-trips { margin-top: 18px; font-size: .85rem; }
 .tl-trips summary { cursor: pointer; font-weight: 700; color: var(--c); }
-.tl-table {
-  width: 100%;
-  max-width: 420px;
-  margin-top: 10px;
-  border-collapse: collapse;
-  text-align: center;
-}
-.tl-table th { padding: 6px; font-size: .78rem; color: var(--col-paper); background: var(--c); }
-.tl-table td { padding: 4px 6px; font-family: var(--font-display); border-bottom: 1px solid var(--c-tint); }
-.tl-table td small { font-family: var(--font-base); font-size: .68rem; }
-.tl-table tr.is-current td { background: var(--col-primary-light); }
+.tl-timetable { display: grid; gap: 10px; margin-top: 8px; }
+.tl-timetable[hidden] { display: none; }
+/* 画像の元の幅（800px）より広げるとぼやけるので、そこで止める */
+.tl-timetable__img { max-width: 500px; }
+.tl-timetable__img img { display: block; width: 100%; height: auto; }
 
 /* ---------- Venues（会場・イベント詳細） ---------- */
 .venues { margin-top: var(--gap); scroll-margin-top: var(--gap); }
