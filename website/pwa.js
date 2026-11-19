@@ -1,14 +1,30 @@
-// PWA：Service Worker の登録と、インストール（ホーム画面に追加）の案内
+// PWA：Service Worker の登録と、インストール（ホーム画面に追加）の案内。新しいドメインと手元だけ。
+// github.io（SM27_SITE が "pages"）は登録せず、このページの登録と sm27- のキャッシュを消す（解除用の sw.js（tools/sw-pages.js）の更新を待たないため。
+// 同じオリジンの運行情報には触れない）
 (() => {
+  const pages = self.SM27_SITE === "pages";
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    if (pages) {
+      navigator.serviceWorker
+        .getRegistration()
+        .then((r) => r?.unregister())
+        .catch(() => {});
+      if ("caches" in window) {
+        caches
+          .keys()
+          .then((keys) => Promise.all(keys.filter((k) => k.startsWith("sm27-")).map((k) => caches.delete(k))))
+          .catch(() => {});
+      }
+    } else {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    }
   }
 
   // github.io の引っ越しの案内（data.js の migrate）。インストールしたアプリの中でも、開くたびに出す（×でそのときだけ閉じる）。
   // 出すときは、github.io のアプリのインストール案内は出さない
   const migrate = window.TT_DATA.migrate;
-  // 見出しの下に、今のアイコン ⇒ 新しいアイコン（image/app/。github.io では消さずに残す。deploy-pages.yml）を並べる。
-  // 手元（"dev"）でも、見た目を確かめられるよう出す（appUrl はデプロイ時に入るので、手元ではボタンの行き先が無い）
+  // 見出しの下に、今のアイコン ⇒ 新しいアイコン（image/app/。github.io では消さずに残す。tools/split-sites.sh）を並べる。
+  // 手元（"dev"）でも、見た目を確かめられるよう出す
   if (migrate?.enabled && ((self.SM27_SITE === "pages" && migrate.appUrl) || self.SM27_SITE === "dev")) {
     const { esc } = window.TT_UTIL;
     const $m = document.createElement("div");
@@ -31,6 +47,9 @@
     document.body.append($m);
     return;
   }
+
+  // github.io はインストールできない（マニフェストを消している）ので、インストールの案内も出さない
+  if (pages) return;
 
   const standalone = matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || navigator.standalone === true;
   if (standalone) return;

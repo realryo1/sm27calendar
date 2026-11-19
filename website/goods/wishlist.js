@@ -50,7 +50,7 @@ window.GM_WISH = (D, L) => {
     // 印刷（PDF）
     printTitle: (name) => `ほしいものリスト　${name}`,
     printMade: (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日に作成`,
-    printNote: "SNOWMIKU2027非公式カレンダーで作成。価格は税込。売り場・価格は変わることがあります。",
+    printNote: "SNOWMIKU2027非公式アプリで作成。価格は税込。売り場・価格は変わることがあります。",
     printCols: ["", "売り場", "品名", "単価", "個数", "小計"],
     printFile: (name) => `ほしいものリスト_${name}`,
     printLink: "QRコードかリンクから、このリストをスマホなどで開けます",

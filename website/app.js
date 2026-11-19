@@ -361,7 +361,9 @@
 
       // 画像（PRECACHE_IMAGES）は別のキャッシュ（sm27-img）で版ごとに持つので、版が変わったもの・新しいものだけ取得する
       const imgPaths = new Set(Object.keys(imgs).map((p) => new URL(p, location.href).pathname));
-      const imgCache = "caches" in window ? await caches.open("sm27-img") : null;
+      // github.io（SM27_SITE が "pages"）は PWA を外しているので、画像のキャッシュも作らない（最新の取得だけ行う）
+      const pages = self.SM27_SITE === "pages";
+      const imgCache = "caches" in window && !pages ? await caches.open("sm27-img") : null;
       const staleImgs = [];
       for (const p of Object.keys(imgs)) {
         const key = new URL(`${p}?v=${imgs[p]}`, location.href).href;
@@ -444,9 +446,15 @@
         await Promise.all((await imgCache.keys()).filter((r) => !keep.has(r.url)).map((r) => imgCache.delete(r)));
       }
 
-      // フォント・ライブラリ・画像のキャッシュ（sw.js の FONT_CACHE・LIB_CACHE・IMG_CACHE）は残す
-      if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k !== "sm27-fonts" && k !== "sm27-lib" && k !== "sm27-img").map((k) => caches.delete(k)));
-      if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
+      if (pages) {
+        // github.io：残っている sm27- のキャッシュとこのページの登録をすべて消す。同じ realryo1.github.io の運行情報などには触れない
+        if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k.startsWith("sm27-")).map((k) => caches.delete(k)));
+        if ("serviceWorker" in navigator) await (await navigator.serviceWorker.getRegistration())?.unregister();
+      } else {
+        // フォント・ライブラリ・画像のキャッシュ（sw.js の FONT_CACHE・LIB_CACHE・IMG_CACHE）は残す
+        if ("caches" in window) await Promise.all((await caches.keys()).filter((k) => k !== "sm27-fonts" && k !== "sm27-lib" && k !== "sm27-img").map((k) => caches.delete(k)));
+        if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
+      }
       // サイトのリセット：インストール案内を再び出し、カレンダー・グッズの2カラムの分割率（持ち手）を初期値に戻す
       try {
         localStorage.removeItem("sm27-install-dismissed");

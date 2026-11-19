@@ -74,7 +74,7 @@ async function api(method, path, body) {
 
 const runsPath = `/actions/workflows/${WORKFLOW_FILE}/runs`;
 const pagesUrl = `https://${owner}.github.io/${repo}/`;
-// 公開URL（GitHub Pages と Vercel）。どちらも新しくなるまで待つ。Vercel の URL はワークフローの APP_URL（コードには置かない）
+// 公開URL（GitHub Pages と Vercel）。どちらも新しくなるまで待つ。Vercel の URL はワークフローの APP_URL から読む
 const appUrl = readFileSync(new URL(`../.github/workflows/${WORKFLOW_FILE}`, import.meta.url), "utf8").match(/^\s*APP_URL:\s*(\S+)/m)?.[1];
 if (!appUrl) die(`${WORKFLOW_FILE} に APP_URL が見つかりません。`);
 const siteUrls = [pagesUrl, appUrl];

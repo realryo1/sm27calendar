@@ -27,7 +27,6 @@
     disclaimer:
       "本ページは非公式です。\nこのページの問い合わせはx.com/realryo1にお願いします。\n情報の正確性には留意していますが、最終的な判断は利用者が行ってください。",
     sources: "出典",
-    calendar: "非公式カレンダーへ戻る",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -186,8 +185,7 @@
     ${D.notice ? `<p>${esc(D.notice)}</p>` : ""}
     <p class="site-footer__updated">${esc(TEXT.updated(`${y}年${mo}月${d}日`))}</p>
     <p>${br(TEXT.disclaimer)}</p>
-    <p class="gm-sources">${esc(TEXT.sources)}：${sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)} ↗</a>`).join("　")}</p>
-    ${EMBED ? "" : `<p class="site-footer__repo"><a href="../">${esc(TEXT.calendar)}</a></p>`}`;
+    <p class="gm-sources">${esc(TEXT.sources)}：${sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)} ↗</a>`).join("　")}</p>`;
 
   // ---------- ほしいものリスト（2カラムの左の列。いつも開いている） ----------
   // 名前と件数・合計（wishlist.js が入れる）を見出しに出す。スマホは浮かぶボタンから dialog で開く

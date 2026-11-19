@@ -12,7 +12,7 @@ window.TT_DATA = {
   // サイト名や説明を変えるときは index.html のそちらも合わせて直す
   site: {
     name: "SNOW MIKU 2027",
-    subtitle: "非公式カレンダー",
+    subtitle: "非公式アプリ",
     boardHint: "二本指で拡大縮小、予定タップで詳細表示",
     // 1日目の先頭で予定のない会場の列（A〜C）に置くチュートリアル
     scrollHint: "スクロールしてみよう！\n下に予定が続きます",
@@ -74,12 +74,11 @@ window.TT_DATA = {
   },
 
   // github.io の引っ越しの案内（pwa.js）。enabled: true にすると、github.io で開くたびに出す（×で閉じられる。新しいドメインでは出さない。手元では見た目の確認のため出す）。
-  // 新しいドメインの URL（appUrl）はコードに置かず、デプロイ時に deploy-pages.yml が入れる
   migrate: {
-    enabled: false,
-    appUrl: "",
+    enabled: true,
+    appUrl: "https://sm27app.realryo1.jp/",
     title: "【 大規模アップデートのお知らせ 】",
-    text: "グッズ一覧・マップ・運行情報を追加しました！<br>新しいURLでホーム画面に追加し直してください。<br>※このアプリは12月末で終了します",
+    text: "マップ・グッズ・運行情報を追加！<br>新サイトで再登録をお願いします。<br>※旧サイトは12月末で終了します",
     button: "新しいページを開く",
   },
 

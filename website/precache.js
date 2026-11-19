@@ -1,5 +1,6 @@
-// 公開先。デプロイ時に deploy-pages.yml が書き換える（"app"：新しいドメイン（Vercel）、"pages"：github.io）。手元は "dev"。
-// index.html（マニフェスト）・nav.js（サイドバー）・pwa.js（引っ越しの案内）・sw.js（保存する範囲）が見る。index.html では最初に読み込む
+// 公開先。デプロイ時に tools/split-sites.sh が書き換える（"app"：新しいドメイン（Vercel）、"pages"：github.io）。手元は "dev"。
+// index.html（マニフェスト）・nav.js（サイドバー）・pwa.js（PWA と引っ越しの案内）・app.js（更新ボタン）が見る。index.html では最初に読み込む。
+// github.io は PWA を外している（保存はしない）が、更新ボタンが取得する一覧としてこのファイルを使う
 self.SM27_SITE = "dev";
 
 // オフライン用に保存するファイルの一覧（sw.js と、更新ボタンの取得対象で共用）
@@ -32,9 +33,11 @@ self.PRECACHE_IMAGES = {
 };
 // 引っ越しの案内（github.io と手元）で表示する新しいアイコン（Vercel ではデプロイ時に image/app/ を削除するため含めない）
 if (self.SM27_SITE !== "app") self.PRECACHE_IMAGES["image/app/icon-maskable-512.png"] = 1;
+// github.io はマニフェストを消している（tools/split-sites.sh）ので、更新ボタンで取得しない
+if (self.SM27_SITE === "pages") self.PRECACHE = self.PRECACHE.filter((p) => !p.endsWith(".webmanifest"));
 
 // グッズ（goods/）と会場マップ（map/。データと一覧の部品は goods/ のもの）。サイドバーから開く。
-// github.io ではサイドバーを出さないので保存しない（sw.js もキャッシュを通さない）
+// github.io ではサイドバーを出さないので、更新ボタンでも取得しない
 self.PRECACHE_GOODS = [
   "goods/",
   "goods/index.html",

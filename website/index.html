@@ -7,38 +7,41 @@
   <script>
     if (/\/[^/.]+$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
   </script>
-  <!-- title / description / OGP は静的に置く必要がある。サイト名・説明を変えるときは data.js の site も合わせて直す -->
-  <title>SNOWMIKU2027 非公式カレンダー</title>
-  <meta name="description" content="SNOW MIKU 2027（2027.2.4〜2.7）のメインイベント・LIVE・Digital Stars・チ・カ・ホ・ファンメイドライブ・雪ミク電車を会場別にまとめた非公式カレンダー。雪ミク電車の在線予測つき。">
-  <link rel="canonical" href="https://realryo1.github.io/sm27calendar/">
+  <!-- title / description / OGP は静的に置く必要がある。サイト名・説明を変えるときは data.js の site も合わせて直す。
+       github.io では OGP:start〜OGP:end と PWA:start〜PWA:end を消す（OGP とインストールは新しいドメインだけ） -->
+  <title>SNOWMIKU2027 非公式アプリ</title>
+  <meta name="description" content="SNOW MIKU 2027（2027.2.4〜2.7）の非公式アプリ。メインイベント・LIVE・Digital Stars・チ・カ・ホ・ファンメイドライブ・雪ミク電車の会場別カレンダーに、会場マップ・グッズ一覧・運行情報をまとめました。雪ミク電車の在線予測つき。">
+  <link rel="canonical" href="https://sm27app.realryo1.jp/">
 
-  <!-- OGP -->
+  <!-- OGP:start -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="SNOWMIKU2027 非公式カレンダー">
-  <meta property="og:title" content="SNOWMIKU2027 非公式カレンダー">
-  <meta property="og:description" content="2027.2.4〜2.7 のメインイベント・LIVE・Digital Stars・チ・カ・ホ・ファンメイドライブ・雪ミク電車を会場別にまとめた非公式カレンダー。雪ミク電車の在線予測つき。">
-  <meta property="og:url" content="https://realryo1.github.io/sm27calendar/">
-  <meta property="og:image" content="https://realryo1.github.io/sm27calendar/image/ogp.png">
+  <meta property="og:site_name" content="SNOWMIKU2027 非公式アプリ">
+  <meta property="og:title" content="SNOWMIKU2027 非公式アプリ">
+  <meta property="og:description" content="2027.2.4〜2.7 のメインイベント・LIVE・Digital Stars・チ・カ・ホ・ファンメイドライブ・雪ミク電車の会場別カレンダーに、会場マップ・グッズ一覧・運行情報をまとめた非公式アプリ。雪ミク電車の在線予測つき。">
+  <meta property="og:url" content="https://sm27app.realryo1.jp/">
+  <meta property="og:image" content="https://sm27app.realryo1.jp/image/ogp.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="SNOWMIKU2027 非公式カレンダー 2027.2.4 THU – 2.7 SUN">
+  <meta property="og:image:alt" content="SNOWMIKU2027 非公式アプリ 2027.2.4 THU – 2.7 SUN">
   <meta property="og:locale" content="ja_JP">
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SNOWMIKU2027 非公式カレンダー">
-  <meta name="twitter:description" content="メインイベント・LIVE・Digital Stars・チ・カ・ホ・ファンメイドライブ・雪ミク電車を会場別にまとめた非公式カレンダー。雪ミク電車の在線予測つき。">
-  <meta name="twitter:image" content="https://realryo1.github.io/sm27calendar/image/ogp.png">
-  <meta name="twitter:image:alt" content="SNOWMIKU2027 非公式カレンダー 2027.2.4 THU – 2.7 SUN">
+  <meta name="twitter:title" content="SNOWMIKU2027 非公式アプリ">
+  <meta name="twitter:description" content="会場別カレンダー・会場マップ・グッズ一覧・運行情報をまとめた非公式アプリ。雪ミク電車の在線予測つき。">
+  <meta name="twitter:image" content="https://sm27app.realryo1.jp/image/ogp.png">
+  <meta name="twitter:image:alt" content="SNOWMIKU2027 非公式アプリ 2027.2.4 THU – 2.7 SUN">
+  <!-- OGP:end -->
   <meta name="theme-color" content="#ffffff">
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="favicon.ico" sizes="48x48">
   <link rel="icon" href="image/favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="image/icon-maskable-512.png">
+  <!-- PWA:start -->
+  <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
+  <!-- PWA:end -->
   <meta name="apple-mobile-web-app-title" content="雪ミク27">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <!-- 公開先（self.SM27_SITE）。下のマニフェストの切り替えで使うので、defer にせず最初に読み込む -->

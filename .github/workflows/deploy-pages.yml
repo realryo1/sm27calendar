@@ -12,7 +12,7 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
-# 新しいドメイン（Vercel）の URL。コードやドキュメントには置かず、ここだけに書く（github.io の引っ越しの案内の行き先・F5 の反映待ち）
+# 新しいドメイン（Vercel）の URL（F5 の反映待ちと下の確認で使う。index.html・data.js にも同じ URL を直接書いている）
 env:
   APP_URL: https://sm27app.realryo1.jp/
 
@@ -45,24 +45,9 @@ jobs:
           sed -i -E "s/(src|href)=\"((base|style)\.css|[a-z-]+\.js)\"/\1=\"\2?v=${v}\"/g" website/index.html
           grep -o -E "(src|href)=\"[a-z.-]+\?v=[0-9]+\"" website/index.html
 
-      # 公開先ごとに分ける。website/ は新しいドメイン（Vercel）、_pages/ は github.io（GitHub Pages）。
-      # precache.js の SM27_SITE（サイドバー・保存する範囲・引っ越しの案内）・新ドメインの manifest.webmanifest の id（"/"）・
-      # github.io の引っ越しの案内の行き先（data.js の migrate.appUrl）を書き換える。
-      # 新しいドメインのアイコン（website/image/app/）があれば image/ の同じ名前のファイルに上書きする（github.io は今のアイコンのまま。
-      # github.io では引っ越しの案内に新しいアイコンを出すので image/app/ を残す）
+      # 公開先ごとに分ける。website/ は新しいドメイン（Vercel）、_pages/ は github.io（GitHub Pages）。中身は tools/split-sites.sh（手元の試験と共用）
       - name: Split sites
-        run: |
-          cp -r website _pages
-          sed -i 's#"id": "/sm27calendar/"#"id": "/"#' website/manifest.webmanifest
-          grep -q '"id": "/"' website/manifest.webmanifest
-          sed -i 's/^self.SM27_SITE = "dev";/self.SM27_SITE = "app";/' website/precache.js
-          sed -i 's/^self.SM27_SITE = "dev";/self.SM27_SITE = "pages";/' _pages/precache.js
-          grep -q 'SM27_SITE = "app"' website/precache.js
-          grep -q 'SM27_SITE = "pages"' _pages/precache.js
-          sed -i -E "s#^(    appUrl: \")[^\"]*(\",)#\1${APP_URL}\2#" _pages/data.js
-          grep -q "appUrl: \"${APP_URL}\"" _pages/data.js
-          if [ -d website/image/app ]; then cp website/image/app/* website/image/; fi
-          rm -rf website/image/app
+        run: bash tools/split-sites.sh website _pages
 
       # 公開するファイルだけ JS / CSS を圧縮する（リポジトリのソースは読みやすいまま）。updatedAt・公開先の書き換えより後に行う
       - name: Minify JS / CSS

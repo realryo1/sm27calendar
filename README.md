@@ -1,8 +1,8 @@
-# SNOWMIKU2027非公式カレンダー
+# SNOWMIKU2027非公式アプリ
 
-SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars・チ・カ・ホ・ファンメイドライブ・雪ミク電車を、会場別にまとめた非公式カレンダーです。雪ミク電車の在線予測つき。
+SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars・チ・カ・ホ・ファンメイドライブ・雪ミク電車の会場別カレンダーに、会場マップ・グッズ一覧・運行情報をまとめた非公式アプリです。雪ミク電車の在線予測つき。旧名は「非公式カレンダー」。
 
-公開URL:https://realryo1.github.io/sm27calendar/
+公開URL:https://sm27app.realryo1.jp/
 
 > 本サイトは非公式です。情報の正確性には留意していますが、最終的な判断は利用者が行ってください。
 
@@ -19,23 +19,24 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 
 |パス|内容|
 |---|---|
-|`website/index.html`|ページ本体（title/description/OGPはここに静的に記述）|
+|`website/index.html`|ページ本体（title/description/OGPはここに静的に記述。canonical・OGPのURLは新しいドメイン）|
 |`website/data.js`|イベント・会場・日付・画面の文言、最終更新日時|
 |`website/app.js`|カレンダー描画|
 |`website/util.js`|共通の小さな関数（エスケープ・改行・時刻・曜日）と、2カラムの持ち手の処理（`splitter`。カレンダーとグッズで共通）。iOSでページ全体の拡大（`gesturestart`・`gesturechange`）を止める処理もここ。グッズも`../util.js`を読む|
 |`website/nav.js`|サイドバー（マップ・グッズ・運行情報への切り替え。github.ioでは出さない。下の「サイドバー」）|
 |`website/train.js`/`train-view.js`|雪ミク電車の時刻表と在線予測。発車時刻の折りたたみには公式の運行ダイヤの画像（`image/yukimiku_h_2027.png`・`yukimiku_y_2027.png`。出典は札幌市交通事業振興公社）を、選んだ日付の平日・土日祝で切り替えて出す|
-|`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連（`precache.js`には公開先`SM27_SITE`も。下の「公開先」）。github.ioの引っ越しの案内は`pwa.js`|
+|`website/pwa.js`/`sw.js`/`precache.js`/`manifest.webmanifest`|PWA関連（`precache.js`には公開先`SM27_SITE`も。下の「公開先」）。github.ioの引っ越しの案内と、github.ioのServiceWorkerの解除は`pwa.js`|
 |`website/base.css`|共通の土台（配色・フォント・背景・テーマ色・フッター・ページの隙間`--gap`）。カレンダーとグッズが読む|
 |`website/style.css`|カレンダー本体のスタイル（`base.css`のあとに読む）|
 |`website/delay/`|姉妹プロジェクト（運行情報）への転送ページ（旧URL）|
 |`website/goods/`|グッズの試験ページ（サイドバーの「グッズ」）。グッズを売り場ごと・出展企業ごとにまとめ、2カラムは左の列にほしいものリスト。品は♡でほしいものリストに入れられ、PDFに印刷できる（`wishlist.js`）。企業ブースの品に公式・企業のタグ。年ごとのデータ（`data-○○○○.js`）と一覧の部品（`goodslist.js`）、会場マップと共通の部品（`common.css`・`embed.js`）もここに置く。`?year=2026`で前年の見本。`noindex`。カレンダーからはサイドバーで開く（github.ioでは出さない）|
 |`website/map/`|会場マップの試験ページ（サイドバーの「マップ」）。会場マップだけを画面いっぱいに出す。既定は2027年の会場の略図＋チ・カ・ホのタブ。データと一覧の部品は`../goods/`のものを読む。グッズとの行き来は親の`nav.js`が取り次ぐ。`noindex`|
 |`document/`|タスクリスト（`sm27progress.md`）、グッズ・会場マップの構成・仕様・注意（`goodsmap.md`）|
-|`tools/`|アイコン・OGP画像の元になるHTML（新しいドメインのアイコンと、共通のfavicon（`?favicon`）は`icon-app.html`、その案の見比べは`iconnew.html`）、ブースマップのエディタ（`goodsmap-editor.html`）、デプロイスクリプト（`deploy-pages.mjs`）|
+|`tools/`|アイコン・OGP画像の元になるHTML（新しいドメインのアイコンと、共通のfavicon（`?favicon`）は`icon-app.html`、その案の見比べは`iconnew.html`）、ブースマップのエディタ（`goodsmap-editor.html`）、デプロイスクリプト（`deploy-pages.mjs`）、github.ioの解除用の`sw.js`の元（`sw-pages.js`）、公開先ごとの作り分け（`split-sites.sh`。ワークフローと手元の試験で共用）、新旧サイトの試験（`test-sites.mjs`。下の「ローカルで確認」）|
 
 ## PWA
 
+- PWA（インストール・オフライン保存）は新しいドメインと手元だけです。github.ioでの扱いは下の「公開先」。
 - オフライン保存するファイルの一覧は`precache.js`（`self.PRECACHE`）。`sw.js`と更新ボタン（`app.js`の`hardRefresh`）が共通で参照します。
 - 画像は`precache.js`の`self.PRECACHE_IMAGES`（`{ パス: 版 }`）に別に持ち、版を付けたURLを鍵に別のキャッシュ（`sm27-img`）へ保存します。版が同じ画像は取り直さず、`VERSION`を上げても更新ボタンでも消しません（更新ボタンでダウンロードするのはコードと、版が変わった画像だけ）。画像を置き換えたら、その行の版を上げます。
 - `sw.js`はstale-while-revalidate。`cache:"no-cache"`/`"reload"`のリクエストはネットワークから取得し、成功したらキャッシュも更新します。
@@ -48,7 +49,7 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 - 更新ボタンの吹き出し：更新中は元の文の下に薄い文字で「ファイル名を更新中…　完了数/全体数」（数は右端に固定）を出します。取得するのは、フォルダのページの引数（`?embed=1`など）を外したURLと、版が変わった画像だけです。成功してリロードしたあと、`sessionStorage`の`sm27-refreshed`の印で「更新に成功しました！」を出します。`app.js`が時間割を組み終えるまでは`html:not(.is-ready) .main`を隠し、空の枠を見せません。
 - `website/delay/`（運行情報の旧URLの転送ページ）はPWAの対象外で、キャッシュしません。キャッシュを通すと、転送されずにカレンダーが表示されるためです。
 - `website/test_`で始まるフォルダ（試験ページ）もPWAの対象外で、キャッシュしません。理由は`delay/`と同じです。
-- グッズ（`website/goods/`）と会場マップ（`website/map/`）は、新しいドメインと手元では保存します（`precache.js`の`PRECACHE_GOODS`）。github.ioでは保存せず、キャッシュも通しません（サイドバーを出さないため）。
+- グッズ（`website/goods/`）と会場マップ（`website/map/`）も保存します（`precache.js`の`PRECACHE_GOODS`）。github.ioの更新ボタンでは取得しません（サイドバーを出さないため）。
 - ページの要求（iframeも）は、フォルダごとの`index.html`のキャッシュを返します（カレンダーと`goods/`・`map/`）。
 
 ## サイドバー
@@ -89,6 +90,14 @@ SNOWMIKU2027（2027.2.4〜2.7）のメインイベント・LIVE・DigitalStars�
 
 `website/`を静的サーバーで配信。VSCode拡張のLiveServerなどを使用してください。
 
+新しいドメインと旧サイト（github.io）の挙動は、`node tools/test-sites.mjs`で確かめます（依存なし。Node22以降とChrome）。デプロイと同じ`tools/split-sites.sh`で作り分け、新しいドメインを`127.0.0.1:8801`、旧サイトを`127.0.0.1:8802/sm27calendar/`に出して、ヘッドレスのChromeで自動テストします。
+
+- 新しいドメイン：OGP・マニフェスト、ServiceWorkerとキャッシュ、オフライン表示（カレンダー・グッズ）、更新ボタン
+- 旧サイト（初めて開く人）：引っ越しの案内、OGP・マニフェストが無い、ServiceWorkerを登録しない
+- 旧サイト（前の版のPWAを入れていた人）：前の版（既定は`d05b59e`。`--old-ref`で変える）のPWAを入れてから新しい版に差し替え、1回の読み込み直しで解除・キャッシュ削除・案内の表示まで進むこと、同じオリジンの運行情報のPWA（見本）が残ること、更新ボタン
+
+`--serve`を付けると配信だけします（ブラウザで手で確かめる用）。旧サイトは新しい版で出します。前の版からの移行を試すときは、`127.0.0.1:8802/__switch?to=old`で前の版のPWAを入れてから`?to=new`に切り替えます。
+
 ## 情報の更新
 
 - イベント情報は`website/data.js`を編集します。
@@ -113,19 +122,20 @@ Vercelへは、ワークフローで加工した（`updatedAt`・`?v=`・圧縮�
 
 ### 公開先
 
-同じ`website/`から、ワークフローが公開先ごとに作り分けます。新しいドメインのURLはコードやドキュメントに置かず、ワークフローの`APP_URL`だけに書きます（F5の反映待ちもそこから読みます）。
+同じ`website/`から、ワークフローが公開先ごとに作り分けます（`tools/split-sites.sh`）。新しいドメインのURLは、ワークフローの`APP_URL`（F5の反映待ちはここから読む）と、`index.html`（canonical・OGP）・`data.js`（`migrate.appUrl`）に書きます。変えるときは3か所とも直します（ワークフローが食い違いを見つけると中断します）。github.ioのURLは、ドキュメントや画面に出しません。
 
 ||新しいドメイン（Vercel）|github.io（GitHubPages）|手元|
 |-|-|-|-|
 |`precache.js`の`SM27_SITE`|`"app"`|`"pages"`|`"dev"`|
 |サイドバー（マップ・グッズ・運行情報）|出す|出さない|出す|
-|オフライン保存|カレンダー＋グッズ＋マップ|カレンダーだけ|カレンダー＋グッズ＋マップ|
+|オフライン保存|カレンダー＋グッズ＋マップ|しない（`sw.js`は解除用。`pwa.js`も登録を外し、`sm27-`のキャッシュを消す）|カレンダー＋グッズ＋マップ|
+|インストール（マニフェスト）|できる|できない（`index.html`の`PWA:start`〜`PWA:end`とマニフェストを消す）|できる（開発用のマニフェスト）|
+|OGP・canonical|新しいドメインのURL|OGPを消す（`OGP:start`〜`OGP:end`）。canonicalは新しいドメイン|新しいドメインのURL|
+|更新ボタン|キャッシュを入れ替える|最新を取得して読み込み直すだけ（`sm27-`のキャッシュとこのページの登録を消す。同じgithub.ioの運行情報には触れない）|キャッシュを入れ替える|
 |アイコン|`website/image/app/`のファイルで、`image/`の同じ名前のファイルを上書き（今は`icon-maskable-512.png`だけ。元は`tools/icon-app.html`）|今のまま|開発用（モノクロ）|
-|引っ越しの案内|出さない|`data.js`の`migrate.enabled`が`true`なら、開くたびに出す|`migrate.enabled`が`true`なら出す（見た目の確認用。ボタンの行き先は無い）|
+|引っ越しの案内|出さない|`data.js`の`migrate.enabled`が`true`なら、開くたびに出す|`migrate.enabled`が`true`なら出す（見た目の確認用）|
 
-引っ越しの案内の行き先（`migrate.appUrl`）は、ワークフローがgithub.io用の`data.js`にだけ入れます。
-
-**github.ioは廃止します**（同じgithub.io配下のPWAが、Androidでインストールできない不具合があるため）。廃止のあとは、github.ioのPWA（ServiceWorker・キャッシュ・マニフェスト）をすべて消し、新しいドメインへ転送する`index.html`と、解除用の`sw.js`の2つだけにします。`sw.js`は、すでに入っている端末のキャッシュを消して登録を解除するためだけのものです（`sw.js`を消しただけでは、古いServiceWorkerが残って古いカレンダーを出し続けるため）。それまでの間は、上の表のとおりカレンダーだけのPWAとして残し、引っ越しの案内で新しいドメインへ移ってもらいます。
+**github.ioは廃止します**（同じgithub.io配下のPWAが、Androidでインストールできない不具合があるため）。今は上の表のとおり、PWAとOGPを外したカレンダーだけのページとして残し、開くたびに引っ越しの案内で新しいドメインへ移ってもらいます。解除用の`sw.js`（`tools/sw-pages.js`）は、すでに入っている端末のキャッシュを消して登録を解除するためだけのものです（`sw.js`を消しただけでは、古いServiceWorkerが残って古いカレンダーを出し続けるため）。廃止のあとは、新しいドメインへ転送する`index.html`と、解除用の`sw.js`の2つだけにします。
 
 F5で「Deploy:一括（カレンダー＋運行情報）」を選ぶと、このリポジトリと姉妹プロジェクト（`hokkaido_delay/`）のデプロイを同時に実行します（それぞれのリポジトリの`tools/deploy-pages.mjs`。ターミナルは別々に開きます）。未コミットの変更があるリポジトリは、そちらだけ中断します。
 

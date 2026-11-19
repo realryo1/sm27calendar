@@ -1,8 +1,8 @@
 {
   "id": "/sm27calendar/",
-  "name": "SNOWMIKU2027非公式カレンダー",
+  "name": "SNOWMIKU2027非公式アプリ",
   "short_name": "雪ミク27",
-  "description": "SNOWMIKU2027（2027.2.4〜2.7）の各種情報をまとめた非公式カレンダー。雪ミク電車の現在地予測つき。オフラインでも見られます。",
+  "description": "SNOWMIKU2027（2027.2.4〜2.7）の会場別カレンダー・会場マップ・グッズ一覧・運行情報をまとめた非公式アプリ。雪ミク電車の現在地予測つき。オフラインでも見られます。",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",
@@ -21,7 +21,7 @@
       "src": "image/ogp.png",
       "sizes": "1200x630",
       "type": "image/png",
-      "label": "SNOWMIKU2027非公式カレンダー"
+      "label": "SNOWMIKU2027非公式アプリ"
     },
     {
       "src": "image/screenshot-narrow.png",

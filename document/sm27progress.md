@@ -6,7 +6,9 @@
 
 ## これから
 
-- [ ] 一挙公開のときに公開URLと説明文を新しいドメイン向けに差し替える：`data.js`の`migrate.enabled`を`true`に（github.ioに引っ越しの案内）、`index.html`のcanonical・`og:url`・`og:image`・`twitter:image`と説明文（マップ・グッズ・運行情報を追記）、`ogp.png`（`tools/ogp.html`からマップ・グッズ・運行情報を追記して書き出し）、`manifest.webmanifest`の説明文（`id`は`deploy-pages.yml`で新ドメイン用のみ`/`に書き換え対応済み）、READMEの公開URL、`goodsmap.md`の公開URL、姉妹プロジェクト`hokkaido_delay`の`website/index.html`の戻り先URLと`README.md`の公開URL。github.ioはゆくゆく廃止し、PWAをすべて消して新しいドメインへ転送する`index.html`と解除用の`sw.js`だけにする（READMEの「公開先」）。ほしいものリストは一挙公開から出すので引き継がない
+- [ ] 一挙公開の残り：姉妹プロジェクト`hokkaido_delay`の`website/index.html`の戻り先URLと`README.md`の公開URL。ほしいものリストは一挙公開から出すので引き継がない
+- [ ] 非公式アプリへの移行をデプロイ後に実機で確かめる：github.ioで引っ越しの案内が出る、github.ioのインストール済みアプリが解除用`sw.js`で読み込み直されキャッシュが消える（同じgithub.ioの運行情報のアプリは残る）、OGP（Xのカード）が新しいドメインで出てgithub.ioで出ない
+- [ ] github.ioの廃止：新しいドメインへ転送する`index.html`と解除用の`sw.js`だけにする（READMEの「公開先」）
 - [ ] グッズの`noindex`を外すか
 - [ ] 札幌市内の散策用のページ：マップに統合する予定（保留）
 - [ ] 正式リリース時に、前年の見本を削除する：`goods/data-2026fix.js`、`goods/embed.js`の`GM_DATA_SRC`の`?year=2026`の読み分け
@@ -35,6 +37,8 @@
 
 ## 解決
 
+- [x] 非公式カレンダーから非公式アプリへの移行：名前を「SNOWMIKU2027非公式アプリ」に、github.ioに引っ越しの案内（文は「マップ・グッズ・運行情報を追加！／新サイトで再登録をお願いします。／※旧サイトは12月末で終了します」）、OGPと説明文に会場マップ・グッズ一覧・運行情報を追記し`ogp.png`を書き出し、github.ioはOGP・マニフェスト・PWAを外して`sw.js`を解除用に（`sw.js`のVERSIONはv56）。新しいドメインのURLは非公開にする理由がなくなったので直接書き、github.ioのURLは出さない。グッズのフッターの「非公式カレンダーへ戻る」はサイドバーがあるので削除。作り分けを`tools/split-sites.sh`に移し、新旧サイトを別のポートで試す`tools/test-sites.mjs`で50件すべてOK。新しいドメインの更新ボタンのあと、そのページはServiceWorkerに制御されず次に開くと制御される（以前からの動き。キャッシュは戻るのでオフラインでも開ける）
+
 - [x] ドキュメントの仕様整合・文節の半角スペース除去（`README.md`・`document/goodsmap.md`・`document/sm27progress.md`）：`README.md`のPWA更新ボタンと公開先表、および`goodsmap.md`の品名リンク・年タブ・全画面/`hint`・拡大表示・マップ寸法・2カラム・ほしいものリスト列・`TAG_ORDER`・`live.status`・`--embed-nav-h`を実態に合わせて更新
 - [x] `map/map.js`の未使用コード（スマホの縮むプレビュー`shrink`・`holdPreview`・`expand`など、持ち手で止める処理`holdSize`・`releaseSize`）を削除した
 - [x] 雪ミク電車（E）：27年の運行ダイヤを公式発表に合わせて反映済み
@@ -44,7 +48,6 @@
 - [x] グッズの2カラムで、ほしいものリストの「設定・保存」だけの行ができていた件：左の列の見出しの右端に移した
 - [x] グッズの左の列の見出しから件数・合計（`gd-drawer__sum`）を消した。合計は下のフッターだけにし、「設定・保存」は見出しの右端に置く（`index.html`・`goods.css`・`wishlist.js`）
 - [x] 雪ミク電車（E）：発車時刻の表をやめ、公式の運行ダイヤの画像（PNG-8）を平日・土日祝で切り替えて出すようにした。リンクボタンに運行ダイヤ（公式）を追加
-- [x] **引っ越しの案内の文**：`data.js`の`migrate.text`（「グッズ一覧・マップ・運行情報を追加しました！」）はこのままで決着
 - [x] マップ（`map/`）とグッズ（`goods/`）を別のページに分けたものを実機で確認済み（スマホの下のバー・PCの縦のバー、マップ⇄グッズの切り替え、しぼり込みの強調、2カラム左の列のほしいものリスト）
 - [x] ほしいものリストのPDF（印刷）・QRコードの読み取り・「画像で保存」（長押し保存・ホーム画面追加のPWA含む）をiPhone等の実機で確認済み
 - [x] 速さの最適化を実機で確認済み（端末フォントの見た目やiPhone/Androidの900の太さ、マップの拡大・ブース名の出方、スマホのスクロール）

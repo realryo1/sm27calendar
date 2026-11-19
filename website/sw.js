@@ -1,9 +1,9 @@
-// オフライン閲覧用の Service Worker
+// オフライン閲覧用の Service Worker（新しいドメインと手元だけ。github.io では解除用の tools/sw-pages.js に差し替える）
 // 初回に全ファイルを保存し、以降はキャッシュから即表示しつつ裏で最新に更新する（stale-while-revalidate）。
 // ファイルを追加・削除したときは precache.js を更新し、VERSION を上げる。
-const VERSION = "v55";
+const VERSION = "v56";
 const CACHE = `sm27-${VERSION}`;
-importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）・self.SM27_SITE（公開先）
+importScripts("precache.js"); // self.PRECACHE（保存するファイルの一覧）・self.PRECACHE_IMAGES（画像）
 const PRECACHE = self.PRECACHE;
 // フォント（Google Fonts）も保存してオフラインで使う。大きくて変わらないので、版を付けない別のキャッシュに持ち、
 // 版の更新でも更新ボタン（app.js の hardRefresh）でも消さない
@@ -68,8 +68,6 @@ self.addEventListener("fetch", (event) => {
   if (sameOrigin && url.pathname.includes("/delay/")) return;
   // test_ で始まるフォルダは試験ページ（グッズマップなど）。PWA の対象外で、キャッシュを通すとカレンダーが返るので、そのまま取得させる
   if (sameOrigin && url.pathname.includes("/test_")) return;
-  // github.io ではグッズ・会場マップを保存しない（precache.js）。サイドバーを出さないので、直接開かれたときもそのまま取得させる
-  if (sameOrigin && self.SM27_SITE === "pages" && /\/(goods|map)\//.test(url.pathname)) return;
 
   // 画像は版つきのキャッシュにあればそれを返し、なければ取得して保存する（更新ボタンの取得時は直接ネットワークから取る）
   if (sameOrigin && IMG_PATHS.has(url.pathname)) {
