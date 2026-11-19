@@ -67,6 +67,7 @@ body { height: 100%; overflow: hidden; }
   line-height: 1.1;
   background: none;
 }
+.gm-floors .gm-tab span { white-space: nowrap; }
 .gm-floors .gm-tab small {
   max-width: 100%;
   overflow: hidden;
@@ -102,7 +103,8 @@ body { height: 100%; overflow: hidden; }
 .gm-zoom { display: flex; flex: none; gap: 4px; margin-left: auto; }
 @media (min-width: 641px) {
   /* 2カラム以上は凡例・ズームボタン・フロアタブを横1列にまとめる（フロアを切り替えてもボタンとタブの位置を動かさない） */
-  .gm-floors { width: clamp(240px, 31vw, 410px); margin: 0; }
+  /* 幅はタブの数（--n。util.js の glassBar が入れる）に合わせ、1つ140px（「ウイングベイ」が1行に収まる）。狭い画面では凡例が先に縮む */
+  .gm-floors { width: min(calc(var(--n, 2) * 140px), 100%); margin: 0; }
 }
 .gm-zoom button {
   min-width: 36px;
@@ -139,6 +141,38 @@ body { height: 100%; overflow: hidden; }
   -webkit-overflow-scrolling: touch;
 }
 .gm-map::-webkit-scrollbar { display: none; }
+/* 周辺の地図のタブ（map.js の setOsm・fillOsm）：会場マップ・凡例・操作のボタンの代わりに、OpenStreetMap の地図（Leaflet）を同じ枠に出す。
+   Leaflet の重なり（z-index 400〜）が枠の外のタブに重ならないよう、枠の中で閉じる（isolation） */
+.gm-osm { display: none; flex: 1; min-height: 0; overflow: hidden; isolation: isolate; border-radius: 12px; font-family: var(--font-base); background: var(--col-paper-muted); }
+.gm-mapbox.is-osm .gm-osm { display: flex; }
+.gm-mapbox.is-osm :is(.gm-map, .gm-legend, .gm-zoom) { display: none; }
+.gm-osm__off { margin: auto; padding: 0 16px; font-size: .85rem; font-weight: 700; text-align: center; }
+/* ピン：カレンダーの会場の記号を、ブランドのグラデーションのしずく形に白抜きで。名前は右に吹き出し */
+.gm-pin { display: grid; place-items: center; }
+.gm-pin span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--col-paper);
+  border-radius: 50% 50% 50% 0;
+  rotate: -45deg;
+  font-family: var(--font-display);
+  font-size: .85rem;
+  color: var(--col-paper);
+  background: var(--brand-gradient);
+  box-shadow: 0 2px 6px rgb(79 69 143 / .4);
+}
+.gm-pin b { font-weight: 400; line-height: 1; rotate: 45deg; } /* しずく形を回した分を戻して、文字は立てる */
+.gm-osm .gm-pin__label { padding: 2px 8px; border: 0; border-radius: 999px; font-size: .75rem; font-weight: 900; color: var(--col-ink-primary); box-shadow: 0 1px 4px rgb(79 69 143 / .3); }
+.gm-osm .gm-pin__label::before { display: none; }
+@media (min-width: 641px) {
+  .gm-mapbox.is-osm .gm-floors { margin-left: auto; } /* 凡例・ボタンが無くても、タブは右端のまま */
+}
+@media (max-width: 640px) {
+  .gm-osm { border-radius: 0; }
+  .gm-mapbox.is-osm { padding-top: var(--safe-t); } /* 地図は上の端まで（会場マップの上の余白は付けない） */
+}
 /* マウスでは押したまま動かして移動できるので、手の形にする（ブースや売り場の上は指の形のまま） */
 @media (hover: hover) and (pointer: fine) {
   .gm-map { cursor: grab; }
@@ -232,6 +266,23 @@ body { height: 100%; overflow: hidden; }
 .gm-canvas { position: relative; flex: none; margin: auto; }
 .gm-canvas svg { display: block; width: 100%; height: 100%; }
 .gm-minis { position: absolute; inset: 0; pointer-events: none; }
+/* ブースの配置が未発表のフロア（データの pending）：絵をぼかし、まん中に「準備中」 */
+.gm-canvas.is-pending > svg { filter: blur(3px); }
+.gm-pending {
+  position: absolute;
+  inset: 0;
+  width: fit-content;
+  height: fit-content;
+  margin: auto;
+  padding: 10px 28px;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--col-ink-primary);
+  background: rgb(255 255 255 / .85);
+  box-shadow: var(--gm-shadow);
+  pointer-events: none;
+}
 /* マップを回すあいだ（map.js の turnMap）：文字を消して絵だけを回し、描き直したら文字をふわっと出す。回す時間は TURN と合わせる */
 .gm-canvas { transition: transform .375s cubic-bezier(.22, 1, .36, 1); } /* easeOutQuint */
 .gm-svg text,

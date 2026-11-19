@@ -253,7 +253,6 @@
       <span class="tt-day__date notranslate" translate="no">${d.label}</span>
       <span class="tt-day__week" data-wd="${d.wd}">${d.week}</span>
       <span class="tt-day__ja" data-wd="${d.wd}">（${d.weekJa}）</span>
-      <span class="tt-day__sub">${br(site.subtitle)}</span>
     </span>`;
 
   // 右端の更新ボタン：ページと画像のキャッシュを消して読み込み直す

@@ -298,7 +298,7 @@
     box-shadow: 0 -6px 16px rgb(79 69 143 / .1);
   }
 }
-/* タイトル（h1）は画面に出さず読み上げ用にだけ残し、代わりに日付帯の日付の右横にサブタイトルを出す（.tt-day__sub） */
+/* タイトル（h1）は画面に出さず読み上げ用にだけ残す（日付帯の右端は更新・並べ替えのボタンと重なるので、サブタイトルは出さない） */
 .day-nav__title {
   position: absolute;
   width: 1px;
@@ -598,7 +598,6 @@ html:not(.is-ready) .main { visibility: hidden; } /* app.js が中身を組み�
   -webkit-text-fill-color: transparent;
 }
 .tt-day__week { font-family: var(--font-display); font-size: .858rem; letter-spacing: .14em; color: var(--col-secondary); }
-.tt-day__sub { margin-left: 4px; font-size: .936rem; font-weight: 700; color: var(--col-ink); } /* 上のバーのタイトルと同じ色 */
 .tt-day__ja { font-size: .884rem; font-weight: 700; opacity: .6; }
 @media (max-width: 640px) {
   .tt-day__date { font-size: 1.495rem; }

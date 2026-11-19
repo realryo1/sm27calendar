@@ -52,11 +52,29 @@ window.GM_DATA = {
   // 売り場の名前（品名の前のタグ）
   places: { wingbay: "小樽", chikaho: "チカホ", hmv: "HMV", skytown: "空港", live: "ライブ会場" },
 
+  // 会場マップのタブの先頭に出す周辺の地図（OpenStreetMap）。bbox は開いたときの範囲 [西, 南, 東, 北]（小樽から札幌まで）。
+  // pins は会場のピン（letter はカレンダーの会場の記号、at は [緯度, 経度]）。
+  // ウイングベイ・Zepp・クラーク会館はOSM（Nominatim）の座標。SYNC north とチ・カ・ホの2か所はOSMに無く、住所・通りから見積もったもの（ずれていたら直す）
+  osm: {
+    label: "地図",
+    bbox: [141.0, 43.03, 141.38, 43.2],
+    pins: [
+      { letter: "A", name: "ウイングベイ小樽", at: [43.18391, 141.02273] },
+      { letter: "B", name: "Zepp Sapporo", at: [43.04935, 141.35316] },
+      { letter: "C", name: "SYNC north", at: [43.057, 141.35] },
+      { letter: "D", name: "チ・カ・ホ 北3条交差点広場（西）", at: [43.0647, 141.3505] },
+      { letter: "D", name: "チ・カ・ホ 憩いの空間（北1東）", at: [43.062, 141.3512] },
+      { letter: "F", name: "北海道大学 クラーク会館", at: [43.06962, 141.34344] },
+    ],
+  },
+
   floors: [
     {
       id: "wingbay",
       label: "ウイングベイ",
       sub: "5番街2F・3番街2F ほか",
+      // ブースの配置が未発表のあいだ、絵をぼかして前に出す文言（発表されたら消す）
+      pending: "準備中",
       view: [0, 0, 860, 440],
       tile: [70, 60],
       areas: [

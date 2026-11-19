@@ -8,8 +8,9 @@ window.GM_MAP = (D, L, { onActivate }) => {
   // 書き写しの確認（コンソールの警告）は、手元で開いたときだけ行う。公開版では毎回は行わない
   const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
 
-  // 会場のタブ（このデータのフロア）
-  const TABS = D.floors.map((f) => ({ floor: f.id, label: f.label, sub: f.sub }));
+  // 会場のタブ（このデータのフロア）。データに osm があれば、先頭に周辺の地図（OpenStreetMap）を置き、開いたときはそれを出す
+  const OSM = "osm";
+  const TABS = [...(D.osm ? [{ floor: OSM, label: D.osm.label }] : []), ...D.floors.map((f) => ({ floor: f.id, label: f.label, sub: f.sub }))];
 
   // 画面の文言（年に関係しないもの）。日付・会場・注意書きなど、年ごとに変わるものはデータ側
   const TEXT = {
@@ -17,6 +18,7 @@ window.GM_MAP = (D, L, { onActivate }) => {
     legend: { sale: "販売あり", exhibit: "展示・体験だけ", gift: "配布・特典だけ", official: "公式物販", show: "主催展示", goods: "グッズ販売・展示など", marche: "マルシェ" },
     zoom: { out: ["－", "縮小"], fit: ["全体", "全体を表示"], in: ["＋", "拡大"] },
     turn: ["回転", "マップを右へ90度回す"],
+    osmOffline: "オフラインのため、地図は表示できません。",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -272,13 +274,11 @@ window.GM_MAP = (D, L, { onActivate }) => {
 
   function renderMap() {
     shown = turned(floor, rot);
-    // 会場（ウイングベイ・チ・カ・ホ）のタブとガラスの板を今のフロアに合わせる
-    $("gmFloors")
-      .querySelectorAll("[data-floor]")
-      .forEach((b) => b.setAttribute("aria-selected", b.dataset.floor === floor.id));
-    setFloorIndex(Math.max(0, TABS.findIndex((t) => t.floor === floor.id)));
+    markTabs();
     // マップの絵（SVG）と、拡大したときにブースの上に出す中身（HTML）を、同じ大きさの台に重ねる
-    $map.innerHTML = `<div class="gm-canvas">${mapSvg(shown)}<div class="gm-minis" aria-hidden="true">${labelsHtml(shown)}${minisHtml(shown)}</div></div>`;
+    // ブースの配置が未発表のフロア（データの pending）は、絵をぼかして前にその文言（「準備中」）を出す（map.css の .is-pending）
+    const pending = floor.pending ? `<p class="gm-pending">${esc(floor.pending)}</p>` : "";
+    $map.innerHTML = `<div class="gm-canvas${pending ? " is-pending" : ""}">${mapSvg(shown)}<div class="gm-minis" aria-hidden="true">${labelsHtml(shown)}${minisHtml(shown)}</div>${pending}</div>`;
     sizeMap();
     // 凡例は、このフロアにあるものだけ
     const kinds = new Set(Object.keys(floor.booths).map((no) => info.get(no)?.kinds[0] ?? "sale"));
@@ -541,6 +541,7 @@ window.GM_MAP = (D, L, { onActivate }) => {
 
   // マップへ移る。ほかのフロアのブースならフロアを切り替え、拡大しているときはブースを枠のまん中に出す
   function showOnMap(id) {
+    setOsm(false);
     const key = spotOf.get(id) ?? id;
     const f = D.floors.find((x) => key in x.booths || x.areas.some((a) => a.spot === key));
     if (f && f !== floor) {
@@ -616,12 +617,79 @@ window.GM_MAP = (D, L, { onActivate }) => {
     const el = ev.target.closest("[data-floor]");
     if (!el) return;
     setFloor(el.dataset.floor);
-    history.replaceState(null, "", `#map-${floor.id}`);
+    history.replaceState(null, "", `#map-${osm ? OSM : floor.id}`);
   });
+  // 会場のタブとガラスの板を、今のフロア（周辺の地図を出しているときはそのタブ）に合わせる
+  function markTabs() {
+    const cur = osm ? OSM : floor.id;
+    $("gmFloors")
+      .querySelectorAll("[data-floor]")
+      .forEach((b) => b.setAttribute("aria-selected", b.dataset.floor === cur));
+    setFloorIndex(Math.max(0, TABS.findIndex((t) => t.floor === cur)));
+  }
+  // 周辺の地図（OpenStreetMap の地図画像を Leaflet で出し、会場にピンを立てる。拡大縮小・移動は地図の中でできる）。会場マップ・凡例・操作のボタンの代わりに出す（map.css の .is-osm）。
+  // 地図の画像は Service Worker が保存しないので、オフラインでは出せない。Leaflet はタブを開いたときにオンラインなら読み込んで地図を作り、オフラインならその旨を出す（オンラインに戻ったら作る）
+  const LEAFLET = {
+    js: ["https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js", "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH"],
+    css: ["https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css", "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H"],
+  };
+  const loadLeaflet = () =>
+    (loadLeaflet.p ??= new Promise((ok, ng) => {
+      const css = Object.assign(document.createElement("link"), { rel: "stylesheet", href: LEAFLET.css[0], integrity: LEAFLET.css[1], crossOrigin: "anonymous" });
+      const js = Object.assign(document.createElement("script"), { src: LEAFLET.js[0], integrity: LEAFLET.js[1], crossOrigin: "anonymous", onload: ok });
+      js.onerror = () => {
+        loadLeaflet.p = null; // 次に開いたときにもう一度読む
+        js.remove();
+        ng();
+      };
+      document.head.append(css, js);
+    }));
+  const $osm = $("gmOsm");
+  let osm = false;
+  let lmap = null;
+  const osmMessage = () => ($osm.innerHTML = `<p class="gm-osm__off">${esc(TEXT.osmOffline)}</p>`);
+  async function fillOsm() {
+    if (!osm) return;
+    if (lmap) return lmap.invalidateSize(); // 隠していたあいだに枠の大きさが変わっていることがある
+    if (!navigator.onLine) return osmMessage();
+    try {
+      await loadLeaflet();
+    } catch {
+      return osmMessage();
+    }
+    if (lmap) return;
+    $osm.innerHTML = "";
+    const L = window.L;
+    const [w, s, e, n] = D.osm.bbox;
+    lmap = L.map($osm, { zoomSnap: 0.25 }).fitBounds([[s, w], [n, e]]);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+    }).addTo(lmap);
+    // ピン：カレンダーの会場の記号（A・B…）と名前
+    for (const p of D.osm.pins ?? []) {
+      const icon = L.divIcon({ className: "gm-pin", html: `<span><b>${esc(p.letter)}</b></span>`, iconSize: [28, 28], iconAnchor: [14, 34] }); // しずく形の先（まん中から下へ約20px）が場所
+      L.marker(p.at, { icon, title: p.name }).addTo(lmap).bindTooltip(esc(p.name), { permanent: true, direction: "right", offset: [14, -20], className: "gm-pin__label" });
+    }
+    new ResizeObserver(() => $osm.clientWidth && lmap.invalidateSize()).observe($osm);
+  }
+  addEventListener("online", fillOsm);
+  function setOsm(on) {
+    if (on === osm) return;
+    osm = on;
+    $("gmMapbox").classList.toggle("is-osm", on);
+    markTabs();
+    fillOsm();
+  }
   // フロアを切り替える（#map-○○ で開いたときも）
   function setFloor(id) {
+    if (id === OSM && D.osm) {
+      setOsm(true);
+      return true;
+    }
     const f = D.floors.find((x) => x.id === id);
     if (!f) return false;
+    setOsm(false);
     if (f !== floor) {
       floor = f;
       renderMap();
@@ -688,6 +756,7 @@ window.GM_MAP = (D, L, { onActivate }) => {
   // ---------- 開始 ----------
   renderStatic();
   renderMap();
+  if (D.osm) setOsm(true);
   show();
 
   return { pick, showOnMap, onMap, setHits, setFloor, show, isPicked: (id) => picked === id };
